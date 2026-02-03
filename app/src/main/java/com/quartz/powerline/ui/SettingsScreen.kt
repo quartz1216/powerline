@@ -1,0 +1,254 @@
+package com.quartz.powerline.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import com.quartz.powerline.ui.viewmodel.MainViewModel
+import com.quartz.powerline.domain.models.AppInfo
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(viewModel: MainViewModel) {
+    var maxRecent by remember { mutableStateOf(viewModel.settingsRepository.getMaxRecentItems()) }
+    var hiddenApps by remember { mutableStateOf(viewModel.settingsRepository.getHiddenApps()) }
+    var aliases by remember { mutableStateOf(viewModel.settingsRepository.getAliases()) }
+    val allApps by viewModel.installedApps.collectAsState()
+
+    var showHiddenAppsDialog by remember { mutableStateOf(false) }
+    var showAddAliasDialog by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Settings") },
+                navigationIcon = {
+                    IconButton(onClick = { viewModel.closeSettings() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            // Max Recent Items
+            Text("Max Recent Items: $maxRecent", style = MaterialTheme.typography.titleMedium)
+            Slider(
+                value = maxRecent.toFloat(),
+                onValueChange = { maxRecent = it.toInt() },
+                onValueChangeFinished = { viewModel.settingsRepository.setMaxRecentItems(maxRecent) },
+                valueRange = 1f..20f,
+                steps = 19
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Hidden Apps
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Hidden Apps", style = MaterialTheme.typography.titleMedium)
+                Button(onClick = { showHiddenAppsDialog = true }) {
+                    Text("Manage (${hiddenApps.size})")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Aliases
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Aliases", style = MaterialTheme.typography.titleMedium)
+                IconButton(onClick = { showAddAliasDialog = true }) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Alias")
+                }
+            }
+
+            LazyColumn(modifier = Modifier.weight(1f)) {
+                items(aliases.toList()) { (alias, packageName) ->
+                    val appName = allApps.find { it.packageName == packageName }?.label ?: packageName
+                    ListItem(
+                        headlineContent = { Text(alias) },
+                        supportingContent = { Text(appName) },
+                        trailingContent = {
+                            IconButton(onClick = {
+                                val newAliases = aliases.toMutableMap()
+                                newAliases.remove(alias)
+                                aliases = newAliases
+                                viewModel.settingsRepository.setAliases(newAliases)
+                            }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            }
+                        }
+                    )
+                    Divider()
+                }
+            }
+        }
+    }
+
+    if (showHiddenAppsDialog) {
+        HiddenAppsDialog(
+            allApps = allApps,
+            hiddenApps = hiddenApps,
+            onDismiss = { showHiddenAppsDialog = false },
+            onSave = { newHidden ->
+                hiddenApps = newHidden
+                viewModel.settingsRepository.setHiddenApps(newHidden)
+                showHiddenAppsDialog = false
+            }
+        )
+    }
+
+    if (showAddAliasDialog) {
+        AddAliasDialog(
+            allApps = allApps,
+            onDismiss = { showAddAliasDialog = false },
+            onSave = { alias, pkg ->
+                val newAliases = aliases.toMutableMap()
+                newAliases[alias] = pkg
+                aliases = newAliases
+                viewModel.settingsRepository.setAliases(newAliases)
+                showAddAliasDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun HiddenAppsDialog(
+    allApps: List<AppInfo>,
+    hiddenApps: Set<String>,
+    onDismiss: () -> Unit,
+    onSave: (Set<String>) -> Unit
+) {
+    val currentHidden = remember { mutableStateOf(hiddenApps) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.fillMaxSize().padding(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Manage Hidden Apps", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(allApps) { app ->
+                        val isHidden = currentHidden.value.contains(app.packageName)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val newSet = currentHidden.value.toMutableSet()
+                                    if (isHidden) newSet.remove(app.packageName) else newSet.add(app.packageName)
+                                    currentHidden.value = newSet
+                                }
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(checked = isHidden, onCheckedChange = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(app.label)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    Button(onClick = { onSave(currentHidden.value) }) { Text("Save") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AddAliasDialog(
+    allApps: List<AppInfo>,
+    onDismiss: () -> Unit,
+    onSave: (String, String) -> Unit
+) {
+    var alias by remember { mutableStateOf("") }
+    var selectedApp by remember { mutableStateOf<AppInfo?>(null) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.fillMaxSize().padding(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Add Alias", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = alias,
+                    onValueChange = { alias = it },
+                    label = { Text("Alias") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Select App:", style = MaterialTheme.typography.labelLarge)
+
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    items(allApps) { app ->
+                        val isSelected = selectedApp?.packageName == app.packageName
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedApp = app }
+                                .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(app.label, color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    Button(
+                        onClick = {
+                            if (alias.isNotBlank() && selectedApp != null) {
+                                onSave(alias, selectedApp!!.packageName)
+                            }
+                        },
+                        enabled = alias.isNotBlank() && selectedApp != null
+                    ) { Text("Save") }
+                }
+            }
+        }
+    }
+}

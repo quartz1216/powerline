@@ -68,4 +68,5 @@ dependencies {
     testImplementation("androidx.test:core:1.5.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+    implementation("com.google.code.gson:gson:2.10.1")
 }

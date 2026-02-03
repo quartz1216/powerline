@@ -7,11 +7,16 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModelProvider
 import com.quartz.powerline.ui.LauncherScreen
+import com.quartz.powerline.ui.SettingsScreen
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
 import com.quartz.powerline.ui.viewmodel.MainViewModel
+import com.quartz.powerline.ui.viewmodel.Screen
 import com.quartz.powerline.utils.ActionExecutor
 
 class MainActivity : ComponentActivity() {
@@ -29,20 +34,31 @@ class MainActivity : ComponentActivity() {
         )[MainViewModel::class.java]
 
         setContent {
-            CommandLauncherTheme(dynamicColor = false) { // Use default dark/light for consistency
-                LauncherScreen(
-                    viewModel = viewModel,
-                    onResultClick = { result ->
-                        ActionExecutor.execute(this, result)
-                        // If it's a calculator copy, we might want to stay?
-                        // But usually we want to launch and minimize.
-                        // For Home app, we can't really "minimize". We just launch something else.
-                        // If we copy, we might want to clear query.
-                        if (result.type == com.quartz.powerline.domain.models.ResultType.CALC) {
-                            viewModel.onQueryChange("")
-                        }
+            CommandLauncherTheme(dynamicColor = false) {
+                val currentScreen by viewModel.currentScreen.collectAsState()
+
+                when (currentScreen) {
+                    Screen.LAUNCHER -> {
+                        LauncherScreen(
+                            viewModel = viewModel,
+                            onResultClick = { result ->
+                                if (result.payload == "settings_action") {
+                                    viewModel.openSettings()
+                                    viewModel.onQueryChange("")
+                                } else {
+                                    ActionExecutor.execute(this@MainActivity, result, viewModel.settingsRepository)
+                                    viewModel.onQueryChange("")
+                                }
+                            }
+                        )
                     }
-                )
+                    Screen.SETTINGS -> {
+                        BackHandler {
+                            viewModel.closeSettings()
+                        }
+                        SettingsScreen(viewModel = viewModel)
+                    }
+                }
             }
         }
     }
@@ -64,8 +80,5 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Ensure query is cleared if we returned from an app?
-        // User didn't specify. Standard behavior is to keep state or reset.
-        // Given "stateNotNeeded=true", it might reset.
     }
 }
