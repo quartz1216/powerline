@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.ui.components.CommandBar
 import com.quartz.powerline.ui.components.ResultItem
@@ -88,7 +89,12 @@ fun LauncherScreen(
                         ResultItem(
                             result = result,
                             isSelected = index == selectedIndex,
-                            onClick = { onResultClick(result) }
+                            onClick = { onResultClick(result) },
+                            onLongClick = {
+                                if (result.type == ResultType.APP && result.packageName != null) {
+                                    viewModel.toggleFavorite(result.packageName)
+                                }
+                            }
                         )
                     }
                 }

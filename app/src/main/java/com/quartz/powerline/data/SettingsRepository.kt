@@ -20,6 +20,25 @@ class SettingsRepository(context: Context) {
         prefs.edit().putStringSet("hidden_apps", hiddenApps).apply()
     }
 
+    // --- Favorite Apps ---
+    fun getFavoriteApps(): Set<String> {
+        return prefs.getStringSet("favorite_apps", emptySet()) ?: emptySet()
+    }
+
+    fun setFavoriteApps(favoriteApps: Set<String>) {
+        prefs.edit().putStringSet("favorite_apps", favoriteApps).apply()
+    }
+
+    fun toggleFavorite(packageName: String) {
+        val current = getFavoriteApps().toMutableSet()
+        if (current.contains(packageName)) {
+            current.remove(packageName)
+        } else {
+            current.add(packageName)
+        }
+        setFavoriteApps(current)
+    }
+
     // --- Aliases ---
     // Map<Alias, PackageName>
     fun getAliases(): Map<String, String> {
@@ -66,6 +85,7 @@ class SettingsRepository(context: Context) {
     fun exportSettings(): String {
         val data = AppBackupData(
             hiddenApps = getHiddenApps(),
+            favoriteApps = getFavoriteApps(),
             aliases = getAliases(),
             maxRecentItems = getMaxRecentItems(),
             history = getHistory()
@@ -76,6 +96,7 @@ class SettingsRepository(context: Context) {
     fun importSettings(json: String) {
         val data = gson.fromJson(json, AppBackupData::class.java)
         setHiddenApps(data.hiddenApps)
+        setFavoriteApps(data.favoriteApps)
         setAliases(data.aliases)
         setMaxRecentItems(data.maxRecentItems)
         saveHistory(data.history)

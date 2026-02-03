@@ -28,10 +28,12 @@ import com.quartz.powerline.domain.models.AppInfo
 fun SettingsScreen(viewModel: MainViewModel) {
     var maxRecent by remember { mutableStateOf(viewModel.settingsRepository.getMaxRecentItems()) }
     var hiddenApps by remember { mutableStateOf(viewModel.settingsRepository.getHiddenApps()) }
+    var favoriteApps by remember { mutableStateOf(viewModel.settingsRepository.getFavoriteApps()) }
     var aliases by remember { mutableStateOf(viewModel.settingsRepository.getAliases()) }
     val allApps by viewModel.installedApps.collectAsState()
 
     var showHiddenAppsDialog by remember { mutableStateOf(false) }
+    var showFavoriteAppsDialog by remember { mutableStateOf(false) }
     var showAddAliasDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -63,6 +65,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     // Reload state from repository
                     maxRecent = viewModel.settingsRepository.getMaxRecentItems()
                     hiddenApps = viewModel.settingsRepository.getHiddenApps()
+                    favoriteApps = viewModel.settingsRepository.getFavoriteApps()
                     aliases = viewModel.settingsRepository.getAliases()
                     // Reload viewmodel data
                     viewModel.reloadApps()
@@ -151,6 +154,20 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Favorite Apps
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Favorite Apps", style = MaterialTheme.typography.titleMedium)
+                Button(onClick = { showFavoriteAppsDialog = true }) {
+                    Text("Manage (${favoriteApps.size})")
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // Aliases
@@ -201,6 +218,19 @@ fun SettingsScreen(viewModel: MainViewModel) {
         )
     }
 
+    if (showFavoriteAppsDialog) {
+        FavoriteAppsDialog(
+            allApps = allApps,
+            favoriteApps = favoriteApps,
+            onDismiss = { showFavoriteAppsDialog = false },
+            onSave = { newFavorites ->
+                favoriteApps = newFavorites
+                viewModel.settingsRepository.setFavoriteApps(newFavorites)
+                showFavoriteAppsDialog = false
+            }
+        )
+    }
+
     if (showAddAliasDialog) {
         AddAliasDialog(
             allApps = allApps,
@@ -213,6 +243,54 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 showAddAliasDialog = false
             }
         )
+    }
+}
+
+@Composable
+fun FavoriteAppsDialog(
+    allApps: List<AppInfo>,
+    favoriteApps: Set<String>,
+    onDismiss: () -> Unit,
+    onSave: (Set<String>) -> Unit
+) {
+    val currentFavorites = remember { mutableStateOf(favoriteApps) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.fillMaxSize().padding(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Manage Favorite Apps", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(allApps) { app ->
+                        val isFavorite = currentFavorites.value.contains(app.packageName)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val newSet = currentFavorites.value.toMutableSet()
+                                    if (isFavorite) newSet.remove(app.packageName) else newSet.add(app.packageName)
+                                    currentFavorites.value = newSet
+                                }
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(checked = isFavorite, onCheckedChange = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(app.label)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    Button(onClick = { onSave(currentFavorites.value) }) { Text("Save") }
+                }
+            }
+        }
     }
 }
 

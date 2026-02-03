@@ -20,6 +20,7 @@ class SearchEngine(
 
     fun search(query: String, apps: List<AppInfo>): List<SearchResult> {
         val hiddenApps = settingsRepository.getHiddenApps()
+        val favoriteApps = settingsRepository.getFavoriteApps()
         val visibleApps = apps.filter { !hiddenApps.contains(it.packageName) }
 
         // 0. Empty Query -> Recent History
@@ -53,7 +54,8 @@ class SearchEngine(
                                     icon = app.icon,
                                     type = ResultType.APP,
                                     packageName = app.packageName,
-                                    className = app.className
+                                    className = app.className,
+                                    isFavorite = favoriteApps.contains(app.packageName)
                                 )
                             } else null
                         }
@@ -132,6 +134,7 @@ class SearchEngine(
             }
         }.sortedWith(
              compareByDescending<Pair<AppInfo, Int>> { it.second } // Sort by match score (Alias > High Fuzzy > Low Fuzzy)
+                .thenByDescending { favoriteApps.contains(it.first.packageName) } // Favorites first within tier
                 .thenByDescending { scores[it.first.packageName] ?: 0 } // Then frequency
                 .thenBy { it.first.label }
         )
@@ -144,7 +147,8 @@ class SearchEngine(
                 icon = app.icon,
                 type = ResultType.APP,
                 packageName = app.packageName,
-                className = app.className
+                className = app.className,
+                isFavorite = favoriteApps.contains(app.packageName)
             )
         })
 

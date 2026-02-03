@@ -2,7 +2,9 @@ package com.quartz.powerline.ui.components
 
 import android.graphics.drawable.Drawable
 import android.widget.ImageView
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,18 +28,24 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ResultItem(
     result: SearchResult,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {}
 ) {
     val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .background(backgroundColor)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -59,6 +68,16 @@ fun ResultItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+
+        if (result.isFavorite) {
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = "Favorite",
+                tint = Color(0xFFFFD700), // Gold color
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }

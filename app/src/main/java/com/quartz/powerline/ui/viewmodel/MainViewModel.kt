@@ -96,6 +96,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _currentScreen.value = Screen.SETTINGS
     }
 
+    fun toggleFavorite(packageName: String) {
+        settingsRepository.toggleFavorite(packageName)
+        // Refresh search results to show/hide star and update ranking
+        performSearch(_query.value)
+    }
+
     private fun performSearch(query: String) {
         _results.value = searchEngine.search(query, _installedApps.value)
         _selectedIndex.value = 0

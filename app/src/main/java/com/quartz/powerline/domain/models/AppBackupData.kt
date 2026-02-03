@@ -6,6 +6,7 @@ data class AppBackupData(
     val version: Int = 1,
     val timestamp: Long = System.currentTimeMillis(),
     val hiddenApps: Set<String>,
+    val favoriteApps: Set<String> = emptySet(),
     val aliases: Map<String, String>,
     val maxRecentItems: Int,
     val history: List<HistoryItem>

@@ -15,6 +15,7 @@ The backup file is a standard JSON file.
 | `version` | Integer | The version of the backup schema. Current version: `1`. |
 | `timestamp` | Long | The timestamp (milliseconds since epoch) when the backup was created. |
 | `hiddenApps` | Array<String> | A list of package names that are hidden from the launcher. |
+| `favoriteApps` | Array<String> | A list of package names that are marked as favorites. |
 | `aliases` | Object | A key-value map where the key is the alias name and the value is the target package name. |
 | `maxRecentItems` | Integer | The maximum number of recent items to display. |
 | `history` | Array<Object> | The usage history. |
@@ -37,6 +38,9 @@ The backup file is a standard JSON file.
   "hiddenApps": [
     "com.android.chrome",
     "com.google.android.youtube"
+  ],
+  "favoriteApps": [
+    "com.whatsapp"
   ],
   "aliases": {
     "maps": "com.google.android.apps.maps",
