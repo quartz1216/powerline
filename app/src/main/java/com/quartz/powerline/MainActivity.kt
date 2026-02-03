@@ -9,15 +9,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModelProvider
 import com.quartz.powerline.ui.LauncherScreen
@@ -29,6 +21,8 @@ import com.quartz.powerline.ui.viewmodel.Screen
 import com.quartz.powerline.utils.ActionExecutor
 
 class MainActivity : ComponentActivity() {
+    private lateinit var viewModel: MainViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -37,10 +31,12 @@ class MainActivity : ComponentActivity() {
         // Show persistent notification
         com.quartz.powerline.utils.NotificationHelper.showNotification(this)
 
-        val viewModel = ViewModelProvider(
+        viewModel = ViewModelProvider(
             this,
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[MainViewModel::class.java]
+
+        handleIntent(intent)
 
         setContent {
             CommandLauncherTheme(dynamicColor = false) {
@@ -48,39 +44,23 @@ class MainActivity : ComponentActivity() {
 
                 when (currentScreen) {
                     Screen.LAUNCHER -> {
-                        // Transparent container that detects clicks outside to "dismiss" (go back)
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Transparent)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null
-                                ) {
+                        LauncherScreen(
+                            viewModel = viewModel,
+                            onResultClick = { result ->
+                                if (result.payload == "settings_action") {
+                                    viewModel.openSettings()
+                                    viewModel.onQueryChange("")
+                                } else {
+                                    ActionExecutor.execute(this@MainActivity, result, viewModel.settingsRepository)
+                                    viewModel.onQueryChange("")
+                                    // Return to previous app after action
                                     moveTaskToBack(true)
                                 }
-                        ) {
-                            // Prevent clicks on the actual UI from triggering dismissal
-                            Box(modifier = Modifier.clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) {}) {
-                                LauncherScreen(
-                                    viewModel = viewModel,
-                                    onResultClick = { result ->
-                                        if (result.payload == "settings_action") {
-                                            viewModel.openSettings()
-                                            viewModel.onQueryChange("")
-                                        } else {
-                                            ActionExecutor.execute(this@MainActivity, result, viewModel.settingsRepository)
-                                            viewModel.onQueryChange("")
-                                            // Return to previous app after action
-                                            moveTaskToBack(true)
-                                        }
-                                    }
-                                )
+                            },
+                            onDismiss = {
+                                moveTaskToBack(true)
                             }
-                        }
+                        )
                     }
                     Screen.SETTINGS -> {
                         BackHandler {
@@ -111,6 +91,17 @@ class MainActivity : ComponentActivity() {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra("open_settings", false) == true) {
+            viewModel.openSettings()
         }
     }
 

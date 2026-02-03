@@ -30,10 +30,15 @@ import com.quartz.powerline.ui.components.CommandBar
 import com.quartz.powerline.ui.components.ResultItem
 import com.quartz.powerline.ui.viewmodel.MainViewModel
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.remember
+
 @Composable
 fun LauncherScreen(
     viewModel: MainViewModel,
-    onResultClick: (SearchResult) -> Unit
+    onResultClick: (SearchResult) -> Unit,
+    onDismiss: (() -> Unit)? = null
 ) {
     val query by viewModel.query.collectAsState()
     val results by viewModel.results.collectAsState()
@@ -49,13 +54,26 @@ fun LauncherScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                onDismiss?.invoke()
+            }
             // Important: Handle IME padding so list isn't hidden by keyboard
             .imePadding()
             .padding(16.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    // Consume clicks to prevent dismissal
+                }
         ) {
             // Spacer to push it down a bit from top status bar
             Spacer(modifier = Modifier.height(48.dp))
