@@ -24,20 +24,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.quartz.powerline.domain.models.SearchResult
+import com.quartz.powerline.ui.components.AppActionMenu
 import com.quartz.powerline.ui.components.CommandBar
 import com.quartz.powerline.ui.components.ResultItem
 import com.quartz.powerline.ui.viewmodel.MainViewModel
+import com.quartz.powerline.utils.ActionExecutor
 
 @Composable
 fun LauncherScreen(
     viewModel: MainViewModel,
     onResultClick: (SearchResult) -> Unit
 ) {
+    val context = LocalContext.current
     val query by viewModel.query.collectAsState()
     val results by viewModel.results.collectAsState()
     val selectedIndex by viewModel.selectedIndex.collectAsState()
+    val longPressedResult by viewModel.longPressedResult.collectAsState()
+    val appShortcuts by viewModel.appShortcuts.collectAsState()
     val listState = rememberLazyListState()
 
     LaunchedEffect(selectedIndex) {
@@ -88,11 +94,35 @@ fun LauncherScreen(
                         ResultItem(
                             result = result,
                             isSelected = index == selectedIndex,
-                            onClick = { onResultClick(result) }
+                            onClick = { onResultClick(result) },
+                            onLongClick = { viewModel.onResultLongClick(result) }
                         )
                     }
                 }
             }
+        }
+
+        // App Action Menu (BottomSheet)
+        longPressedResult?.let { result ->
+            AppActionMenu(
+                result = result,
+                shortcuts = appShortcuts,
+                onDismiss = { viewModel.dismissLongPressMenu() },
+                onAppInfo = {
+                    result.packageName?.let { pkg ->
+                        ActionExecutor.openAppInfo(context, pkg)
+                    }
+                },
+                onUninstall = {
+                    result.packageName?.let { pkg ->
+                        ActionExecutor.uninstallApp(context, pkg)
+                    }
+                },
+                onShortcutClick = { shortcut ->
+                    ActionExecutor.execute(context, shortcut, viewModel.settingsRepository)
+                    viewModel.onQueryChange("")
+                }
+            )
         }
 
         // Settings FAB

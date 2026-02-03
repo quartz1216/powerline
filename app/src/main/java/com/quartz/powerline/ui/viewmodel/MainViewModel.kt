@@ -7,6 +7,7 @@ import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.domain.AppRepository
 import com.quartz.powerline.domain.SearchEngine
 import com.quartz.powerline.domain.models.AppInfo
+import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,6 +40,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _installedApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val installedApps: StateFlow<List<AppInfo>> = _installedApps.asStateFlow()
+
+    private val _longPressedResult = MutableStateFlow<SearchResult?>(null)
+    val longPressedResult: StateFlow<SearchResult?> = _longPressedResult.asStateFlow()
+
+    private val _appShortcuts = MutableStateFlow<List<SearchResult>>(emptyList())
+    val appShortcuts: StateFlow<List<SearchResult>> = _appShortcuts.asStateFlow()
 
     init {
         loadApps()
@@ -94,6 +101,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun closePermissions() {
         _currentScreen.value = Screen.SETTINGS
+    }
+
+    fun onResultLongClick(result: SearchResult) {
+        if (result.type == ResultType.APP && result.packageName != null) {
+            _longPressedResult.value = result
+            viewModelScope.launch {
+                _appShortcuts.value = appRepository.getAppShortcuts(result.packageName)
+            }
+        }
+    }
+
+    fun dismissLongPressMenu() {
+        _longPressedResult.value = null
+        _appShortcuts.value = emptyList()
     }
 
     private fun performSearch(query: String) {

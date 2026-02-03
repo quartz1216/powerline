@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.LauncherApps
 import android.net.Uri
 import android.widget.Toast
 import com.quartz.powerline.data.HistoryItem
@@ -23,12 +24,18 @@ object ActionExecutor {
         when (result.type) {
             ResultType.APP -> {
                 if (result.packageName != null) {
-                    val intent = context.packageManager.getLaunchIntentForPackage(result.packageName)
-                    if (intent != null) {
-                        context.startActivity(intent)
+                    if (result.payload != null && result.payload.startsWith("shortcut:")) {
+                        val shortcutId = result.payload.removePrefix("shortcut:")
+                        executeShortcut(context, result.packageName, shortcutId)
                         success = true
                     } else {
-                        Toast.makeText(context, "Cannot launch app", Toast.LENGTH_SHORT).show()
+                        val intent = context.packageManager.getLaunchIntentForPackage(result.packageName)
+                        if (intent != null) {
+                            context.startActivity(intent)
+                            success = true
+                        } else {
+                            Toast.makeText(context, "Cannot launch app", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }
@@ -60,6 +67,39 @@ object ActionExecutor {
                 timestamp = System.currentTimeMillis()
             )
             settingsRepository.addToHistory(historyItem)
+        }
+    }
+
+    fun openAppInfo(context: Context, packageName: String) {
+        try {
+            val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", packageName, null)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Cannot open app info", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun uninstallApp(context: Context, packageName: String) {
+        try {
+            val intent = Intent(Intent.ACTION_DELETE).apply {
+                data = Uri.fromParts("package", packageName, null)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Cannot uninstall app", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun executeShortcut(context: Context, packageName: String, shortcutId: String) {
+        val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
+        try {
+            launcherApps.startShortcut(packageName, shortcutId, null, null, android.os.Process.myUserHandle())
+        } catch (e: Exception) {
+            Toast.makeText(context, "Cannot launch shortcut", Toast.LENGTH_SHORT).show()
         }
     }
 }
