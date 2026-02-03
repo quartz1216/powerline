@@ -5,10 +5,13 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
-    <!-- Home Launcher Theme: Shows System Wallpaper -->
+    <!-- Home Launcher Theme: Shows Translucent/Dimmed Overlay -->
     <style name="Theme.CommandLauncher.Home" parent="Theme.CommandLauncher">
-        <item name="android:windowShowWallpaper">true</item>
+        <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.5</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Translucent</item>
     </style>
 
     <!-- Overlay Theme: Completely Transparent -->

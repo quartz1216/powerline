@@ -48,8 +48,14 @@ class OverlayActivity : ComponentActivity() {
                         LauncherScreen(
                             viewModel = viewModel,
                             onResultClick = { result ->
-                                ActionExecutor.execute(this@OverlayActivity, result, viewModel.settingsRepository)
-                                finish()
+                                if (result.payload == "settings_action") {
+                                    viewModel.openSettings()
+                                    viewModel.onQueryChange("")
+                                } else {
+                                    ActionExecutor.execute(this@OverlayActivity, result, viewModel.settingsRepository)
+                                    viewModel.onQueryChange("")
+                                    finish()
+                                }
                             }
                         )
                     }

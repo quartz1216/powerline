@@ -40,7 +40,12 @@
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
             android:theme="@style/Theme.CommandLauncher.Overlay"
-            android:windowSoftInputMode="adjustResize|stateAlwaysVisible" />
+            android:windowSoftInputMode="adjustResize|stateAlwaysVisible">
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <!-- Quick Settings Tile Service -->
         <service
