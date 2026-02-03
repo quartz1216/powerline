@@ -76,6 +76,15 @@ class SearchEngine(
                             payload = item.title
                         )
                     }
+                    ResultType.PLUGIN -> {
+                        SearchResult(
+                            id = item.id,
+                            title = item.title,
+                            subtitle = "Recent Plugin",
+                            type = ResultType.PLUGIN,
+                            payload = "" // Argument is not stored in HistoryItem yet
+                        )
+                    }
                 }
             }
         }
@@ -96,6 +105,34 @@ class SearchEngine(
                     payload = "settings_action"
                 )
             )
+        }
+
+        // 1.1 Custom Plugins
+        val plugins = settingsRepository.getPlugins()
+        for (plugin in plugins) {
+            val kw = plugin.keyword.lowercase()
+            if (lowerQuery == kw) {
+                results.add(
+                    SearchResult(
+                        id = "plugin_${plugin.id}",
+                        title = plugin.name,
+                        subtitle = "Plugin",
+                        type = ResultType.PLUGIN,
+                        payload = ""
+                    )
+                )
+            } else if (lowerQuery.startsWith("$kw ")) {
+                val arg = trimmedQuery.substring(plugin.keyword.length).trim()
+                results.add(
+                    SearchResult(
+                        id = "plugin_${plugin.id}",
+                        title = "${plugin.name}: $arg",
+                        subtitle = "Run Plugin Action",
+                        type = ResultType.PLUGIN,
+                        payload = arg
+                    )
+                )
+            }
         }
 
         // 2. Calculation

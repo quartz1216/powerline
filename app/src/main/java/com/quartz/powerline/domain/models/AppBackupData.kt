@@ -7,6 +7,7 @@ data class AppBackupData(
     val timestamp: Long = System.currentTimeMillis(),
     val hiddenApps: Set<String>,
     val aliases: Map<String, String>,
+    val plugins: List<CustomPlugin>? = null,
     val maxRecentItems: Int,
     val history: List<HistoryItem>
 )

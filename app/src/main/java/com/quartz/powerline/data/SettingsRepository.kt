@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.quartz.powerline.domain.models.AppBackupData
+import com.quartz.powerline.domain.models.CustomPlugin
 import com.quartz.powerline.domain.models.ResultType
 
 class SettingsRepository(context: Context) {
@@ -31,6 +32,18 @@ class SettingsRepository(context: Context) {
     fun setAliases(aliases: Map<String, String>) {
         val json = gson.toJson(aliases)
         prefs.edit().putString("aliases", json).apply()
+    }
+
+    // --- Custom Plugins ---
+    fun getPlugins(): List<CustomPlugin> {
+        val json = prefs.getString("custom_plugins", "[]")
+        val type = object : TypeToken<List<CustomPlugin>>() {}.type
+        return gson.fromJson(json, type)
+    }
+
+    fun setPlugins(plugins: List<CustomPlugin>) {
+        val json = gson.toJson(plugins)
+        prefs.edit().putString("custom_plugins", json).apply()
     }
 
     // --- Max Recent Items ---
@@ -67,6 +80,7 @@ class SettingsRepository(context: Context) {
         val data = AppBackupData(
             hiddenApps = getHiddenApps(),
             aliases = getAliases(),
+            plugins = getPlugins(),
             maxRecentItems = getMaxRecentItems(),
             history = getHistory()
         )
@@ -77,6 +91,7 @@ class SettingsRepository(context: Context) {
         val data = gson.fromJson(json, AppBackupData::class.java)
         setHiddenApps(data.hiddenApps)
         setAliases(data.aliases)
+        setPlugins(data.plugins ?: emptyList())
         setMaxRecentItems(data.maxRecentItems)
         saveHistory(data.history)
     }

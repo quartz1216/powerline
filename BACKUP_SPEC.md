@@ -16,8 +16,19 @@ The backup file is a standard JSON file.
 | `timestamp` | Long | The timestamp (milliseconds since epoch) when the backup was created. |
 | `hiddenApps` | Array<String> | A list of package names that are hidden from the launcher. |
 | `aliases` | Object | A key-value map where the key is the alias name and the value is the target package name. |
+| `plugins` | Array<Object> | A list of custom plugins. |
 | `maxRecentItems` | Integer | The maximum number of recent items to display. |
 | `history` | Array<Object> | The usage history. |
+
+### Plugin Object
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | String | Unique identifier for the plugin. |
+| `name` | String | Display name of the plugin. |
+| `keyword` | String | Trigger keyword for the plugin. |
+| `action` | String | Type of action (`OPEN_URL`, `COPY_TO_CLIPBOARD`). |
+| `actionData` | String | The template for the action (use `{q}` for user input). |
 
 ### History Item Object
 

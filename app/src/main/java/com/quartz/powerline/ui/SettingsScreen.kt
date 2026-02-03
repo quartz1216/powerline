@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.quartz.powerline.ui.viewmodel.MainViewModel
 import com.quartz.powerline.domain.models.AppInfo
+import com.quartz.powerline.domain.models.CustomPlugin
+import com.quartz.powerline.domain.models.PluginAction
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,10 +33,13 @@ fun SettingsScreen(viewModel: MainViewModel) {
     var maxRecent by remember { mutableStateOf(viewModel.settingsRepository.getMaxRecentItems()) }
     var hiddenApps by remember { mutableStateOf(viewModel.settingsRepository.getHiddenApps()) }
     var aliases by remember { mutableStateOf(viewModel.settingsRepository.getAliases()) }
+    var plugins by remember { mutableStateOf(viewModel.settingsRepository.getPlugins()) }
     val allApps by viewModel.installedApps.collectAsState()
 
     var showHiddenAppsDialog by remember { mutableStateOf(false) }
     var showAddAliasDialog by remember { mutableStateOf(false) }
+    var showAddPluginDialog by remember { mutableStateOf(false) }
+    var editingPlugin by remember { mutableStateOf<CustomPlugin?>(null) }
 
     val context = LocalContext.current
 
@@ -65,6 +72,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     hiddenApps = viewModel.settingsRepository.getHiddenApps()
                     aliases = viewModel.settingsRepository.getAliases()
                     // Reload viewmodel data
+                    plugins = viewModel.settingsRepository.getPlugins()
                     viewModel.reloadApps()
 
                     Toast.makeText(context, "Settings imported successfully", Toast.LENGTH_SHORT).show()
@@ -87,7 +95,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
             )
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
@@ -95,95 +103,148 @@ fun SettingsScreen(viewModel: MainViewModel) {
         ) {
 
             // General / Tools
-            Text("General", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
+            item {
+                Text("General", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
-                onClick = { viewModel.openPermissions() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Check Permissions & Defaults")
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { exportLauncher.launch("powerline_backup.json") },
-                    modifier = Modifier.weight(1f)
+                Button(
+                    onClick = { viewModel.openPermissions() },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Export Settings")
+                    Text("Check Permissions & Defaults")
                 }
-                OutlinedButton(
-                    onClick = { importLauncher.launch(arrayOf("application/json")) },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Import Settings")
-                }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { exportLauncher.launch("powerline_backup.json") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Export Settings")
+                    }
+                    OutlinedButton(
+                        onClick = { importLauncher.launch(arrayOf("application/json")) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Import Settings")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
             // Max Recent Items
-            Text("Max Recent Items: $maxRecent", style = MaterialTheme.typography.titleMedium)
-            Slider(
-                value = maxRecent.toFloat(),
-                onValueChange = { maxRecent = it.toInt() },
-                onValueChangeFinished = { viewModel.settingsRepository.setMaxRecentItems(maxRecent) },
-                valueRange = 1f..20f,
-                steps = 19
-            )
+            item {
+                Text("Max Recent Items: $maxRecent", style = MaterialTheme.typography.titleMedium)
+                Slider(
+                    value = maxRecent.toFloat(),
+                    onValueChange = { maxRecent = it.toInt() },
+                    onValueChangeFinished = { viewModel.settingsRepository.setMaxRecentItems(maxRecent) },
+                    valueRange = 1f..20f,
+                    steps = 19
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
             // Hidden Apps
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Hidden Apps", style = MaterialTheme.typography.titleMedium)
-                Button(onClick = { showHiddenAppsDialog = true }) {
-                    Text("Manage (${hiddenApps.size})")
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Hidden Apps", style = MaterialTheme.typography.titleMedium)
+                    Button(onClick = { showHiddenAppsDialog = true }) {
+                        Text("Manage (${hiddenApps.size})")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            // Custom Plugins
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Custom Plugins", style = MaterialTheme.typography.titleMedium)
+                    IconButton(onClick = {
+                        editingPlugin = null
+                        showAddPluginDialog = true
+                    }) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Plugin")
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Aliases
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Aliases", style = MaterialTheme.typography.titleMedium)
-                IconButton(onClick = { showAddAliasDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Alias")
-                }
-            }
-
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(aliases.toList()) { (alias, packageName) ->
-                    val appName = allApps.find { it.packageName == packageName }?.label ?: packageName
-                    ListItem(
-                        headlineContent = { Text(alias) },
-                        supportingContent = { Text(appName) },
-                        trailingContent = {
+            items(plugins) { plugin ->
+                ListItem(
+                    headlineContent = { Text(plugin.name) },
+                    supportingContent = { Text("${plugin.keyword} -> ${plugin.action}") },
+                    trailingContent = {
+                        Row {
                             IconButton(onClick = {
-                                val newAliases = aliases.toMutableMap()
-                                newAliases.remove(alias)
-                                aliases = newAliases
-                                viewModel.settingsRepository.setAliases(newAliases)
+                                editingPlugin = plugin
+                                showAddPluginDialog = true
+                            }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Edit")
+                            }
+                            IconButton(onClick = {
+                                val newPlugins = plugins.toMutableList()
+                                newPlugins.remove(plugin)
+                                plugins = newPlugins
+                                viewModel.settingsRepository.setPlugins(newPlugins)
                             }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Delete")
                             }
                         }
-                    )
-                    Divider()
+                    }
+                )
+                Divider()
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            // Aliases
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Aliases", style = MaterialTheme.typography.titleMedium)
+                    IconButton(onClick = { showAddAliasDialog = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Alias")
+                    }
                 }
+            }
+
+            items(aliases.toList()) { (alias, packageName) ->
+                val appName = allApps.find { it.packageName == packageName }?.label ?: packageName
+                ListItem(
+                    headlineContent = { Text(alias) },
+                    supportingContent = { Text(appName) },
+                    trailingContent = {
+                        IconButton(onClick = {
+                            val newAliases = aliases.toMutableMap()
+                            newAliases.remove(alias)
+                            aliases = newAliases
+                            viewModel.settingsRepository.setAliases(newAliases)
+                        }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
+                    }
+                )
+                Divider()
             }
         }
     }
@@ -213,6 +274,92 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 showAddAliasDialog = false
             }
         )
+    }
+
+    if (showAddPluginDialog) {
+        ManagePluginDialog(
+            plugin = editingPlugin,
+            onDismiss = { showAddPluginDialog = false },
+            onSave = { plugin ->
+                val newPlugins = plugins.toMutableList()
+                val index = newPlugins.indexOfFirst { it.id == plugin.id }
+                if (index != -1) {
+                    newPlugins[index] = plugin
+                } else {
+                    newPlugins.add(plugin)
+                }
+                plugins = newPlugins
+                viewModel.settingsRepository.setPlugins(newPlugins)
+                showAddPluginDialog = false
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ManagePluginDialog(
+    plugin: CustomPlugin?,
+    onDismiss: () -> Unit,
+    onSave: (CustomPlugin) -> Unit
+) {
+    var name by remember { mutableStateOf(plugin?.name ?: "") }
+    var keyword by remember { mutableStateOf(plugin?.keyword ?: "") }
+    var action by remember { mutableStateOf(plugin?.action ?: PluginAction.OPEN_URL) }
+    var actionData by remember { mutableStateOf(plugin?.actionData ?: "") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(if (plugin == null) "Add Plugin" else "Edit Plugin", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = keyword, onValueChange = { keyword = it }, label = { Text("Keyword (e.g. gh)") }, modifier = Modifier.fillMaxWidth())
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Action:", style = MaterialTheme.typography.labelLarge)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = action == PluginAction.OPEN_URL, onClick = { action = PluginAction.OPEN_URL })
+                    Text("Open URL")
+                    Spacer(modifier = Modifier.width(16.dp))
+                    RadioButton(selected = action == PluginAction.COPY_TO_CLIPBOARD, onClick = { action = PluginAction.COPY_TO_CLIPBOARD })
+                    Text("Copy")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = actionData,
+                    onValueChange = { actionData = it },
+                    label = { Text("Action Data") },
+                    modifier = Modifier.fillMaxWidth(),
+                    supportingText = { Text("Use {q} for user input template") }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    Button(
+                        onClick = {
+                            onSave(CustomPlugin(
+                                id = plugin?.id ?: UUID.randomUUID().toString(),
+                                name = name,
+                                keyword = keyword,
+                                action = action,
+                                actionData = actionData
+                            ))
+                        },
+                        enabled = name.isNotBlank() && keyword.isNotBlank() && actionData.isNotBlank()
+                    ) {
+                        Text("Save")
+                    }
+                }
+            }
+        }
     }
 }
 
