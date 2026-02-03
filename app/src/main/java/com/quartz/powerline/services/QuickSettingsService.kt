@@ -1,8 +1,8 @@
-package com.example.commandlauncher.services
+package com.quartz.powerline.services
 
 import android.content.Intent
 import android.service.quicksettings.TileService
-import com.example.commandlauncher.OverlayActivity
+import com.quartz.powerline.OverlayActivity
 
 class QuickSettingsService : TileService() {
 

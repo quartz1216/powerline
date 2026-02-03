@@ -1,4 +1,4 @@
-package com.example.commandlauncher.ui.theme
+package com.quartz.powerline.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

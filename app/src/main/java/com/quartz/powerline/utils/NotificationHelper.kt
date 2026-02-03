@@ -1,4 +1,4 @@
-package com.example.commandlauncher.utils
+package com.quartz.powerline.utils
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -8,8 +8,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.example.commandlauncher.OverlayActivity
-import com.example.commandlauncher.R
+import com.quartz.powerline.OverlayActivity
+import com.quartz.powerline.R
 
 object NotificationHelper {
 

@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.commandlauncher"
+    namespace = "com.quartz.powerline"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.commandlauncher"
+        applicationId = "com.quartz.powerline"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

@@ -1,4 +1,4 @@
-package com.example.commandlauncher.domain.models
+package com.quartz.powerline.domain.models
 
 import android.graphics.drawable.Drawable
 

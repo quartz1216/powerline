@@ -1,4 +1,4 @@
-package com.example.commandlauncher
+package com.quartz.powerline
 
 import android.content.Intent
 import android.net.Uri
@@ -9,10 +9,10 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.ViewModelProvider
-import com.example.commandlauncher.ui.LauncherScreen
-import com.example.commandlauncher.ui.theme.CommandLauncherTheme
-import com.example.commandlauncher.ui.viewmodel.MainViewModel
-import com.example.commandlauncher.utils.ActionExecutor
+import com.quartz.powerline.ui.LauncherScreen
+import com.quartz.powerline.ui.theme.CommandLauncherTheme
+import com.quartz.powerline.ui.viewmodel.MainViewModel
+import com.quartz.powerline.utils.ActionExecutor
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         checkOverlayPermission()
 
         // Show persistent notification
-        com.example.commandlauncher.utils.NotificationHelper.showNotification(this)
+        com.quartz.powerline.utils.NotificationHelper.showNotification(this)
 
         val viewModel = ViewModelProvider(
             this,
@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
                         // But usually we want to launch and minimize.
                         // For Home app, we can't really "minimize". We just launch something else.
                         // If we copy, we might want to clear query.
-                        if (result.type == com.example.commandlauncher.domain.models.ResultType.CALC) {
+                        if (result.type == com.quartz.powerline.domain.models.ResultType.CALC) {
                             viewModel.onQueryChange("")
                         }
                     }

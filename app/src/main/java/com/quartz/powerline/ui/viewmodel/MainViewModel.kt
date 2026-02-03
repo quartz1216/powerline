@@ -1,12 +1,12 @@
-package com.example.commandlauncher.ui.viewmodel
+package com.quartz.powerline.ui.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.commandlauncher.domain.AppRepository
-import com.example.commandlauncher.domain.SearchEngine
-import com.example.commandlauncher.domain.models.AppInfo
-import com.example.commandlauncher.domain.models.SearchResult
+import com.quartz.powerline.domain.AppRepository
+import com.quartz.powerline.domain.SearchEngine
+import com.quartz.powerline.domain.models.AppInfo
+import com.quartz.powerline.domain.models.SearchResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

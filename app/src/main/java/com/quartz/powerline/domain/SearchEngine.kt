@@ -1,9 +1,9 @@
-package com.example.commandlauncher.domain
+package com.quartz.powerline.domain
 
 import android.content.Context
-import com.example.commandlauncher.domain.models.AppInfo
-import com.example.commandlauncher.domain.models.ResultType
-import com.example.commandlauncher.domain.models.SearchResult
+import com.quartz.powerline.domain.models.AppInfo
+import com.quartz.powerline.domain.models.ResultType
+import com.quartz.powerline.domain.models.SearchResult
 import java.util.UUID
 
 class SearchEngine {

@@ -1,9 +1,9 @@
-package com.example.commandlauncher.domain
+package com.quartz.powerline.domain
 
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import com.example.commandlauncher.domain.models.AppInfo
+import com.quartz.powerline.domain.models.AppInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

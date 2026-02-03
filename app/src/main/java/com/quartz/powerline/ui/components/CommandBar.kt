@@ -1,4 +1,4 @@
-package com.example.commandlauncher.ui.components
+package com.quartz.powerline.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions

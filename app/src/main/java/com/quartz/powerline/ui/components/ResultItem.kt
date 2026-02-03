@@ -1,4 +1,4 @@
-package com.example.commandlauncher.ui.components
+package com.quartz.powerline.ui.components
 
 import android.graphics.drawable.Drawable
 import android.widget.ImageView
@@ -22,8 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.example.commandlauncher.domain.models.ResultType
-import com.example.commandlauncher.domain.models.SearchResult
+import com.quartz.powerline.domain.models.ResultType
+import com.quartz.powerline.domain.models.SearchResult
 
 @Composable
 fun ResultItem(

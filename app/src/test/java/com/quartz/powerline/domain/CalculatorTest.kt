@@ -1,4 +1,4 @@
-package com.example.commandlauncher.domain
+package com.quartz.powerline.domain
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

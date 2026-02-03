@@ -1,4 +1,4 @@
-package com.example.commandlauncher.domain
+package com.quartz.powerline.domain
 
 import java.text.DecimalFormat
 

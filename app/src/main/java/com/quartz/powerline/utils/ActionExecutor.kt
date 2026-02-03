@@ -1,4 +1,4 @@
-package com.example.commandlauncher.utils
+package com.quartz.powerline.utils
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -6,8 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
-import com.example.commandlauncher.domain.models.ResultType
-import com.example.commandlauncher.domain.models.SearchResult
+import com.quartz.powerline.domain.models.ResultType
+import com.quartz.powerline.domain.models.SearchResult
 
 object ActionExecutor {
 

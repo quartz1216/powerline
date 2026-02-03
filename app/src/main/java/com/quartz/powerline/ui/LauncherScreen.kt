@@ -1,4 +1,4 @@
-package com.example.commandlauncher.ui
+package com.quartz.powerline.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -18,10 +18,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.commandlauncher.domain.models.SearchResult
-import com.example.commandlauncher.ui.components.CommandBar
-import com.example.commandlauncher.ui.components.ResultItem
-import com.example.commandlauncher.ui.viewmodel.MainViewModel
+import com.quartz.powerline.domain.models.SearchResult
+import com.quartz.powerline.ui.components.CommandBar
+import com.quartz.powerline.ui.components.ResultItem
+import com.quartz.powerline.ui.viewmodel.MainViewModel
 
 @Composable
 fun LauncherScreen(
