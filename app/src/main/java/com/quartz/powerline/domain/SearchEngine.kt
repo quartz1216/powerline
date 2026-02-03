@@ -119,17 +119,24 @@ class SearchEngine(
 
         val aliasPackage = aliases[trimmedQuery]
 
-        val appMatches = visibleApps.filter { app ->
-            val matchName = app.label.contains(trimmedQuery, ignoreCase = true)
+        val appMatches = visibleApps.mapNotNull { app ->
             val matchAlias = aliasPackage == app.packageName
-            matchName || matchAlias
+            val fuzzyScore = fuzzyMatch(trimmedQuery, app.label)
+
+            if (matchAlias) {
+                app to Int.MAX_VALUE // Highest priority for alias
+            } else if (fuzzyScore > 0) {
+                app to fuzzyScore
+            } else {
+                null
+            }
         }.sortedWith(
-             compareByDescending<AppInfo> { aliasPackage == it.packageName }
-                .thenByDescending { scores[it.packageName] ?: 0 }
-                .thenBy { it.label }
+             compareByDescending<Pair<AppInfo, Int>> { it.second } // Sort by match score (Alias > High Fuzzy > Low Fuzzy)
+                .thenByDescending { scores[it.first.packageName] ?: 0 } // Then frequency
+                .thenBy { it.first.label }
         )
 
-        results.addAll(appMatches.map { app ->
+        results.addAll(appMatches.map { (app, _) ->
             SearchResult(
                 id = app.packageName,
                 title = app.label,
@@ -166,5 +173,44 @@ class SearchEngine(
         )
 
         return results
+    }
+
+    /**
+     * Simple fuzzy matching algorithm.
+     * Returns a score:
+     * - 0: No match
+     * - >0: Match score (higher is better)
+     * - 1000: Exact match (case insensitive)
+     * - 100: Starts with query
+     */
+    private fun fuzzyMatch(query: String, target: String): Int {
+        if (query.isEmpty()) return 0
+
+        val q = query.lowercase()
+        val t = target.lowercase()
+
+        // Exact match
+        if (t == q) return 1000
+
+        // Starts with
+        if (t.startsWith(q)) return 100
+
+        // Contains (substring)
+        if (t.contains(q)) return 50
+
+        // Subsequence match
+        var qIdx = 0
+        var tIdx = 0
+        var matches = 0
+
+        while (qIdx < q.length && tIdx < t.length) {
+            if (q[qIdx] == t[tIdx]) {
+                matches++
+                qIdx++
+            }
+            tIdx++
+        }
+
+        return if (matches == q.length) 10 else 0
     }
 }

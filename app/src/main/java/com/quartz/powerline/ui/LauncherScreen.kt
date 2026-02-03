@@ -16,6 +16,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -75,8 +80,8 @@ fun LauncherScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            color = androidx.compose.material3.MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                            shape = androidx.compose.material3.MaterialTheme.shapes.medium
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                            shape = MaterialTheme.shapes.medium
                         )
                 ) {
                     itemsIndexed(results) { index, result ->
@@ -88,6 +93,18 @@ fun LauncherScreen(
                     }
                 }
             }
+        }
+
+        // Settings FAB
+        FloatingActionButton(
+            onClick = { viewModel.openSettings() },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ) {
+            Icon(Icons.Default.Settings, contentDescription = "Settings")
         }
     }
 }
