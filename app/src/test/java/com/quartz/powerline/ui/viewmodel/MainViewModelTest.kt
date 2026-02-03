@@ -90,4 +90,22 @@ class MainViewModelTest {
         viewModel.onQueryChange("2+2")
         assertEquals(0, viewModel.selectedIndex.value)
     }
+
+    @Test
+    fun `test query cleared after executeResult`() = runTest {
+        viewModel.onQueryChange("hello")
+        assertEquals("hello", viewModel.query.value)
+
+        val result = SearchResult(
+            id = "test",
+            title = "Test",
+            type = ResultType.WEB,
+            payload = "hello"
+        )
+
+        val application = ApplicationProvider.getApplicationContext<Application>()
+        viewModel.executeResult(application, result)
+
+        assertEquals("", viewModel.query.value)
+    }
 }

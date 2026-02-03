@@ -18,7 +18,6 @@ import com.quartz.powerline.ui.SettingsScreen
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
 import com.quartz.powerline.ui.viewmodel.MainViewModel
 import com.quartz.powerline.ui.viewmodel.Screen
-import com.quartz.powerline.utils.ActionExecutor
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,13 +42,7 @@ class MainActivity : ComponentActivity() {
                         LauncherScreen(
                             viewModel = viewModel,
                             onResultClick = { result ->
-                                if (result.payload == "settings_action") {
-                                    viewModel.openSettings()
-                                    viewModel.onQueryChange("")
-                                } else {
-                                    ActionExecutor.execute(this@MainActivity, result, viewModel.settingsRepository)
-                                    viewModel.onQueryChange("")
-                                }
+                                viewModel.executeResult(this@MainActivity, result)
                             }
                         )
                     }

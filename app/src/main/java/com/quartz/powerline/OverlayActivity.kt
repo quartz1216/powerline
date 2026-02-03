@@ -15,7 +15,6 @@ import androidx.lifecycle.ViewModelProvider
 import com.quartz.powerline.ui.LauncherScreen
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
 import com.quartz.powerline.ui.viewmodel.MainViewModel
-import com.quartz.powerline.utils.ActionExecutor
 
 class OverlayActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,7 +47,7 @@ class OverlayActivity : ComponentActivity() {
                         LauncherScreen(
                             viewModel = viewModel,
                             onResultClick = { result ->
-                                ActionExecutor.execute(this@OverlayActivity, result, viewModel.settingsRepository)
+                                viewModel.executeResult(this@OverlayActivity, result)
                                 finish()
                             }
                         )

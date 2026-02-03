@@ -1,6 +1,7 @@
 package com.quartz.powerline.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.quartz.powerline.data.SettingsRepository
@@ -8,6 +9,7 @@ import com.quartz.powerline.domain.AppRepository
 import com.quartz.powerline.domain.SearchEngine
 import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.domain.models.SearchResult
+import com.quartz.powerline.utils.ActionExecutor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -94,6 +96,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun closePermissions() {
         _currentScreen.value = Screen.SETTINGS
+    }
+
+    fun executeResult(context: Context, result: SearchResult) {
+        if (result.payload == "settings_action") {
+            openSettings()
+        } else {
+            ActionExecutor.execute(context, result, settingsRepository)
+        }
+        onQueryChange("")
     }
 
     private fun performSearch(query: String) {
