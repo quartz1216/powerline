@@ -81,7 +81,7 @@ class MainViewModelTest {
     @Test
     fun `test selection reset on query change`() = runTest {
         viewModel.onQueryChange("1+1")
-        val results = viewModel.results.first { it.isNotEmpty() }
+        viewModel.results.first { it.isNotEmpty() }
 
         viewModel.selectNext()
         assertEquals(1, viewModel.selectedIndex.value)

@@ -8,6 +8,7 @@ enum class ResultType {
 
 data class SearchResult(
     val id: String,
+    val pluginId: String,
     val title: String,
     val subtitle: String? = null,
     val icon: Drawable? = null,

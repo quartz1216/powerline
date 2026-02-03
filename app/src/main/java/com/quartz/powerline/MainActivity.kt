@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
                                     viewModel.openSettings()
                                     viewModel.onQueryChange("")
                                 } else {
-                                    ActionExecutor.execute(this@MainActivity, result, viewModel.settingsRepository)
+                                    ActionExecutor.execute(this@MainActivity, result, viewModel.settingsRepository, viewModel.pluginManager)
                                     viewModel.onQueryChange("")
                                 }
                             }
@@ -64,6 +64,18 @@ class MainActivity : ComponentActivity() {
                             viewModel.closePermissions()
                         }
                         PermissionsScreen(onBack = { viewModel.closePermissions() })
+                    }
+                    Screen.PLUGIN_SETTINGS -> {
+                        BackHandler {
+                            viewModel.closeSettings()
+                        }
+                        val pluginId by viewModel.selectedPluginId.collectAsState()
+                        val plugin = pluginId?.let { viewModel.pluginManager.getPlugin(it) }
+                        if (plugin != null) {
+                            com.quartz.powerline.ui.PluginSettingsScreen(viewModel = viewModel, plugin = plugin)
+                        } else {
+                            viewModel.closeSettings()
+                        }
                     }
                 }
             }

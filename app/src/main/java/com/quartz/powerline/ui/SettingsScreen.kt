@@ -27,12 +27,6 @@ import com.quartz.powerline.domain.models.AppInfo
 @Composable
 fun SettingsScreen(viewModel: MainViewModel) {
     var maxRecent by remember { mutableStateOf(viewModel.settingsRepository.getMaxRecentItems()) }
-    var hiddenApps by remember { mutableStateOf(viewModel.settingsRepository.getHiddenApps()) }
-    var aliases by remember { mutableStateOf(viewModel.settingsRepository.getAliases()) }
-    val allApps by viewModel.installedApps.collectAsState()
-
-    var showHiddenAppsDialog by remember { mutableStateOf(false) }
-    var showAddAliasDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -62,8 +56,6 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     viewModel.settingsRepository.importSettings(json)
                     // Reload state from repository
                     maxRecent = viewModel.settingsRepository.getMaxRecentItems()
-                    hiddenApps = viewModel.settingsRepository.getHiddenApps()
-                    aliases = viewModel.settingsRepository.getAliases()
                     // Reload viewmodel data
                     viewModel.reloadApps()
 
@@ -87,132 +79,73 @@ fun SettingsScreen(viewModel: MainViewModel) {
             )
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
+            item {
+                // General / Tools
+                Text("General", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
 
-            // General / Tools
-            Text("General", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = { viewModel.openPermissions() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Check Permissions & Defaults")
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { exportLauncher.launch("powerline_backup.json") },
-                    modifier = Modifier.weight(1f)
+                Button(
+                    onClick = { viewModel.openPermissions() },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Export Settings")
+                    Text("Check Permissions & Defaults")
                 }
-                OutlinedButton(
-                    onClick = { importLauncher.launch(arrayOf("application/json")) },
-                    modifier = Modifier.weight(1f)
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Import Settings")
+                    OutlinedButton(
+                        onClick = { exportLauncher.launch("powerline_backup.json") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Export Settings")
+                    }
+                    OutlinedButton(
+                        onClick = { importLauncher.launch(arrayOf("application/json")) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Import Settings")
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Max Recent Items
+                Text("Max Recent Items: $maxRecent", style = MaterialTheme.typography.titleMedium)
+                Slider(
+                    value = maxRecent.toFloat(),
+                    onValueChange = { maxRecent = it.toInt() },
+                    onValueChangeFinished = { viewModel.settingsRepository.setMaxRecentItems(maxRecent) },
+                    valueRange = 1f..20f,
+                    steps = 19
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text("Plugins", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Max Recent Items
-            Text("Max Recent Items: $maxRecent", style = MaterialTheme.typography.titleMedium)
-            Slider(
-                value = maxRecent.toFloat(),
-                onValueChange = { maxRecent = it.toInt() },
-                onValueChangeFinished = { viewModel.settingsRepository.setMaxRecentItems(maxRecent) },
-                valueRange = 1f..20f,
-                steps = 19
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Hidden Apps
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Hidden Apps", style = MaterialTheme.typography.titleMedium)
-                Button(onClick = { showHiddenAppsDialog = true }) {
-                    Text("Manage (${hiddenApps.size})")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Aliases
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Aliases", style = MaterialTheme.typography.titleMedium)
-                IconButton(onClick = { showAddAliasDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Alias")
-                }
-            }
-
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(aliases.toList()) { (alias, packageName) ->
-                    val appName = allApps.find { it.packageName == packageName }?.label ?: packageName
-                    ListItem(
-                        headlineContent = { Text(alias) },
-                        supportingContent = { Text(appName) },
-                        trailingContent = {
-                            IconButton(onClick = {
-                                val newAliases = aliases.toMutableMap()
-                                newAliases.remove(alias)
-                                aliases = newAliases
-                                viewModel.settingsRepository.setAliases(newAliases)
-                            }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete")
-                            }
-                        }
-                    )
-                    Divider()
-                }
+            items(viewModel.pluginManager.plugins) { plugin ->
+                ListItem(
+                    headlineContent = { Text(plugin.name) },
+                    supportingContent = { Text(plugin.description) },
+                    modifier = Modifier.clickable {
+                        viewModel.openPluginSettings(plugin.id)
+                    }
+                )
+                Divider()
             }
         }
-    }
-
-    if (showHiddenAppsDialog) {
-        HiddenAppsDialog(
-            allApps = allApps,
-            hiddenApps = hiddenApps,
-            onDismiss = { showHiddenAppsDialog = false },
-            onSave = { newHidden ->
-                hiddenApps = newHidden
-                viewModel.settingsRepository.setHiddenApps(newHidden)
-                showHiddenAppsDialog = false
-            }
-        )
-    }
-
-    if (showAddAliasDialog) {
-        AddAliasDialog(
-            allApps = allApps,
-            onDismiss = { showAddAliasDialog = false },
-            onSave = { alias, pkg ->
-                val newAliases = aliases.toMutableMap()
-                newAliases[alias] = pkg
-                aliases = newAliases
-                viewModel.settingsRepository.setAliases(newAliases)
-                showAddAliasDialog = false
-            }
-        )
     }
 }
 

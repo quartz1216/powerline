@@ -48,7 +48,7 @@ class OverlayActivity : ComponentActivity() {
                         LauncherScreen(
                             viewModel = viewModel,
                             onResultClick = { result ->
-                                ActionExecutor.execute(this@OverlayActivity, result, viewModel.settingsRepository)
+                                ActionExecutor.execute(this@OverlayActivity, result, viewModel.settingsRepository, viewModel.pluginManager)
                                 finish()
                             }
                         )

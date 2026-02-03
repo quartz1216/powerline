@@ -16,14 +16,20 @@ import kotlinx.coroutines.launch
 enum class Screen {
     LAUNCHER,
     SETTINGS,
-    PERMISSIONS
+    PERMISSIONS,
+    PLUGIN_SETTINGS
 }
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val settingsRepository = SettingsRepository(application)
     private val appRepository = AppRepository(application)
-    private val searchEngine = SearchEngine(application, settingsRepository)
+
+    private val _installedApps = MutableStateFlow<List<AppInfo>>(emptyList())
+    val installedApps: StateFlow<List<AppInfo>> = _installedApps.asStateFlow()
+
+    val pluginManager = com.quartz.powerline.plugins.PluginManager(settingsRepository, _installedApps)
+    private val searchEngine = SearchEngine(application, pluginManager)
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
@@ -37,8 +43,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _currentScreen = MutableStateFlow(Screen.LAUNCHER)
     val currentScreen: StateFlow<Screen> = _currentScreen.asStateFlow()
 
-    private val _installedApps = MutableStateFlow<List<AppInfo>>(emptyList())
-    val installedApps: StateFlow<List<AppInfo>> = _installedApps.asStateFlow()
+    private val _selectedPluginId = MutableStateFlow<String?>(null)
+    val selectedPluginId: StateFlow<String?> = _selectedPluginId.asStateFlow()
 
     init {
         loadApps()
@@ -82,10 +88,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun closeSettings() {
-        _currentScreen.value = Screen.LAUNCHER
-        // Reload apps in case settings changed (hidden apps)
-        // And refresh search
-        reloadApps()
+        if (_currentScreen.value == Screen.PLUGIN_SETTINGS) {
+            _currentScreen.value = Screen.SETTINGS
+            _selectedPluginId.value = null
+        } else {
+            _currentScreen.value = Screen.LAUNCHER
+            // Reload apps in case settings changed (hidden apps)
+            // And refresh search
+            reloadApps()
+        }
+    }
+
+    fun openPluginSettings(pluginId: String) {
+        _selectedPluginId.value = pluginId
+        _currentScreen.value = Screen.PLUGIN_SETTINGS
     }
 
     fun openPermissions() {
@@ -97,7 +113,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun performSearch(query: String) {
-        _results.value = searchEngine.search(query, _installedApps.value)
+        _results.value = searchEngine.search(query)
         _selectedIndex.value = 0
     }
 }
