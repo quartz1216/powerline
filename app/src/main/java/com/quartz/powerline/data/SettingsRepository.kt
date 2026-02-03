@@ -4,14 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.quartz.powerline.domain.models.AppBackupData
 import com.quartz.powerline.domain.models.ResultType
-
-data class HistoryItem(
-    val id: String, // package name or special ID
-    val type: ResultType,
-    val title: String,
-    val timestamp: Long
-)
 
 class SettingsRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
@@ -66,5 +60,24 @@ class SettingsRepository(context: Context) {
     private fun saveHistory(history: List<HistoryItem>) {
         val json = gson.toJson(history)
         prefs.edit().putString("history", json).apply()
+    }
+
+    // --- Import / Export ---
+    fun exportSettings(): String {
+        val data = AppBackupData(
+            hiddenApps = getHiddenApps(),
+            aliases = getAliases(),
+            maxRecentItems = getMaxRecentItems(),
+            history = getHistory()
+        )
+        return gson.toJson(data)
+    }
+
+    fun importSettings(json: String) {
+        val data = gson.fromJson(json, AppBackupData::class.java)
+        setHiddenApps(data.hiddenApps)
+        setAliases(data.aliases)
+        setMaxRecentItems(data.maxRecentItems)
+        saveHistory(data.history)
     }
 }

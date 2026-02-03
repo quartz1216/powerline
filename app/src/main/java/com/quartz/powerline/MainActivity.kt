@@ -13,6 +13,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModelProvider
 import com.quartz.powerline.ui.LauncherScreen
+import com.quartz.powerline.ui.PermissionsScreen
 import com.quartz.powerline.ui.SettingsScreen
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
 import com.quartz.powerline.ui.viewmodel.MainViewModel
@@ -57,6 +58,12 @@ class MainActivity : ComponentActivity() {
                             viewModel.closeSettings()
                         }
                         SettingsScreen(viewModel = viewModel)
+                    }
+                    Screen.PERMISSIONS -> {
+                        BackHandler {
+                            viewModel.closePermissions()
+                        }
+                        PermissionsScreen(onBack = { viewModel.closePermissions() })
                     }
                 }
             }
