@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.text.TextUtils
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -36,6 +37,7 @@ fun PermissionsScreen(
     var overlayGranted by remember { mutableStateOf(checkOverlayPermission(context)) }
     var notificationGranted by remember { mutableStateOf(checkNotificationPermission(context)) }
     var isDefaultHome by remember { mutableStateOf(checkDefaultHome(context)) }
+    var accessibilityGranted by remember { mutableStateOf(checkAccessibilityPermission(context)) }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -43,6 +45,7 @@ fun PermissionsScreen(
                 overlayGranted = checkOverlayPermission(context)
                 notificationGranted = checkNotificationPermission(context)
                 isDefaultHome = checkDefaultHome(context)
+                accessibilityGranted = checkAccessibilityPermission(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -110,6 +113,16 @@ fun PermissionsScreen(
                     context.startActivity(intent)
                 }
             )
+            Divider()
+            PermissionItem(
+                title = "Accessibility Permission",
+                description = "Required for Status Bar Tap trigger.",
+                isGranted = accessibilityGranted,
+                onClick = {
+                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                    context.startActivity(intent)
+                }
+            )
         }
     }
 }
@@ -156,4 +169,12 @@ fun checkDefaultHome(context: Context): Boolean {
     intent.addCategory(Intent.CATEGORY_HOME)
     val resolveInfo = context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
     return resolveInfo?.activityInfo?.packageName == context.packageName
+}
+
+fun checkAccessibilityPermission(context: Context): Boolean {
+    val service = "${context.packageName}/com.quartz.powerline.services.StatusBarAccessibilityService"
+    val enabled = Settings.Secure.getInt(context.contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0)
+    if (enabled != 1) return false
+    val settingValue = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
+    return settingValue?.split(':')?.any { it.equals(service, ignoreCase = true) } ?: false
 }

@@ -27,6 +27,7 @@ import com.quartz.powerline.domain.models.AppInfo
 @Composable
 fun SettingsScreen(viewModel: MainViewModel) {
     var maxRecent by remember { mutableStateOf(viewModel.settingsRepository.getMaxRecentItems()) }
+    var statusBarTapEnabled by remember { mutableStateOf(viewModel.settingsRepository.isStatusBarTapEnabled()) }
     var hiddenApps by remember { mutableStateOf(viewModel.settingsRepository.getHiddenApps()) }
     var aliases by remember { mutableStateOf(viewModel.settingsRepository.getAliases()) }
     val allApps by viewModel.installedApps.collectAsState()
@@ -62,6 +63,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     viewModel.settingsRepository.importSettings(json)
                     // Reload state from repository
                     maxRecent = viewModel.settingsRepository.getMaxRecentItems()
+                    statusBarTapEnabled = viewModel.settingsRepository.isStatusBarTapEnabled()
                     hiddenApps = viewModel.settingsRepository.getHiddenApps()
                     aliases = viewModel.settingsRepository.getAliases()
                     // Reload viewmodel data
@@ -105,7 +107,31 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 Text("Check Permissions & Defaults")
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Status Bar Tap", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        "Tap status bar to open overlay",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = statusBarTapEnabled,
+                    onCheckedChange = {
+                        statusBarTapEnabled = it
+                        viewModel.settingsRepository.setStatusBarTapEnabled(it)
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
