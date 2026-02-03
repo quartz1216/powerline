@@ -15,7 +15,8 @@ import kotlinx.coroutines.launch
 
 enum class Screen {
     LAUNCHER,
-    SETTINGS
+    SETTINGS,
+    PERMISSIONS
 }
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -85,6 +86,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         // Reload apps in case settings changed (hidden apps)
         // And refresh search
         reloadApps()
+    }
+
+    fun openPermissions() {
+        _currentScreen.value = Screen.PERMISSIONS
+    }
+
+    fun closePermissions() {
+        _currentScreen.value = Screen.SETTINGS
     }
 
     private fun performSearch(query: String) {

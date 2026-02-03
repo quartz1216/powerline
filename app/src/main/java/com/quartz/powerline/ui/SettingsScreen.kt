@@ -1,5 +1,8 @@
 package com.quartz.powerline.ui
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.quartz.powerline.ui.viewmodel.MainViewModel
@@ -29,6 +33,47 @@ fun SettingsScreen(viewModel: MainViewModel) {
 
     var showHiddenAppsDialog by remember { mutableStateOf(false) }
     var showAddAliasDialog by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let {
+            try {
+                val json = viewModel.settingsRepository.exportSettings()
+                context.contentResolver.openOutputStream(it)?.use { os ->
+                    os.write(json.toByteArray())
+                }
+                Toast.makeText(context, "Settings exported successfully", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            try {
+                context.contentResolver.openInputStream(it)?.use { `is` ->
+                    val json = `is`.bufferedReader().use { reader -> reader.readText() }
+                    viewModel.settingsRepository.importSettings(json)
+                    // Reload state from repository
+                    maxRecent = viewModel.settingsRepository.getMaxRecentItems()
+                    hiddenApps = viewModel.settingsRepository.getHiddenApps()
+                    aliases = viewModel.settingsRepository.getAliases()
+                    // Reload viewmodel data
+                    viewModel.reloadApps()
+
+                    Toast.makeText(context, "Settings imported successfully", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -48,6 +93,40 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
+
+            // General / Tools
+            Text("General", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = { viewModel.openPermissions() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Check Permissions & Defaults")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { exportLauncher.launch("powerline_backup.json") },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Export Settings")
+                }
+                OutlinedButton(
+                    onClick = { importLauncher.launch(arrayOf("application/json")) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Import Settings")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             // Max Recent Items
             Text("Max Recent Items: $maxRecent", style = MaterialTheme.typography.titleMedium)
             Slider(
