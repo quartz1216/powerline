@@ -37,6 +37,9 @@ class MainActivity : ComponentActivity() {
         if (intent.getBooleanExtra("open_settings", false)) {
             viewModel.openSettings()
         }
+        if (intent.getBooleanExtra("request_camera_permission", false)) {
+            requestCameraPermission()
+        }
 
         setContent {
             CommandLauncherTheme(dynamicColor = false) {
@@ -89,12 +92,23 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun requestCameraPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(android.Manifest.permission.CAMERA), 102)
+            }
+        }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        val viewModel = ViewModelProvider(this)[MainViewModel::class.java]
         if (intent.getBooleanExtra("open_settings", false)) {
-            val viewModel = ViewModelProvider(this)[MainViewModel::class.java]
             viewModel.openSettings()
+        }
+        if (intent.getBooleanExtra("request_camera_permission", false)) {
+            requestCameraPermission()
         }
     }
 

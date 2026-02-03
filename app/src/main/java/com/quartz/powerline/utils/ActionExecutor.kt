@@ -2,13 +2,16 @@ package com.quartz.powerline.utils
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.quartz.powerline.data.HistoryItem
 import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.domain.models.ResultType
@@ -17,18 +20,15 @@ import com.quartz.powerline.domain.models.SearchResult
 object ActionExecutor {
 
     fun execute(context: Context, result: SearchResult, settingsRepository: SettingsRepository) {
-        // Log History
-        // We log before execution or after?
-        // If we log after, we ensure success.
-
         var success = false
 
         when (result.type) {
             ResultType.SYSTEM -> {
                 when (result.payload) {
                     "settings_action" -> {
+                        // Launch MainActivity which will handle opening the settings screen
                         val intent = Intent(context, com.quartz.powerline.MainActivity::class.java).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                             putExtra("open_settings", true)
                         }
                         context.startActivity(intent)
@@ -112,6 +112,19 @@ object ActionExecutor {
     private var isFlashlightOn = false
 
     private fun toggleFlashlight(context: Context): Boolean {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(context, "Camera permission required for flashlight", Toast.LENGTH_SHORT).show()
+            // We should ideally request permission here, but ActionExecutor is an object and doesn't have an activity context.
+            // MainActivity handles the initial permission check, but if denied, we can't easily request here.
+            // We'll rely on MainActivity to handle the request if needed.
+            val intent = Intent(context, com.quartz.powerline.MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra("request_camera_permission", true)
+            }
+            context.startActivity(intent)
+            return false
+        }
+
         val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         return try {
             val cameraId = cameraManager.cameraIdList.getOrNull(0)
