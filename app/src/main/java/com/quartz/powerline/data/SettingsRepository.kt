@@ -42,6 +42,15 @@ class SettingsRepository(context: Context) {
         prefs.edit().putInt("max_recent_items", count).apply()
     }
 
+    // --- Status Bar Tap ---
+    fun getStatusBarTapEnabled(): Boolean {
+        return prefs.getBoolean("status_bar_tap_enabled", false)
+    }
+
+    fun setStatusBarTapEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("status_bar_tap_enabled", enabled).apply()
+    }
+
     // --- History ---
     fun getHistory(): List<HistoryItem> {
         val json = prefs.getString("history", "[]")
@@ -68,7 +77,8 @@ class SettingsRepository(context: Context) {
             hiddenApps = getHiddenApps(),
             aliases = getAliases(),
             maxRecentItems = getMaxRecentItems(),
-            history = getHistory()
+            history = getHistory(),
+            statusBarTapEnabled = getStatusBarTapEnabled()
         )
         return gson.toJson(data)
     }
@@ -79,5 +89,6 @@ class SettingsRepository(context: Context) {
         setAliases(data.aliases)
         setMaxRecentItems(data.maxRecentItems)
         saveHistory(data.history)
+        setStatusBarTapEnabled(data.statusBarTapEnabled)
     }
 }

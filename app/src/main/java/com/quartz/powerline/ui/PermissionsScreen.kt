@@ -35,6 +35,7 @@ fun PermissionsScreen(
 
     var overlayGranted by remember { mutableStateOf(checkOverlayPermission(context)) }
     var notificationGranted by remember { mutableStateOf(checkNotificationPermission(context)) }
+    var accessibilityGranted by remember { mutableStateOf(checkAccessibilityPermission(context)) }
     var isDefaultHome by remember { mutableStateOf(checkDefaultHome(context)) }
 
     DisposableEffect(lifecycleOwner) {
@@ -42,6 +43,7 @@ fun PermissionsScreen(
             if (event == Lifecycle.Event.ON_RESUME) {
                 overlayGranted = checkOverlayPermission(context)
                 notificationGranted = checkNotificationPermission(context)
+                accessibilityGranted = checkAccessibilityPermission(context)
                 isDefaultHome = checkDefaultHome(context)
             }
         }
@@ -102,6 +104,16 @@ fun PermissionsScreen(
             )
             Divider()
             PermissionItem(
+                title = "Accessibility Service",
+                description = "Required for Status Bar Tap Trigger.",
+                isGranted = accessibilityGranted,
+                onClick = {
+                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                    context.startActivity(intent)
+                }
+            )
+            Divider()
+            PermissionItem(
                 title = "Default Home App",
                 description = "Set this app as your default launcher.",
                 isGranted = isDefaultHome,
@@ -156,4 +168,10 @@ fun checkDefaultHome(context: Context): Boolean {
     intent.addCategory(Intent.CATEGORY_HOME)
     val resolveInfo = context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
     return resolveInfo?.activityInfo?.packageName == context.packageName
+}
+
+fun checkAccessibilityPermission(context: Context): Boolean {
+    val serviceName = "${context.packageName}/.services.StatusBarAccessibilityService"
+    val enabledServices = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
+    return enabledServices?.contains(serviceName) == true
 }

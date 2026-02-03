@@ -8,5 +8,6 @@ data class AppBackupData(
     val hiddenApps: Set<String>,
     val aliases: Map<String, String>,
     val maxRecentItems: Int,
-    val history: List<HistoryItem>
+    val history: List<HistoryItem>,
+    val statusBarTapEnabled: Boolean = false
 )

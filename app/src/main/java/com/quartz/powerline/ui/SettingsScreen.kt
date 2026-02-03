@@ -27,6 +27,7 @@ import com.quartz.powerline.domain.models.AppInfo
 @Composable
 fun SettingsScreen(viewModel: MainViewModel) {
     var maxRecent by remember { mutableStateOf(viewModel.settingsRepository.getMaxRecentItems()) }
+    var statusBarTapEnabled by remember { mutableStateOf(viewModel.settingsRepository.getStatusBarTapEnabled()) }
 
     val context = LocalContext.current
 
@@ -127,6 +128,39 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     onValueChangeFinished = { viewModel.settingsRepository.setMaxRecentItems(maxRecent) },
                     valueRange = 1f..20f,
                     steps = 19
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Status Bar Tap Trigger
+                Text("Features", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ListItem(
+                    headlineContent = { Text("Status Bar Tap Trigger") },
+                    supportingContent = { Text("Tap the top of the screen to open launcher.") },
+                    trailingContent = {
+                        Switch(
+                            checked = statusBarTapEnabled,
+                            onCheckedChange = {
+                                statusBarTapEnabled = it
+                                viewModel.settingsRepository.setStatusBarTapEnabled(it)
+                                if (it && !checkAccessibilityPermission(context)) {
+                                    Toast.makeText(context, "Please enable Accessibility Service", Toast.LENGTH_LONG).show()
+                                    viewModel.openPermissions()
+                                }
+                            }
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                         val newState = !statusBarTapEnabled
+                         statusBarTapEnabled = newState
+                         viewModel.settingsRepository.setStatusBarTapEnabled(newState)
+                         if (newState && !checkAccessibilityPermission(context)) {
+                            Toast.makeText(context, "Please enable Accessibility Service", Toast.LENGTH_LONG).show()
+                            viewModel.openPermissions()
+                         }
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
