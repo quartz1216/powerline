@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -30,6 +32,14 @@ fun LauncherScreen(
 ) {
     val query by viewModel.query.collectAsState()
     val results by viewModel.results.collectAsState()
+    val selectedIndex by viewModel.selectedIndex.collectAsState()
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(selectedIndex) {
+        if (results.isNotEmpty()) {
+            listState.animateScrollToItem(selectedIndex)
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -49,16 +59,19 @@ fun LauncherScreen(
                 query = query,
                 onQueryChange = viewModel::onQueryChange,
                 onEnter = {
-                    if (results.isNotEmpty()) {
-                        onResultClick(results.first())
+                    if (results.isNotEmpty() && selectedIndex in results.indices) {
+                        onResultClick(results[selectedIndex])
                     }
-                }
+                },
+                onArrowDown = viewModel::selectNext,
+                onArrowUp = viewModel::selectPrevious
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             if (results.isNotEmpty()) {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
@@ -66,10 +79,10 @@ fun LauncherScreen(
                             shape = androidx.compose.material3.MaterialTheme.shapes.medium
                         )
                 ) {
-                    items(results) { result ->
+                    itemsIndexed(results) { index, result ->
                         ResultItem(
                             result = result,
-                            isSelected = false, // TODO: Implement keyboard navigation selection if time permits
+                            isSelected = index == selectedIndex,
                             onClick = { onResultClick(result) }
                         )
                     }

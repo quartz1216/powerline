@@ -18,6 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.input.ImeAction
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,6 +29,8 @@ fun CommandBar(
     query: String,
     onQueryChange: (String) -> Unit,
     onEnter: () -> Unit,
+    onArrowDown: () -> Unit,
+    onArrowUp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -39,7 +44,28 @@ fun CommandBar(
         onValueChange = onQueryChange,
         modifier = modifier
             .fillMaxWidth()
-            .focusRequester(focusRequester),
+            .focusRequester(focusRequester)
+            .onPreviewKeyEvent {
+                if (it.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN) {
+                    when (it.key) {
+                        Key.DirectionDown -> {
+                            onArrowDown()
+                            true
+                        }
+                        Key.DirectionUp -> {
+                            onArrowUp()
+                            true
+                        }
+                        Key.Enter -> {
+                            onEnter()
+                            true
+                        }
+                        else -> false
+                    }
+                } else {
+                    false
+                }
+            },
         placeholder = { Text("Search apps, web, math...") },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
         singleLine = true,

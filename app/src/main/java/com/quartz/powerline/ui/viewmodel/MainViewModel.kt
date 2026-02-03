@@ -23,6 +23,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _results = MutableStateFlow<List<SearchResult>>(emptyList())
     val results: StateFlow<List<SearchResult>> = _results.asStateFlow()
 
+    private val _selectedIndex = MutableStateFlow(0)
+    val selectedIndex: StateFlow<Int> = _selectedIndex.asStateFlow()
+
     private var allApps: List<AppInfo> = emptyList()
 
     init {
@@ -42,7 +45,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         performSearch(newQuery)
     }
 
+    fun selectNext() {
+        val current = _selectedIndex.value
+        val max = _results.value.lastIndex
+        if (current < max) {
+            _selectedIndex.value = current + 1
+        }
+    }
+
+    fun selectPrevious() {
+        val current = _selectedIndex.value
+        if (current > 0) {
+            _selectedIndex.value = current - 1
+        }
+    }
+
     private fun performSearch(query: String) {
         _results.value = searchEngine.search(query, allApps)
+        _selectedIndex.value = 0
     }
 }
