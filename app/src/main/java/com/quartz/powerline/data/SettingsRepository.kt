@@ -57,6 +57,12 @@ class SettingsRepository(context: Context) {
         saveHistory(trimmed)
     }
 
+    fun removeFromHistory(id: String) {
+        val currentHistory = getHistory().toMutableList()
+        currentHistory.removeAll { it.id == id }
+        saveHistory(currentHistory)
+    }
+
     private fun saveHistory(history: List<HistoryItem>) {
         val json = gson.toJson(history)
         prefs.edit().putString("history", json).apply()

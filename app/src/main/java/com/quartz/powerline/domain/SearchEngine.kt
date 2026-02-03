@@ -62,9 +62,14 @@ class SearchEngine(
                         SearchResult(
                             id = item.id,
                             title = item.title,
-                            subtitle = "Recent Web",
+                            subtitle = if (item.id.startsWith("web_direct:")) "Recent Web Address" else "Recent Web Search",
                             type = ResultType.WEB,
-                            payload = item.title
+                            payload = if (item.id.startsWith("web_direct:")) {
+                                val directQuery = item.id.removePrefix("web_direct:")
+                                if (directQuery.startsWith("http")) directQuery else "https://$directQuery"
+                            } else {
+                                item.title
+                            }
                         )
                     }
                     ResultType.CALC -> {
@@ -103,7 +108,7 @@ class SearchEngine(
         if (calcResult != null) {
             results.add(
                 SearchResult(
-                    id = "calc_${UUID.randomUUID()}",
+                    id = "calc:$calcResult",
                     title = calcResult,
                     subtitle = "Calculate",
                     type = ResultType.CALC,
@@ -152,8 +157,8 @@ class SearchEngine(
         if (urlPattern.matcher(trimmedQuery).matches()) {
              results.add(
                 SearchResult(
-                    id = "web_direct",
-                    title = "Go to $trimmedQuery",
+                    id = "web_direct:$trimmedQuery",
+                    title = trimmedQuery,
                     subtitle = "Web Address",
                     type = ResultType.WEB,
                     payload = if (trimmedQuery.startsWith("http")) trimmedQuery else "https://$trimmedQuery"
@@ -164,9 +169,9 @@ class SearchEngine(
         // Search Web (Fallthrough)
         results.add(
             SearchResult(
-                id = "web_search",
-                title = "Search Web",
-                subtitle = trimmedQuery,
+                id = "web_search:$trimmedQuery",
+                title = trimmedQuery,
+                subtitle = "Search Web",
                 type = ResultType.WEB,
                 payload = trimmedQuery
             )

@@ -100,4 +100,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _results.value = searchEngine.search(query, _installedApps.value)
         _selectedIndex.value = 0
     }
+
+    fun removeFromHistory(result: SearchResult) {
+        viewModelScope.launch {
+            settingsRepository.removeFromHistory(result.id)
+            // Refresh results if we are showing history
+            if (_query.value.isBlank()) {
+                performSearch("")
+            }
+        }
+    }
 }

@@ -88,7 +88,8 @@ fun LauncherScreen(
                         ResultItem(
                             result = result,
                             isSelected = index == selectedIndex,
-                            onClick = { onResultClick(result) }
+                            onClick = { onResultClick(result) },
+                            onLongClick = { viewModel.removeFromHistory(result) }
                         )
                     }
                 }

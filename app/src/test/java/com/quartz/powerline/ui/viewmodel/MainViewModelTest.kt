@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -81,7 +82,7 @@ class MainViewModelTest {
     @Test
     fun `test selection reset on query change`() = runTest {
         viewModel.onQueryChange("1+1")
-        val results = viewModel.results.first { it.isNotEmpty() }
+        viewModel.results.first { it.isNotEmpty() }
 
         viewModel.selectNext()
         assertEquals(1, viewModel.selectedIndex.value)
@@ -89,5 +90,35 @@ class MainViewModelTest {
         // Change query
         viewModel.onQueryChange("2+2")
         assertEquals(0, viewModel.selectedIndex.value)
+    }
+
+    @Test
+    fun `test remove from history`() = runTest {
+        // Wait for initial load to finish to avoid uncompleted coroutines from loadApps()
+        advanceUntilIdle()
+
+        // 1. Perform a search and execute it to add to history
+        viewModel.onQueryChange("test query")
+        val results = viewModel.results.first { it.isNotEmpty() }
+        val webResult = results.find { it.type == ResultType.WEB }!!
+
+        val application = ApplicationProvider.getApplicationContext<Application>()
+        val settingsRepository = viewModel.settingsRepository
+        com.quartz.powerline.utils.ActionExecutor.execute(application, webResult, settingsRepository)
+
+        // 2. Clear query and verify it's in history
+        viewModel.onQueryChange("")
+        val historyResults = viewModel.results.first { it.isNotEmpty() }
+        val historyItem = historyResults.find { it.id == webResult.id }
+        assertEquals(webResult.title, historyItem?.title)
+
+        // 3. Remove from history
+        viewModel.removeFromHistory(historyItem!!)
+        advanceUntilIdle()
+
+        // 4. Verify it's gone from results
+        val updatedResults = viewModel.results.value
+        val removedItem = updatedResults.find { it.id == webResult.id }
+        assertEquals(null, removedItem)
     }
 }
