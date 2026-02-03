@@ -64,7 +64,7 @@ class SearchEngine(
                             title = item.title,
                             subtitle = "Recent Web",
                             type = ResultType.WEB,
-                            payload = item.title
+                            payload = item.payload ?: item.title
                         )
                     }
                     ResultType.CALC -> {
@@ -73,8 +73,23 @@ class SearchEngine(
                             title = item.title,
                             subtitle = "Recent Calc",
                             type = ResultType.CALC,
-                            payload = item.title
+                            payload = item.payload ?: item.title
                         )
+                    }
+                    ResultType.APP_SEARCH -> {
+                        val pkg = item.id.removePrefix("app_search_")
+                        val app = visibleApps.find { it.packageName == pkg }
+                        if (app != null) {
+                            SearchResult(
+                                id = item.id,
+                                title = item.title,
+                                subtitle = item.payload ?: "Recent Search",
+                                icon = app.icon,
+                                type = ResultType.APP_SEARCH,
+                                packageName = app.packageName,
+                                payload = item.payload
+                            )
+                        } else null
                     }
                 }
             }
@@ -159,6 +174,75 @@ class SearchEngine(
                     payload = if (trimmedQuery.startsWith("http")) trimmedQuery else "https://$trimmedQuery"
                 )
             )
+        }
+
+        // 5. App Search (Keywords & Defaults)
+        val spaceIndex = trimmedQuery.indexOf(' ')
+        if (spaceIndex != -1) {
+            val prefix = trimmedQuery.substring(0, spaceIndex).lowercase()
+            val subQuery = trimmedQuery.substring(spaceIndex + 1).trim()
+
+            if (subQuery.isNotEmpty()) {
+                // Check if prefix matches an alias
+                val targetPackage = aliases[prefix]
+                if (targetPackage != null) {
+                    val app = visibleApps.find { it.packageName == targetPackage }
+                    if (app != null) {
+                        results.add(
+                            SearchResult(
+                                id = "app_search_${app.packageName}",
+                                title = "Search ${app.label}",
+                                subtitle = subQuery,
+                                icon = app.icon,
+                                type = ResultType.APP_SEARCH,
+                                packageName = app.packageName,
+                                payload = subQuery
+                            )
+                        )
+                    }
+                }
+
+                // Also check if prefix matches an app name directly (e.g. "youtube cat")
+                visibleApps.filter { it.label.lowercase() == prefix }.forEach { app ->
+                    results.add(
+                        SearchResult(
+                            id = "app_search_${app.packageName}",
+                            title = "Search ${app.label}",
+                            subtitle = subQuery,
+                            icon = app.icon,
+                            type = ResultType.APP_SEARCH,
+                            packageName = app.packageName,
+                            payload = subQuery
+                        )
+                    )
+                }
+            }
+        }
+
+        // Add Default Search Providers if they exist
+        val defaultProviders = listOf(
+            "com.google.android.youtube" to "YouTube",
+            "com.android.vending" to "Play Store"
+        )
+
+        for ((pkg, label) in defaultProviders) {
+            val app = visibleApps.find { it.packageName == pkg }
+            if (app != null) {
+                // Don't add if already added by keyword search
+                if (results.none { it.type == ResultType.APP_SEARCH && it.packageName == pkg }) {
+                    results.add(
+                        SearchResult(
+                            id = "app_search_$pkg",
+                            title = "Search $label",
+                            subtitle = trimmedQuery,
+                            icon = app.icon,
+                            type = ResultType.APP_SEARCH,
+                            packageName = pkg,
+                            payload = trimmedQuery
+                        )
+                    )
+                }
+            }
         }
 
         // Search Web (Fallthrough)

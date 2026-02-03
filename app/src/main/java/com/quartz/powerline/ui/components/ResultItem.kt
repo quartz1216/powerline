@@ -87,6 +87,16 @@ fun ResultIcon(result: SearchResult) {
                 tint = MaterialTheme.colorScheme.primary
             )
         }
+        ResultType.APP_SEARCH -> {
+            result.icon?.let { drawable ->
+                AppIcon(drawable = drawable)
+            } ?: Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 

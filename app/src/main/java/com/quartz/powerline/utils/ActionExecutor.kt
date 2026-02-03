@@ -50,6 +50,27 @@ object ActionExecutor {
                 Toast.makeText(context, "Copied: ${result.payload}", Toast.LENGTH_SHORT).show()
                 success = true
             }
+            ResultType.APP_SEARCH -> {
+                val packageName = result.packageName
+                val query = result.payload
+                if (packageName != null && query != null) {
+                    val intent = if (packageName == "com.android.vending") {
+                        Intent(Intent.ACTION_VIEW, Uri.parse("market://search?q=${Uri.encode(query)}"))
+                    } else {
+                        Intent(Intent.ACTION_SEARCH).apply {
+                            setPackage(packageName)
+                            putExtra("query", query)
+                        }
+                    }
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    try {
+                        context.startActivity(intent)
+                        success = true
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Search not supported by this app", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
 
         if (success) {
@@ -57,7 +78,8 @@ object ActionExecutor {
                 id = result.id,
                 type = result.type,
                 title = result.title,
-                timestamp = System.currentTimeMillis()
+                timestamp = System.currentTimeMillis(),
+                payload = result.payload
             )
             settingsRepository.addToHistory(historyItem)
         }
