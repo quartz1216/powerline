@@ -99,6 +99,9 @@ fun AppIcon(drawable: Drawable) {
                 scaleType = ImageView.ScaleType.FIT_CENTER
             }
         },
+        update = { view ->
+            view.setImageDrawable(drawable)
+        },
         modifier = Modifier.size(40.dp)
     )
 }

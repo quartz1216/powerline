@@ -3,6 +3,7 @@ package com.quartz.powerline.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.domain.AppRepository
 import com.quartz.powerline.domain.SearchEngine
 import com.quartz.powerline.domain.models.AppInfo
@@ -12,10 +13,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+enum class Screen {
+    LAUNCHER,
+    SETTINGS
+}
+
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
+    val settingsRepository = SettingsRepository(application)
     private val appRepository = AppRepository(application)
-    private val searchEngine = SearchEngine()
+    private val searchEngine = SearchEngine(application, settingsRepository)
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
@@ -26,17 +33,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedIndex = MutableStateFlow(0)
     val selectedIndex: StateFlow<Int> = _selectedIndex.asStateFlow()
 
-    private var allApps: List<AppInfo> = emptyList()
+    private val _currentScreen = MutableStateFlow(Screen.LAUNCHER)
+    val currentScreen: StateFlow<Screen> = _currentScreen.asStateFlow()
+
+    private val _installedApps = MutableStateFlow<List<AppInfo>>(emptyList())
+    val installedApps: StateFlow<List<AppInfo>> = _installedApps.asStateFlow()
 
     init {
         loadApps()
     }
 
+    fun reloadApps() {
+        loadApps()
+    }
+
     private fun loadApps() {
         viewModelScope.launch {
-            allApps = appRepository.getInstalledApps()
+            val apps = appRepository.getInstalledApps()
+            _installedApps.value = apps
             // Initial search (empty)
-            performSearch("")
+            performSearch(_query.value)
         }
     }
 
@@ -60,8 +76,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun openSettings() {
+        _currentScreen.value = Screen.SETTINGS
+    }
+
+    fun closeSettings() {
+        _currentScreen.value = Screen.LAUNCHER
+        // Reload apps in case settings changed (hidden apps)
+        // And refresh search
+        reloadApps()
+    }
+
     private fun performSearch(query: String) {
-        _results.value = searchEngine.search(query, allApps)
+        _results.value = searchEngine.search(query, _installedApps.value)
         _selectedIndex.value = 0
     }
 }
