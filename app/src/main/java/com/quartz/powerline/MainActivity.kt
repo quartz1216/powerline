@@ -34,6 +34,10 @@ class MainActivity : ComponentActivity() {
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[MainViewModel::class.java]
 
+        if (intent.getBooleanExtra("open_settings", false)) {
+            viewModel.openSettings()
+        }
+
         setContent {
             CommandLauncherTheme(dynamicColor = false) {
                 val currentScreen by viewModel.currentScreen.collectAsState()
@@ -43,7 +47,7 @@ class MainActivity : ComponentActivity() {
                         LauncherScreen(
                             viewModel = viewModel,
                             onResultClick = { result ->
-                                if (result.payload == "settings_action") {
+                                if (result.type == com.quartz.powerline.domain.models.ResultType.SYSTEM && result.payload == "settings_action") {
                                     viewModel.openSettings()
                                     viewModel.onQueryChange("")
                                 } else {
@@ -82,6 +86,15 @@ class MainActivity : ComponentActivity() {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra("open_settings", false)) {
+            val viewModel = ViewModelProvider(this)[MainViewModel::class.java]
+            viewModel.openSettings()
         }
     }
 

@@ -7,6 +7,7 @@ import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
+import com.quartz.powerline.domain.models.SystemCommand
 import java.util.UUID
 
 class SearchEngine(
@@ -16,6 +17,17 @@ class SearchEngine(
 
     private val urlPattern = java.util.regex.Pattern.compile(
         "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}(/.*)?$"
+    )
+
+    private val systemCommands = listOf(
+        SystemCommand("sys_wifi", "Wi-Fi Settings", android.R.drawable.ic_menu_preferences, "wifi"),
+        SystemCommand("sys_bluetooth", "Bluetooth Settings", android.R.drawable.ic_menu_preferences, "bluetooth"),
+        SystemCommand("sys_flashlight", "Flashlight", android.R.drawable.ic_menu_camera, "flashlight"),
+        SystemCommand("sys_volume", "Volume Settings", android.R.drawable.ic_lock_silent_mode_off, "volume"),
+        SystemCommand("sys_battery", "Battery Settings", android.R.drawable.ic_lock_idle_low_battery, "battery"),
+        SystemCommand("sys_airplane", "Airplane Mode Settings", android.R.drawable.ic_menu_preferences, "airplane"),
+        SystemCommand("sys_brightness", "Display Settings", android.R.drawable.ic_menu_preferences, "brightness"),
+        SystemCommand("sys_dnd", "Do Not Disturb Settings", android.R.drawable.ic_lock_silent_mode, "dnd")
     )
 
     fun search(query: String, apps: List<AppInfo>): List<SearchResult> {
@@ -33,27 +45,39 @@ class SearchEngine(
             return distinctHistory.mapNotNull { item ->
                 when (item.type) {
                     ResultType.APP -> {
-                        // Check if it's the special Settings action
+                        val app = visibleApps.find { it.packageName == item.id }
+                        if (app != null) {
+                            SearchResult(
+                                id = app.packageName,
+                                title = app.label,
+                                subtitle = "Recent",
+                                icon = app.icon,
+                                type = ResultType.APP,
+                                packageName = app.packageName,
+                                className = app.className
+                            )
+                        } else null
+                    }
+                    ResultType.SYSTEM -> {
                         if (item.id == "settings_action") {
                              SearchResult(
                                 id = "settings_action",
                                 title = "Settings",
                                 subtitle = "Recent",
                                 icon = ContextCompat.getDrawable(context, android.R.drawable.ic_menu_preferences),
-                                type = ResultType.APP,
+                                type = ResultType.SYSTEM,
                                 payload = "settings_action"
                             )
                         } else {
-                            val app = visibleApps.find { it.packageName == item.id }
-                            if (app != null) {
+                            val cmd = systemCommands.find { it.id == item.id }
+                            if (cmd != null) {
                                 SearchResult(
-                                    id = app.packageName,
-                                    title = app.label,
-                                    subtitle = "Recent",
-                                    icon = app.icon,
-                                    type = ResultType.APP,
-                                    packageName = app.packageName,
-                                    className = app.className
+                                    id = cmd.id,
+                                    title = cmd.name,
+                                    subtitle = "Recent System Command",
+                                    icon = ContextCompat.getDrawable(context, cmd.iconRes),
+                                    type = ResultType.SYSTEM,
+                                    payload = cmd.action
                                 )
                             } else null
                         }
@@ -90,13 +114,28 @@ class SearchEngine(
                 SearchResult(
                     id = "settings_action",
                     title = "Settings",
-                    subtitle = "Open Settings",
+                    subtitle = "Open App Settings",
                     icon = ContextCompat.getDrawable(context, android.R.drawable.ic_menu_preferences),
-                    type = ResultType.APP,
+                    type = ResultType.SYSTEM,
                     payload = "settings_action"
                 )
             )
         }
+
+        // 1.5 System Commands
+        val systemMatches = systemCommands.filter { cmd ->
+            fuzzyMatch(trimmedQuery, cmd.name) > 0 || fuzzyMatch(trimmedQuery, cmd.action) > 0
+        }.map { cmd ->
+            SearchResult(
+                id = cmd.id,
+                title = cmd.name,
+                subtitle = "System Command",
+                icon = ContextCompat.getDrawable(context, cmd.iconRes),
+                type = ResultType.SYSTEM,
+                payload = cmd.action
+            )
+        }
+        results.addAll(systemMatches)
 
         // 2. Calculation
         val calcResult = Calculator.evaluate(trimmedQuery)

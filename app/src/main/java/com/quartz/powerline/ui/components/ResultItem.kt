@@ -66,7 +66,7 @@ fun ResultItem(
 @Composable
 fun ResultIcon(result: SearchResult) {
     when (result.type) {
-        ResultType.APP -> {
+        ResultType.APP, ResultType.SYSTEM -> {
             result.icon?.let { drawable ->
                 AppIcon(drawable = drawable)
             }
