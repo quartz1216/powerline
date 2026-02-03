@@ -16,7 +16,8 @@ import kotlinx.coroutines.launch
 enum class Screen {
     LAUNCHER,
     SETTINGS,
-    PERMISSIONS
+    PERMISSIONS,
+    MEMO
 }
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -93,6 +94,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun closePermissions() {
+        _currentScreen.value = Screen.SETTINGS
+    }
+
+    fun openMemo() {
+        _currentScreen.value = Screen.MEMO
+    }
+
+    fun closeMemo() {
         _currentScreen.value = Screen.SETTINGS
     }
 

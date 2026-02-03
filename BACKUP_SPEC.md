@@ -18,6 +18,7 @@ The backup file is a standard JSON file.
 | `aliases` | Object | A key-value map where the key is the alias name and the value is the target package name. |
 | `maxRecentItems` | Integer | The maximum number of recent items to display. |
 | `history` | Array<Object> | The usage history. |
+| `memo` | String | The content of the memo. |
 
 ### History Item Object
 

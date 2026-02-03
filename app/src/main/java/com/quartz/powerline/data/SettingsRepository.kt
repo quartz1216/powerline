@@ -42,6 +42,15 @@ class SettingsRepository(context: Context) {
         prefs.edit().putInt("max_recent_items", count).apply()
     }
 
+    // --- Memo ---
+    fun getMemo(): String {
+        return prefs.getString("memo", "") ?: ""
+    }
+
+    fun setMemo(memo: String) {
+        prefs.edit().putString("memo", memo).apply()
+    }
+
     // --- History ---
     fun getHistory(): List<HistoryItem> {
         val json = prefs.getString("history", "[]")
@@ -68,7 +77,8 @@ class SettingsRepository(context: Context) {
             hiddenApps = getHiddenApps(),
             aliases = getAliases(),
             maxRecentItems = getMaxRecentItems(),
-            history = getHistory()
+            history = getHistory(),
+            memo = getMemo()
         )
         return gson.toJson(data)
     }
@@ -79,5 +89,6 @@ class SettingsRepository(context: Context) {
         setAliases(data.aliases)
         setMaxRecentItems(data.maxRecentItems)
         saveHistory(data.history)
+        setMemo(data.memo ?: "")
     }
 }
