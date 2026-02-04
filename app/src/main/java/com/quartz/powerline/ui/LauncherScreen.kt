@@ -33,7 +33,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.ui.components.AppActionMenu
@@ -52,6 +54,8 @@ fun LauncherScreen(
     val listState = rememberLazyListState()
     var showMenu by remember { mutableStateOf(false) }
     var longPressedResult by remember { mutableStateOf<SearchResult?>(null) }
+    val homeScreenText by viewModel.homeScreenText.collectAsState()
+    var showHomeTextDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedIndex) {
         if (results.isNotEmpty()) {
@@ -129,6 +133,30 @@ fun LauncherScreen(
             )
         }
 
+        // Home Screen Text (Top Left)
+        if (homeScreenText.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .clickable { showHomeTextDialog = true }
+            ) {
+                val fontSize = when {
+                    homeScreenText.length > 35 -> 12.sp
+                    homeScreenText.length > 25 -> 14.sp
+                    homeScreenText.length > 15 -> 16.sp
+                    else -> 20.sp
+                }
+
+                Text(
+                    text = homeScreenText,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = fontSize),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
         // Hamburger Menu (Top Right)
         Box(
             modifier = Modifier.align(Alignment.TopEnd)
@@ -153,6 +181,17 @@ fun LauncherScreen(
                     }
                 )
             }
+        }
+
+        if (showHomeTextDialog) {
+            EditHomeScreenTextDialog(
+                initialText = homeScreenText,
+                onDismiss = { showHomeTextDialog = false },
+                onSave = {
+                    viewModel.updateHomeScreenText(it)
+                    showHomeTextDialog = false
+                }
+            )
         }
     }
 }

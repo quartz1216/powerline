@@ -157,6 +157,15 @@ class SettingsRepository(context: Context) {
         prefs.edit().putBoolean("enable_package_search", enabled).apply()
     }
 
+    // --- Home Screen Text ---
+    fun getHomeScreenText(): String {
+        return prefs.getString("home_screen_text", "") ?: ""
+    }
+
+    fun setHomeScreenText(text: String) {
+        prefs.edit().putString("home_screen_text", text).apply()
+    }
+
     // --- History ---
     fun getHistory(): List<HistoryItem> {
         val json = prefs.getString("history", "[]")
@@ -195,7 +204,8 @@ class SettingsRepository(context: Context) {
             favoriteApps = getFavoriteApps(),
             appWeights = getAppWeights(),
             enableWeightSearch = getEnableWeightSearch(),
-            enablePackageSearch = getEnablePackageSearch()
+            enablePackageSearch = getEnablePackageSearch(),
+            homeScreenText = getHomeScreenText()
         )
         return gson.toJson(data)
     }
@@ -218,6 +228,7 @@ class SettingsRepository(context: Context) {
         setAppWeights(data.appWeights)
         setEnableWeightSearch(data.enableWeightSearch ?: true)
         setEnablePackageSearch(data.enablePackageSearch ?: true)
+        setHomeScreenText(data.homeScreenText ?: "")
     }
 
     fun clearAllSettings() {

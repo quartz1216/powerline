@@ -47,12 +47,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedPluginId = MutableStateFlow<String?>(null)
     val selectedPluginId: StateFlow<String?> = _selectedPluginId.asStateFlow()
 
+    private val _homeScreenText = MutableStateFlow(settingsRepository.getHomeScreenText())
+    val homeScreenText: StateFlow<String> = _homeScreenText.asStateFlow()
+
     init {
         loadApps()
     }
 
     fun reloadApps() {
         loadApps()
+        // Reload settings that might have changed externally (e.g. import)
+        _homeScreenText.value = settingsRepository.getHomeScreenText()
     }
 
     private fun loadApps() {
@@ -62,6 +67,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             // Initial search (empty)
             performSearch(_query.value)
         }
+    }
+
+    fun updateHomeScreenText(text: String) {
+        settingsRepository.setHomeScreenText(text)
+        _homeScreenText.value = text
     }
 
     fun onQueryChange(newQuery: String) {
