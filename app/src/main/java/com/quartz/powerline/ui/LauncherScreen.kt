@@ -159,8 +159,9 @@ fun LauncherScreen(
         }
 
         // Hamburger Menu (Top Right)
-        Box(
-            modifier = Modifier.align(Alignment.TopEnd)
+        Row(
+            modifier = Modifier.align(Alignment.TopEnd),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             IconButton(
                 onClick = onMemoClick,
