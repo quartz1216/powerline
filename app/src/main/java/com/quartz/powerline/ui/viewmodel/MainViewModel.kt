@@ -116,4 +116,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _results.value = searchEngine.search(query)
         _selectedIndex.value = 0
     }
+
+    fun toggleFavorite(packageName: String) {
+        val current = settingsRepository.getFavoriteApps().toMutableSet()
+        if (current.contains(packageName)) {
+            current.remove(packageName)
+        } else {
+            current.add(packageName)
+        }
+        settingsRepository.setFavoriteApps(current)
+        // Refresh search to update ordering
+        performSearch(_query.value)
+    }
+
+    fun isFavorite(packageName: String): Boolean {
+        return settingsRepository.getFavoriteApps().contains(packageName)
+    }
 }

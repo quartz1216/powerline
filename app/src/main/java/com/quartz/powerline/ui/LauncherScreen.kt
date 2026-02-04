@@ -34,7 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
+import com.quartz.powerline.ui.components.AppActionMenu
 import com.quartz.powerline.ui.components.CommandBar
 import com.quartz.powerline.ui.components.ResultItem
 import com.quartz.powerline.ui.viewmodel.MainViewModel
@@ -49,6 +51,7 @@ fun LauncherScreen(
     val selectedIndex by viewModel.selectedIndex.collectAsState()
     val listState = rememberLazyListState()
     var showMenu by remember { mutableStateOf(false) }
+    var longPressedResult by remember { mutableStateOf<SearchResult?>(null) }
 
     LaunchedEffect(selectedIndex) {
         if (results.isNotEmpty()) {
@@ -102,11 +105,28 @@ fun LauncherScreen(
                         ResultItem(
                             result = result,
                             isSelected = index == selectedIndex,
-                            onClick = { onResultClick(result) }
+                            onClick = { onResultClick(result) },
+                            onLongClick = {
+                                if (result.type == ResultType.APP && result.packageName != null) {
+                                    longPressedResult = result
+                                }
+                            }
                         )
                     }
                 }
             }
+        }
+
+        // Long Press Menu
+        longPressedResult?.let { result ->
+            AppActionMenu(
+                searchResult = result,
+                isFavorite = result.packageName?.let { viewModel.isFavorite(it) } ?: false,
+                onDismissRequest = { longPressedResult = null },
+                onToggleFavorite = {
+                    result.packageName?.let { viewModel.toggleFavorite(it) }
+                }
+            )
         }
 
         // Hamburger Menu (Top Right)

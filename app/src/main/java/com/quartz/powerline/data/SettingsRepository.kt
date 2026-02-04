@@ -102,6 +102,45 @@ class SettingsRepository(context: Context) {
         prefs.edit().putBoolean("debug_mode", enabled).apply()
     }
 
+    // --- Favorite Apps ---
+    fun getFavoriteApps(): Set<String> {
+        return prefs.getStringSet("favorite_apps", emptySet()) ?: emptySet()
+    }
+
+    fun setFavoriteApps(favorites: Set<String>) {
+        prefs.edit().putStringSet("favorite_apps", favorites).apply()
+    }
+
+    // --- App Weights ---
+    // Map<PackageName, Weight>
+    fun getAppWeights(): Map<String, Int> {
+        val json = prefs.getString("app_weights", "{}")
+        val type = object : TypeToken<Map<String, Int>>() {}.type
+        return gson.fromJson(json, type)
+    }
+
+    fun setAppWeights(weights: Map<String, Int>) {
+        val json = gson.toJson(weights)
+        prefs.edit().putString("app_weights", json).apply()
+    }
+
+    // --- Search Features Toggles ---
+    fun getEnableWeightSearch(): Boolean {
+        return prefs.getBoolean("enable_weight_search", true)
+    }
+
+    fun setEnableWeightSearch(enabled: Boolean) {
+        prefs.edit().putBoolean("enable_weight_search", enabled).apply()
+    }
+
+    fun getEnablePackageSearch(): Boolean {
+        return prefs.getBoolean("enable_package_search", true)
+    }
+
+    fun setEnablePackageSearch(enabled: Boolean) {
+        prefs.edit().putBoolean("enable_package_search", enabled).apply()
+    }
+
     // --- History ---
     fun getHistory(): List<HistoryItem> {
         val json = prefs.getString("history", "[]")
@@ -134,7 +173,11 @@ class SettingsRepository(context: Context) {
             bottomTriggerEnabled = getBottomTriggerEnabled(),
             bottomTriggerCenterGapPercent = getBottomTriggerCenterGapPercent(),
             bottomTriggerHeightDp = getBottomTriggerHeightDp(),
-            overlayCloseOnBackgroundTap = getOverlayCloseOnBackgroundTap()
+            overlayCloseOnBackgroundTap = getOverlayCloseOnBackgroundTap(),
+            favoriteApps = getFavoriteApps(),
+            appWeights = getAppWeights(),
+            enableWeightSearch = getEnableWeightSearch(),
+            enablePackageSearch = getEnablePackageSearch()
         )
         return gson.toJson(data)
     }
@@ -151,6 +194,10 @@ class SettingsRepository(context: Context) {
         setBottomTriggerCenterGapPercent(data.bottomTriggerCenterGapPercent)
         setBottomTriggerHeightDp(data.bottomTriggerHeightDp)
         setOverlayCloseOnBackgroundTap(data.overlayCloseOnBackgroundTap ?: true)
+        setFavoriteApps(data.favoriteApps)
+        setAppWeights(data.appWeights)
+        setEnableWeightSearch(data.enableWeightSearch ?: true)
+        setEnablePackageSearch(data.enablePackageSearch ?: true)
     }
 
     fun clearAllSettings() {
