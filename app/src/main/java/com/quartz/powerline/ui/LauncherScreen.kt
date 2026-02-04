@@ -32,7 +32,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.ui.components.AppActionMenu
@@ -52,6 +54,8 @@ fun LauncherScreen(
     val selectedIndex by viewModel.selectedIndex.collectAsState()
     val listState = rememberLazyListState()
     var longPressedResult by remember { mutableStateOf<SearchResult?>(null) }
+    val homeScreenText by viewModel.homeScreenText.collectAsState()
+    var showHomeTextDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedIndex) {
         if (results.isNotEmpty()) {
@@ -129,12 +133,33 @@ fun LauncherScreen(
             )
         }
 
-        // Top Right Actions (Memo & Settings)
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // Home Screen Text (Top Left)
+        if (homeScreenText.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .clickable { showHomeTextDialog = true }
+            ) {
+                val fontSize = when {
+                    homeScreenText.length > 35 -> 12.sp
+                    homeScreenText.length > 25 -> 14.sp
+                    homeScreenText.length > 15 -> 16.sp
+                    else -> 20.sp
+                }
+
+                Text(
+                    text = homeScreenText,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = fontSize),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
+        // Hamburger Menu (Top Right)
+        Box(
+            modifier = Modifier.align(Alignment.TopEnd)
         ) {
             IconButton(
                 onClick = onMemoClick,
@@ -149,6 +174,17 @@ fun LauncherScreen(
             ) {
                 Icon(Icons.Default.Settings, contentDescription = "Settings")
             }
+        }
+
+        if (showHomeTextDialog) {
+            EditHomeScreenTextDialog(
+                initialText = homeScreenText,
+                onDismiss = { showHomeTextDialog = false },
+                onSave = {
+                    viewModel.updateHomeScreenText(it)
+                    showHomeTextDialog = false
+                }
+            )
         }
     }
 }

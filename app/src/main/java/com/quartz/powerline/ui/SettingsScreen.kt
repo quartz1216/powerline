@@ -38,6 +38,8 @@ fun SettingsScreen(
     var bottomTriggerHeightDp by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerHeightDp()) }
     var overlayCloseOnBackgroundTap by remember { mutableStateOf(viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()) }
     var debugMode by remember { mutableStateOf(viewModel.settingsRepository.getDebugMode()) }
+    val homeScreenText by viewModel.homeScreenText.collectAsState()
+    var showHomeTextDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -111,6 +113,16 @@ fun SettingsScreen(
                     supportingContent = { Text("Customize overlay background dimming and blur.") },
                     modifier = Modifier.clickable {
                         viewModel.openAppearanceSettings()
+                    }
+                )
+
+                Divider()
+
+                ListItem(
+                    headlineContent = { Text("Home Screen Text") },
+                    supportingContent = { Text(if (homeScreenText.isNotEmpty()) homeScreenText else "Tap to set text") },
+                    modifier = Modifier.clickable {
+                        showHomeTextDialog = true
                     }
                 )
 
@@ -327,6 +339,17 @@ fun SettingsScreen(
                 Divider()
             }
         }
+
+        if (showHomeTextDialog) {
+            EditHomeScreenTextDialog(
+                initialText = homeScreenText,
+                onDismiss = { showHomeTextDialog = false },
+                onSave = {
+                    viewModel.updateHomeScreenText(it)
+                    showHomeTextDialog = false
+                }
+            )
+        }
     }
 }
 
@@ -439,6 +462,54 @@ fun AddAliasDialog(
                             }
                         },
                         enabled = alias.isNotBlank() && selectedApp != null
+                    ) { Text("Save") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EditHomeScreenTextDialog(
+    initialText: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var text by remember { mutableStateOf(initialText) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Edit Home Screen Text", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text("Text") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    text = "Leave empty to hide.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    Button(
+                        onClick = { onSave(text) }
                     ) { Text("Save") }
                 }
             }
