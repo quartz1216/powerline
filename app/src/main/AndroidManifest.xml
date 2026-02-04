@@ -52,6 +52,16 @@
             android:exported="false"
             android:theme="@style/Theme.CommandLauncher" />
 
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="false"
+            android:theme="@style/Theme.CommandLauncher" />
+
+        <activity
+            android:name=".PurchaseActivity"
+            android:exported="false"
+            android:theme="@style/Theme.CommandLauncher" />
+
         <!-- Quick Settings Tile Service -->
         <service
             android:name=".services.QuickSettingsService"

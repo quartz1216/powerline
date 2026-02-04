@@ -28,6 +28,13 @@ class MainActivity : ComponentActivity() {
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[MainViewModel::class.java]
 
+        // Onboarding Check
+        if (!viewModel.settingsRepository.getOnboardingCompleted()) {
+            startActivity(Intent(this, WelcomeActivity::class.java))
+            finish()
+            return
+        }
+
         setContent {
             CommandLauncherTheme(dynamicColor = false) {
                 // Main Activity only shows Launcher. Settings and Memo are separate Activities.
