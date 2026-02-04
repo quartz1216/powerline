@@ -1,5 +1,8 @@
 package com.quartz.powerline.ui
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,6 +31,7 @@ import com.quartz.powerline.domain.models.AppInfo
 fun SettingsScreen(viewModel: MainViewModel) {
     var maxRecent by remember { mutableStateOf(viewModel.settingsRepository.getMaxRecentItems()) }
     var statusBarTapEnabled by remember { mutableStateOf(viewModel.settingsRepository.getStatusBarTapEnabled()) }
+    var debugMode by remember { mutableStateOf(viewModel.settingsRepository.getDebugMode()) }
 
     val context = LocalContext.current
 
@@ -162,6 +166,74 @@ fun SettingsScreen(viewModel: MainViewModel) {
                          }
                     }
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Debug / Tools
+                Text("Debug & Maintenance", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ListItem(
+                    headlineContent = { Text("Debug Mode") },
+                    supportingContent = { Text("Show toasts for accessibility events.") },
+                    trailingContent = {
+                        Switch(
+                            checked = debugMode,
+                            onCheckedChange = {
+                                debugMode = it
+                                viewModel.settingsRepository.setDebugMode(it)
+                            }
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                        val newState = !debugMode
+                        debugMode = newState
+                        viewModel.settingsRepository.setDebugMode(newState)
+                    }
+                )
+
+                Divider()
+
+                ListItem(
+                    headlineContent = { Text("App Info") },
+                    modifier = Modifier.clickable {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.parse("package:${context.packageName}")
+                        }
+                        context.startActivity(intent)
+                    }
+                )
+
+                Divider()
+
+                ListItem(
+                    headlineContent = { Text("Restart App") },
+                    modifier = Modifier.clickable {
+                        val pm = context.packageManager
+                        val intent = pm.getLaunchIntentForPackage(context.packageName)
+                        val componentName = intent?.component
+                        val mainIntent = Intent.makeRestartActivityTask(componentName)
+                        context.startActivity(mainIntent)
+                        Runtime.getRuntime().exit(0)
+                    }
+                )
+
+                Divider()
+
+                ListItem(
+                    headlineContent = { Text("Reset App Settings") },
+                    supportingContent = { Text("Clears all internal preferences and history.") },
+                    modifier = Modifier.clickable {
+                        viewModel.settingsRepository.clearAllSettings()
+                        // Reload state
+                        maxRecent = viewModel.settingsRepository.getMaxRecentItems()
+                        statusBarTapEnabled = viewModel.settingsRepository.getStatusBarTapEnabled()
+                        debugMode = viewModel.settingsRepository.getDebugMode()
+                        viewModel.reloadApps()
+                        Toast.makeText(context, "Settings reset.", Toast.LENGTH_SHORT).show()
+                    }
+                )
+
 
                 Spacer(modifier = Modifier.height(24.dp))
 

@@ -51,6 +51,15 @@ class SettingsRepository(context: Context) {
         prefs.edit().putBoolean("status_bar_tap_enabled", enabled).apply()
     }
 
+    // --- Debug Mode ---
+    fun getDebugMode(): Boolean {
+        return prefs.getBoolean("debug_mode", false)
+    }
+
+    fun setDebugMode(enabled: Boolean) {
+        prefs.edit().putBoolean("debug_mode", enabled).apply()
+    }
+
     // --- History ---
     fun getHistory(): List<HistoryItem> {
         val json = prefs.getString("history", "[]")
@@ -90,5 +99,9 @@ class SettingsRepository(context: Context) {
         setMaxRecentItems(data.maxRecentItems)
         saveHistory(data.history)
         setStatusBarTapEnabled(data.statusBarTapEnabled)
+    }
+
+    fun clearAllSettings() {
+        prefs.edit().clear().apply()
     }
 }
