@@ -84,6 +84,15 @@ class SettingsRepository(context: Context) {
         prefs.edit().putInt("bottom_trigger_height_dp", heightDp).apply()
     }
 
+    // --- Overlay Behavior ---
+    fun getOverlayCloseOnBackgroundTap(): Boolean {
+        return prefs.getBoolean("overlay_close_on_background_tap", true)
+    }
+
+    fun setOverlayCloseOnBackgroundTap(enabled: Boolean) {
+        prefs.edit().putBoolean("overlay_close_on_background_tap", enabled).apply()
+    }
+
     // --- Debug Mode ---
     fun getDebugMode(): Boolean {
         return prefs.getBoolean("debug_mode", false)
@@ -124,7 +133,8 @@ class SettingsRepository(context: Context) {
             statusBarTriggerWidthPercent = getStatusBarTriggerWidthPercent(),
             bottomTriggerEnabled = getBottomTriggerEnabled(),
             bottomTriggerCenterGapPercent = getBottomTriggerCenterGapPercent(),
-            bottomTriggerHeightDp = getBottomTriggerHeightDp()
+            bottomTriggerHeightDp = getBottomTriggerHeightDp(),
+            overlayCloseOnBackgroundTap = getOverlayCloseOnBackgroundTap()
         )
         return gson.toJson(data)
     }
@@ -140,6 +150,7 @@ class SettingsRepository(context: Context) {
         setBottomTriggerEnabled(data.bottomTriggerEnabled)
         setBottomTriggerCenterGapPercent(data.bottomTriggerCenterGapPercent)
         setBottomTriggerHeightDp(data.bottomTriggerHeightDp)
+        setOverlayCloseOnBackgroundTap(data.overlayCloseOnBackgroundTap ?: true)
     }
 
     fun clearAllSettings() {

@@ -33,6 +33,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
     var bottomTriggerEnabled by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerEnabled()) }
     var bottomTriggerCenterGapPercent by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerCenterGapPercent()) }
     var bottomTriggerHeightDp by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerHeightDp()) }
+    var overlayCloseOnBackgroundTap by remember { mutableStateOf(viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()) }
     var debugMode by remember { mutableStateOf(viewModel.settingsRepository.getDebugMode()) }
 
     val context = LocalContext.current
@@ -63,6 +64,11 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     viewModel.settingsRepository.importSettings(json)
                     // Reload state from repository
                     maxRecent = viewModel.settingsRepository.getMaxRecentItems()
+                    bottomTriggerEnabled = viewModel.settingsRepository.getBottomTriggerEnabled()
+                    bottomTriggerCenterGapPercent = viewModel.settingsRepository.getBottomTriggerCenterGapPercent()
+                    bottomTriggerHeightDp = viewModel.settingsRepository.getBottomTriggerHeightDp()
+                    overlayCloseOnBackgroundTap = viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()
+                    debugMode = viewModel.settingsRepository.getDebugMode()
                     // Reload viewmodel data
                     viewModel.reloadApps()
 
@@ -141,6 +147,27 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 // Bottom Trigger
                 Text("Features", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
+
+                ListItem(
+                    headlineContent = { Text("Close Overlay on Background Tap") },
+                    supportingContent = { Text("When the overlay is open, tapping the empty background area will close it.") },
+                    trailingContent = {
+                        Switch(
+                            checked = overlayCloseOnBackgroundTap,
+                            onCheckedChange = {
+                                overlayCloseOnBackgroundTap = it
+                                viewModel.settingsRepository.setOverlayCloseOnBackgroundTap(it)
+                            }
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                        val newState = !overlayCloseOnBackgroundTap
+                        overlayCloseOnBackgroundTap = newState
+                        viewModel.settingsRepository.setOverlayCloseOnBackgroundTap(newState)
+                    }
+                )
+
+                Divider()
 
                 ListItem(
                     headlineContent = { Text("Bottom Corners Trigger") },
@@ -262,6 +289,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         bottomTriggerEnabled = viewModel.settingsRepository.getBottomTriggerEnabled()
                         bottomTriggerCenterGapPercent = viewModel.settingsRepository.getBottomTriggerCenterGapPercent()
                         bottomTriggerHeightDp = viewModel.settingsRepository.getBottomTriggerHeightDp()
+                        overlayCloseOnBackgroundTap = viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()
                         debugMode = viewModel.settingsRepository.getDebugMode()
                         viewModel.reloadApps()
                         Toast.makeText(context, "Settings reset.", Toast.LENGTH_SHORT).show()
