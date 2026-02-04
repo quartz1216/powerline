@@ -14,19 +14,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.ui.components.CommandBar
@@ -42,6 +48,7 @@ fun LauncherScreen(
     val results by viewModel.results.collectAsState()
     val selectedIndex by viewModel.selectedIndex.collectAsState()
     val listState = rememberLazyListState()
+    var showMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedIndex) {
         if (results.isNotEmpty()) {
@@ -61,7 +68,7 @@ fun LauncherScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             // Spacer to push it down a bit from top status bar
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(64.dp))
 
             CommandBar(
                 query = query,
@@ -102,16 +109,30 @@ fun LauncherScreen(
             }
         }
 
-        // Settings FAB
-        FloatingActionButton(
-            onClick = { viewModel.openSettings() },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        // Hamburger Menu (Top Right)
+        Box(
+            modifier = Modifier.align(Alignment.TopEnd)
         ) {
-            Icon(Icons.Default.Settings, contentDescription = "Settings")
+            IconButton(
+                onClick = { showMenu = true },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), CircleShape)
+            ) {
+                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+            }
+
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Settings") },
+                    leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                    onClick = {
+                        showMenu = false
+                        viewModel.openSettings()
+                    }
+                )
+            }
         }
     }
 }
