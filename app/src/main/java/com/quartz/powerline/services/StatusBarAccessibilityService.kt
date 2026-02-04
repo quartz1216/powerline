@@ -14,6 +14,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.FrameLayout
 import android.widget.Toast
 import com.quartz.powerline.OverlayActivity
@@ -29,6 +30,7 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
     private var leftOverlayView: View? = null
     private var rightOverlayView: View? = null
     private var isOverlaysAdded = false
+    private var isKeyboardVisible = false
 
     // Touch handling
     private var startY = 0f
@@ -47,6 +49,7 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
         getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
             .registerOnSharedPreferenceChangeListener(this)
 
+        checkKeyboardVisibility()
         updateOverlayState()
 
         Handler(Looper.getMainLooper()).post {
@@ -58,7 +61,8 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
         if (key == "bottom_trigger_enabled" ||
             key == "debug_mode" ||
             key == "bottom_trigger_center_gap_percent" ||
-            key == "bottom_trigger_height_dp") {
+            key == "bottom_trigger_height_dp" ||
+            key == "hide_triggers_on_keyboard") {
             updateOverlayState()
         }
     }
@@ -66,8 +70,11 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
     private fun updateOverlayState() {
         val enabled = settingsRepository.getBottomTriggerEnabled()
         val debug = settingsRepository.getDebugMode()
+        val hideOnKeyboard = settingsRepository.getHideTriggersOnKeyboard()
 
-        if (enabled || debug) {
+        val shouldShow = (enabled || debug) && !(enabled && hideOnKeyboard && isKeyboardVisible)
+
+        if (shouldShow) {
             // Ensure overlay exists
             if (!isOverlaysAdded) {
                 createOverlays()
@@ -81,6 +88,15 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
         } else {
             // Remove overlay
             removeOverlays()
+        }
+    }
+
+    private fun checkKeyboardVisibility() {
+        val windows = windows ?: return
+        val visible = windows.any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+        if (visible != isKeyboardVisible) {
+            isKeyboardVisible = visible
+            updateOverlayState()
         }
     }
 
@@ -100,9 +116,13 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
         val screenWidth = displayMetrics.widthPixels
         val gapPercent = settingsRepository.getBottomTriggerCenterGapPercent()
 
-        // Width of one side = (100% - gap%) / 2
-        val widthPercent = (100 - gapPercent) / 2f
-        val width = (screenWidth * (widthPercent / 100f)).toInt()
+        // 3% margin to avoid interference with corner gestures
+        val edgeMarginPercent = 3f
+        val edgeMargin = (screenWidth * (edgeMarginPercent / 100f)).toInt()
+
+        // Width logic: (50 - gap/2 - 3)%
+        val widthPercent = 50f - (gapPercent / 2f) - edgeMarginPercent
+        val width = (screenWidth * (widthPercent / 100f)).toInt().coerceAtLeast(0)
         val height = getTriggerHeight()
 
         // Update Left
@@ -110,6 +130,7 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
             val params = leftOverlayView!!.layoutParams as WindowManager.LayoutParams
             params.width = width
             params.height = height
+            params.x = edgeMargin
             params.gravity = Gravity.BOTTOM or Gravity.START
             try { windowManager?.updateViewLayout(leftOverlayView, params) } catch (e: Exception) { e.printStackTrace() }
         }
@@ -119,6 +140,7 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
             val params = rightOverlayView!!.layoutParams as WindowManager.LayoutParams
             params.width = width
             params.height = height
+            params.x = edgeMargin
             params.gravity = Gravity.BOTTOM or Gravity.END
             try { windowManager?.updateViewLayout(rightOverlayView, params) } catch (e: Exception) { e.printStackTrace() }
         }
@@ -131,8 +153,13 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
         val screenWidth = displayMetrics.widthPixels
         val gapPercent = settingsRepository.getBottomTriggerCenterGapPercent()
 
-        val widthPercent = (100 - gapPercent) / 2f
-        val width = (screenWidth * (widthPercent / 100f)).toInt()
+        // 3% margin to avoid interference with corner gestures
+        val edgeMarginPercent = 3f
+        val edgeMargin = (screenWidth * (edgeMarginPercent / 100f)).toInt()
+
+        // Width logic: (50 - gap/2 - 3)%
+        val widthPercent = 50f - (gapPercent / 2f) - edgeMarginPercent
+        val width = (screenWidth * (widthPercent / 100f)).toInt().coerceAtLeast(0)
         val height = getTriggerHeight()
 
         val baseParams = WindowManager.LayoutParams(
@@ -151,6 +178,7 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
         leftView.setBackgroundColor(if (settingsRepository.getDebugMode()) 0x55FF0000 else Color.TRANSPARENT)
         setupTouchListener(leftView)
         val leftParams = WindowManager.LayoutParams().apply { copyFrom(baseParams) }
+        leftParams.x = edgeMargin
         leftParams.gravity = Gravity.BOTTOM or Gravity.START
 
         // Right View
@@ -158,6 +186,7 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
         rightView.setBackgroundColor(if (settingsRepository.getDebugMode()) 0x55FF0000 else Color.TRANSPARENT)
         setupTouchListener(rightView)
         val rightParams = WindowManager.LayoutParams().apply { copyFrom(baseParams) }
+        rightParams.x = edgeMargin
         rightParams.gravity = Gravity.BOTTOM or Gravity.END
 
         try {
@@ -250,7 +279,10 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // No longer relying on events for trigger, but keeping service alive
+        if (event?.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
+            event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            checkKeyboardVisibility()
+        }
     }
 
     override fun onInterrupt() {
