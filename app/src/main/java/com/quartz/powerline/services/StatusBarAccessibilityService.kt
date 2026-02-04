@@ -8,16 +8,17 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Handler
 import android.os.Looper
-import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.widget.FrameLayout
 import android.widget.Toast
 import com.quartz.powerline.OverlayActivity
 import com.quartz.powerline.data.SettingsRepository
+import kotlin.math.abs
 
 class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -26,10 +27,18 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
     private var overlayView: View? = null
     private var isOverlayAdded = false
 
+    // Touch handling
+    private var startY = 0f
+    private var startX = 0f
+    private var isGestureTriggered = false
+    private val swipeThreshold = 20f // Pixels
+    private var touchSlop = 0
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         settingsRepository = SettingsRepository(this)
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        touchSlop = ViewConfiguration.get(this).scaledTouchSlop
 
         // Register for settings changes
         getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
@@ -86,41 +95,47 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
         val view = FrameLayout(this)
         view.setBackgroundColor(if (settingsRepository.getDebugMode()) 0x55FF0000 else Color.TRANSPARENT)
 
-        val gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                if (settingsRepository.getStatusBarTapEnabled()) {
-                    val intent = Intent(this@StatusBarAccessibilityService, OverlayActivity::class.java)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    startActivity(intent)
-                    return true
-                }
-                return false
-            }
-
-            override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-                if (e1 != null && e2.y - e1.y > 50) { // Swipe Down
-                    performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
-                    return true
-                }
-                return false
-            }
-
-            override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
-                 // Backup for slow swipes that might not trigger fling
-                 if (e1 != null && e2.y - e1.y > 50) {
-                    performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
-                    return true
-                 }
-                 return false
-            }
-        })
-
         view.setOnTouchListener { _, event ->
-            // Pass touch to gesture detector
-            gestureDetector.onTouchEvent(event)
-            // If debug mode, maybe log?
-            true // Consume touch so we can detect gestures.
-                 // Note: This blocks the underlying status bar touches, which is why we handle Swipe Down manually.
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    startY = event.rawY
+                    startX = event.rawX
+                    isGestureTriggered = false
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (!isGestureTriggered) {
+                        val deltaY = event.rawY - startY
+                        val deltaX = event.rawX - startX
+
+                        // Check for vertical swipe down
+                        // Allow some horizontal movement, but it should be primarily vertical?
+                        // Actually, simplified check: just moving down enough triggers it.
+                        if (deltaY > swipeThreshold) {
+                            performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
+                            isGestureTriggered = true
+                        }
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (!isGestureTriggered) {
+                        val deltaY = abs(event.rawY - startY)
+                        val deltaX = abs(event.rawX - startX)
+
+                        // Treat as tap if movement is minimal
+                        if (deltaY < touchSlop && deltaX < touchSlop) {
+                            if (settingsRepository.getStatusBarTapEnabled()) {
+                                val intent = Intent(this@StatusBarAccessibilityService, OverlayActivity::class.java)
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(intent)
+                            }
+                        }
+                    }
+                    true
+                }
+                else -> false
+            }
         }
 
         try {
