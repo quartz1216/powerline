@@ -17,7 +17,8 @@ enum class Screen {
     LAUNCHER,
     SETTINGS,
     PERMISSIONS,
-    PLUGIN_SETTINGS
+    PLUGIN_SETTINGS,
+    APPEARANCE_SETTINGS
 }
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -88,7 +89,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun closeSettings() {
-        if (_currentScreen.value == Screen.PLUGIN_SETTINGS) {
+        if (_currentScreen.value == Screen.PLUGIN_SETTINGS || _currentScreen.value == Screen.APPEARANCE_SETTINGS) {
             _currentScreen.value = Screen.SETTINGS
             _selectedPluginId.value = null
         } else {
@@ -97,6 +98,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             // And refresh search
             reloadApps()
         }
+    }
+
+    fun openAppearanceSettings() {
+        _currentScreen.value = Screen.APPEARANCE_SETTINGS
     }
 
     fun openPluginSettings(pluginId: String) {
