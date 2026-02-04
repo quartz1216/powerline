@@ -15,6 +15,7 @@ import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
 
 class PurchaseActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
