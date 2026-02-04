@@ -75,6 +75,10 @@ class OverlayActivity : ComponentActivity() {
         val blurRadius = viewModel.settingsRepository.getOverlayBlurRadius()
 
         window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        if (Build.VERSION.SDK_INT >= 31) {
+             window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+        }
+
         val params = window.attributes
         params.dimAmount = dimAmount
         if (Build.VERSION.SDK_INT >= 31) {
