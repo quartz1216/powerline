@@ -1,5 +1,6 @@
 package com.quartz.powerline
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -51,7 +52,20 @@ class OverlayActivity : ComponentActivity() {
                         LauncherScreen(
                             viewModel = viewModel,
                             onResultClick = { result ->
-                                ActionExecutor.execute(this@OverlayActivity, result, viewModel.settingsRepository, viewModel.pluginManager)
+                                if (result.payload == "settings_action") {
+                                    startActivity(Intent(this@OverlayActivity, SettingsActivity::class.java))
+                                    finish()
+                                } else {
+                                    ActionExecutor.execute(this@OverlayActivity, result, viewModel.settingsRepository, viewModel.pluginManager)
+                                    finish()
+                                }
+                            },
+                            onMemoClick = {
+                                startActivity(Intent(this@OverlayActivity, MemoActivity::class.java))
+                                finish()
+                            },
+                            onSettingsClick = {
+                                startActivity(Intent(this@OverlayActivity, SettingsActivity::class.java))
                                 finish()
                             }
                         )

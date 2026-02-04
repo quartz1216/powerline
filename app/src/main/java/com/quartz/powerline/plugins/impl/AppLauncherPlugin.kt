@@ -21,7 +21,7 @@ import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.plugins.Plugin
 import com.quartz.powerline.ui.AddAliasDialog
 import com.quartz.powerline.ui.HiddenAppsDialog
-import com.quartz.powerline.ui.viewmodel.MainViewModel
+import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 import kotlinx.coroutines.flow.StateFlow
 
 class AppLauncherPlugin(
@@ -166,7 +166,7 @@ class AppLauncherPlugin(
     }
 
     @Composable
-    override fun SettingsScreen(viewModel: MainViewModel) {
+    override fun SettingsScreen(viewModel: SettingsViewModel) {
         var hiddenApps by remember { mutableStateOf(settingsRepository.getHiddenApps()) }
         var aliases by remember { mutableStateOf(settingsRepository.getAliases()) }
         var enableWeightSearch by remember { mutableStateOf(settingsRepository.getEnableWeightSearch()) }

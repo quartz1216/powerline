@@ -13,7 +13,7 @@ import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.plugins.Plugin
-import com.quartz.powerline.ui.viewmodel.MainViewModel
+import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 import kotlinx.coroutines.flow.StateFlow
 
 class RecentsPlugin(
@@ -85,6 +85,17 @@ class RecentsPlugin(
                         payload = item.title
                     )
                 }
+                ResultType.MEMO -> {
+                    SearchResult(
+                        id = item.id,
+                        pluginId = "memo",
+                        title = item.title,
+                        subtitle = "Recent Memo",
+                        icon = ContextCompat.getDrawable(context, android.R.drawable.ic_menu_edit),
+                        type = ResultType.MEMO,
+                        payload = item.title
+                    )
+                }
             }
         }
     }
@@ -96,7 +107,7 @@ class RecentsPlugin(
     }
 
     @Composable
-    override fun SettingsScreen(viewModel: MainViewModel) {
+    override fun SettingsScreen(viewModel: SettingsViewModel) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Text("Recent Activity Settings", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(16.dp))
