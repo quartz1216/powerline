@@ -37,14 +37,13 @@ class OverlayActivity : ComponentActivity() {
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {
+                        if (viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()) {
                             finish()
+                        }
                         }
                 ) {
                     // Prevent clicks on the actual UI from closing the activity
-                    Box(modifier = Modifier.clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {}) {
+                    Box(modifier = Modifier) {
                         LauncherScreen(
                             viewModel = viewModel,
                             onResultClick = { result ->

@@ -13,5 +13,6 @@ data class AppBackupData(
     val statusBarTriggerWidthPercent: Int = 30, // Deprecated
     val bottomTriggerEnabled: Boolean = false,
     val bottomTriggerCenterGapPercent: Int = 40,
-    val bottomTriggerHeightDp: Int = 0 // 0 = Auto
+    val bottomTriggerHeightDp: Int = 0, // 0 = Auto
+    val overlayCloseOnBackgroundTap: Boolean? = true
 )

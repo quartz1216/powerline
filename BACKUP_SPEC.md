@@ -23,6 +23,7 @@ The backup file is a standard JSON file.
 | `bottomTriggerEnabled` | Boolean | Whether the bottom corners trigger is enabled. |
 | `bottomTriggerCenterGapPercent` | Integer | The percentage of the bottom screen width to leave as a gap in the center. |
 | `bottomTriggerHeightDp` | Integer | The height of the bottom trigger area in dp. 0 means auto-detect. |
+| `overlayCloseOnBackgroundTap` | Boolean | Whether to close the overlay when tapping the background. |
 
 ### History Item Object
 
@@ -60,6 +61,7 @@ The backup file is a standard JSON file.
   "statusBarTriggerWidthPercent": 30,
   "bottomTriggerEnabled": false,
   "bottomTriggerCenterGapPercent": 40,
-  "bottomTriggerHeightDp": 0
+  "bottomTriggerHeightDp": 0,
+  "overlayCloseOnBackgroundTap": true
 }
 ```
