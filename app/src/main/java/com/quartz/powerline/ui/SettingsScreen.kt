@@ -1,5 +1,8 @@
 package com.quartz.powerline.ui
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,6 +30,10 @@ import com.quartz.powerline.domain.models.AppInfo
 @Composable
 fun SettingsScreen(viewModel: MainViewModel) {
     var maxRecent by remember { mutableStateOf(viewModel.settingsRepository.getMaxRecentItems()) }
+    var bottomTriggerEnabled by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerEnabled()) }
+    var bottomTriggerCenterGapPercent by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerCenterGapPercent()) }
+    var bottomTriggerHeightDp by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerHeightDp()) }
+    var debugMode by remember { mutableStateOf(viewModel.settingsRepository.getDebugMode()) }
 
     val context = LocalContext.current
 
@@ -128,6 +135,139 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     valueRange = 1f..20f,
                     steps = 19
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Bottom Trigger
+                Text("Features", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ListItem(
+                    headlineContent = { Text("Bottom Corners Trigger") },
+                    supportingContent = { Text("Tap the bottom corners of the screen to open launcher.") },
+                    trailingContent = {
+                        Switch(
+                            checked = bottomTriggerEnabled,
+                            onCheckedChange = {
+                                bottomTriggerEnabled = it
+                                viewModel.settingsRepository.setBottomTriggerEnabled(it)
+                                if (it && !checkAccessibilityPermission(context)) {
+                                    Toast.makeText(context, "Please enable Accessibility Service", Toast.LENGTH_LONG).show()
+                                    viewModel.openPermissions()
+                                }
+                            }
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                         val newState = !bottomTriggerEnabled
+                         bottomTriggerEnabled = newState
+                         viewModel.settingsRepository.setBottomTriggerEnabled(newState)
+                         if (newState && !checkAccessibilityPermission(context)) {
+                            Toast.makeText(context, "Please enable Accessibility Service", Toast.LENGTH_LONG).show()
+                            viewModel.openPermissions()
+                         }
+                    }
+                )
+
+                if (bottomTriggerEnabled) {
+                    ListItem(
+                        headlineContent = { Text("Center Gap: ${bottomTriggerCenterGapPercent}%") },
+                        supportingContent = { Text("Percentage of center area to ignore.") },
+                        trailingContent = {}
+                    )
+                    Slider(
+                        value = bottomTriggerCenterGapPercent.toFloat(),
+                        onValueChange = { bottomTriggerCenterGapPercent = it.toInt() },
+                        onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerCenterGapPercent(bottomTriggerCenterGapPercent) },
+                        valueRange = 0f..90f,
+                        steps = 17, // 5% steps roughly
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
+                     ListItem(
+                        headlineContent = { Text("Trigger Height: ${if (bottomTriggerHeightDp == 0) "Auto" else "$bottomTriggerHeightDp dp"}") },
+                        supportingContent = { Text("0 = Auto (Navigation Bar Height)") },
+                        trailingContent = {}
+                    )
+                    Slider(
+                        value = bottomTriggerHeightDp.toFloat(),
+                        onValueChange = { bottomTriggerHeightDp = it.toInt() },
+                        onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerHeightDp(bottomTriggerHeightDp) },
+                        valueRange = 0f..100f,
+                        steps = 19, // 5dp steps
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Debug / Tools
+                Text("Debug & Maintenance", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ListItem(
+                    headlineContent = { Text("Debug Mode") },
+                    supportingContent = { Text("Show toasts for accessibility events.") },
+                    trailingContent = {
+                        Switch(
+                            checked = debugMode,
+                            onCheckedChange = {
+                                debugMode = it
+                                viewModel.settingsRepository.setDebugMode(it)
+                            }
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                        val newState = !debugMode
+                        debugMode = newState
+                        viewModel.settingsRepository.setDebugMode(newState)
+                    }
+                )
+
+                Divider()
+
+                ListItem(
+                    headlineContent = { Text("App Info") },
+                    modifier = Modifier.clickable {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.parse("package:${context.packageName}")
+                        }
+                        context.startActivity(intent)
+                    }
+                )
+
+                Divider()
+
+                ListItem(
+                    headlineContent = { Text("Restart App") },
+                    modifier = Modifier.clickable {
+                        val pm = context.packageManager
+                        val intent = pm.getLaunchIntentForPackage(context.packageName)
+                        val componentName = intent?.component
+                        val mainIntent = Intent.makeRestartActivityTask(componentName)
+                        context.startActivity(mainIntent)
+                        Runtime.getRuntime().exit(0)
+                    }
+                )
+
+                Divider()
+
+                ListItem(
+                    headlineContent = { Text("Reset App Settings") },
+                    supportingContent = { Text("Clears all internal preferences and history.") },
+                    modifier = Modifier.clickable {
+                        viewModel.settingsRepository.clearAllSettings()
+                        // Reload state
+                        maxRecent = viewModel.settingsRepository.getMaxRecentItems()
+                        bottomTriggerEnabled = viewModel.settingsRepository.getBottomTriggerEnabled()
+                        bottomTriggerCenterGapPercent = viewModel.settingsRepository.getBottomTriggerCenterGapPercent()
+                        bottomTriggerHeightDp = viewModel.settingsRepository.getBottomTriggerHeightDp()
+                        debugMode = viewModel.settingsRepository.getDebugMode()
+                        viewModel.reloadApps()
+                        Toast.makeText(context, "Settings reset.", Toast.LENGTH_SHORT).show()
+                    }
+                )
+
 
                 Spacer(modifier = Modifier.height(24.dp))
 

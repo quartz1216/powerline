@@ -18,6 +18,11 @@ The backup file is a standard JSON file.
 | `aliases` | Object | A key-value map where the key is the alias name and the value is the target package name. |
 | `maxRecentItems` | Integer | The maximum number of recent items to display. |
 | `history` | Array<Object> | The usage history. |
+| `statusBarTapEnabled` | Boolean | Whether the status bar tap trigger is enabled. |
+| `statusBarTriggerWidthPercent` | Integer | The width percentage (0-100) of the status bar trigger area, aligned to the right. |
+| `bottomTriggerEnabled` | Boolean | Whether the bottom corners trigger is enabled. |
+| `bottomTriggerCenterGapPercent` | Integer | The percentage of the bottom screen width to leave as a gap in the center. |
+| `bottomTriggerHeightDp` | Integer | The height of the bottom trigger area in dp. 0 means auto-detect. |
 
 ### History Item Object
 
@@ -50,6 +55,11 @@ The backup file is a standard JSON file.
       "title": "WhatsApp",
       "timestamp": 1715599900000
     }
-  ]
+  ],
+  "statusBarTapEnabled": false,
+  "statusBarTriggerWidthPercent": 30,
+  "bottomTriggerEnabled": false,
+  "bottomTriggerCenterGapPercent": 40,
+  "bottomTriggerHeightDp": 0
 }
 ```

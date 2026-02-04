@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Command Launcher</string>
+    <string name="accessibility_service_description">Detects taps on the status bar to launch Command Launcher overlay.</string>
+</resources>

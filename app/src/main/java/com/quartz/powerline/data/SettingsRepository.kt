@@ -42,6 +42,57 @@ class SettingsRepository(context: Context) {
         prefs.edit().putInt("max_recent_items", count).apply()
     }
 
+    // --- Status Bar Tap ---
+    fun getStatusBarTapEnabled(): Boolean {
+        return prefs.getBoolean("status_bar_tap_enabled", false)
+    }
+
+    fun setStatusBarTapEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("status_bar_tap_enabled", enabled).apply()
+    }
+
+    fun getStatusBarTriggerWidthPercent(): Int {
+        return prefs.getInt("status_bar_trigger_width_percent", 30)
+    }
+
+    fun setStatusBarTriggerWidthPercent(percent: Int) {
+        prefs.edit().putInt("status_bar_trigger_width_percent", percent).apply()
+    }
+
+    // --- Bottom Trigger ---
+    fun getBottomTriggerEnabled(): Boolean {
+        return prefs.getBoolean("bottom_trigger_enabled", false)
+    }
+
+    fun setBottomTriggerEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("bottom_trigger_enabled", enabled).apply()
+    }
+
+    fun getBottomTriggerCenterGapPercent(): Int {
+        return prefs.getInt("bottom_trigger_center_gap_percent", 40)
+    }
+
+    fun setBottomTriggerCenterGapPercent(percent: Int) {
+        prefs.edit().putInt("bottom_trigger_center_gap_percent", percent).apply()
+    }
+
+    fun getBottomTriggerHeightDp(): Int {
+        return prefs.getInt("bottom_trigger_height_dp", 0)
+    }
+
+    fun setBottomTriggerHeightDp(heightDp: Int) {
+        prefs.edit().putInt("bottom_trigger_height_dp", heightDp).apply()
+    }
+
+    // --- Debug Mode ---
+    fun getDebugMode(): Boolean {
+        return prefs.getBoolean("debug_mode", false)
+    }
+
+    fun setDebugMode(enabled: Boolean) {
+        prefs.edit().putBoolean("debug_mode", enabled).apply()
+    }
+
     // --- History ---
     fun getHistory(): List<HistoryItem> {
         val json = prefs.getString("history", "[]")
@@ -68,7 +119,12 @@ class SettingsRepository(context: Context) {
             hiddenApps = getHiddenApps(),
             aliases = getAliases(),
             maxRecentItems = getMaxRecentItems(),
-            history = getHistory()
+            history = getHistory(),
+            statusBarTapEnabled = getStatusBarTapEnabled(),
+            statusBarTriggerWidthPercent = getStatusBarTriggerWidthPercent(),
+            bottomTriggerEnabled = getBottomTriggerEnabled(),
+            bottomTriggerCenterGapPercent = getBottomTriggerCenterGapPercent(),
+            bottomTriggerHeightDp = getBottomTriggerHeightDp()
         )
         return gson.toJson(data)
     }
@@ -79,5 +135,14 @@ class SettingsRepository(context: Context) {
         setAliases(data.aliases)
         setMaxRecentItems(data.maxRecentItems)
         saveHistory(data.history)
+        setStatusBarTapEnabled(data.statusBarTapEnabled)
+        setStatusBarTriggerWidthPercent(data.statusBarTriggerWidthPercent)
+        setBottomTriggerEnabled(data.bottomTriggerEnabled)
+        setBottomTriggerCenterGapPercent(data.bottomTriggerCenterGapPercent)
+        setBottomTriggerHeightDp(data.bottomTriggerHeightDp)
+    }
+
+    fun clearAllSettings() {
+        prefs.edit().clear().apply()
     }
 }
