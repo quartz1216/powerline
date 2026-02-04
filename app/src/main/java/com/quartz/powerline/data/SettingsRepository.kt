@@ -59,6 +59,31 @@ class SettingsRepository(context: Context) {
         prefs.edit().putInt("status_bar_trigger_width_percent", percent).apply()
     }
 
+    // --- Bottom Trigger ---
+    fun getBottomTriggerEnabled(): Boolean {
+        return prefs.getBoolean("bottom_trigger_enabled", false)
+    }
+
+    fun setBottomTriggerEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("bottom_trigger_enabled", enabled).apply()
+    }
+
+    fun getBottomTriggerCenterGapPercent(): Int {
+        return prefs.getInt("bottom_trigger_center_gap_percent", 40)
+    }
+
+    fun setBottomTriggerCenterGapPercent(percent: Int) {
+        prefs.edit().putInt("bottom_trigger_center_gap_percent", percent).apply()
+    }
+
+    fun getBottomTriggerHeightDp(): Int {
+        return prefs.getInt("bottom_trigger_height_dp", 0)
+    }
+
+    fun setBottomTriggerHeightDp(heightDp: Int) {
+        prefs.edit().putInt("bottom_trigger_height_dp", heightDp).apply()
+    }
+
     // --- Debug Mode ---
     fun getDebugMode(): Boolean {
         return prefs.getBoolean("debug_mode", false)
@@ -96,7 +121,10 @@ class SettingsRepository(context: Context) {
             maxRecentItems = getMaxRecentItems(),
             history = getHistory(),
             statusBarTapEnabled = getStatusBarTapEnabled(),
-            statusBarTriggerWidthPercent = getStatusBarTriggerWidthPercent()
+            statusBarTriggerWidthPercent = getStatusBarTriggerWidthPercent(),
+            bottomTriggerEnabled = getBottomTriggerEnabled(),
+            bottomTriggerCenterGapPercent = getBottomTriggerCenterGapPercent(),
+            bottomTriggerHeightDp = getBottomTriggerHeightDp()
         )
         return gson.toJson(data)
     }
@@ -109,6 +137,9 @@ class SettingsRepository(context: Context) {
         saveHistory(data.history)
         setStatusBarTapEnabled(data.statusBarTapEnabled)
         setStatusBarTriggerWidthPercent(data.statusBarTriggerWidthPercent)
+        setBottomTriggerEnabled(data.bottomTriggerEnabled)
+        setBottomTriggerCenterGapPercent(data.bottomTriggerCenterGapPercent)
+        setBottomTriggerHeightDp(data.bottomTriggerHeightDp)
     }
 
     fun clearAllSettings() {

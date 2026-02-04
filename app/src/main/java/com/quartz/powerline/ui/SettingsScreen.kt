@@ -30,8 +30,9 @@ import com.quartz.powerline.domain.models.AppInfo
 @Composable
 fun SettingsScreen(viewModel: MainViewModel) {
     var maxRecent by remember { mutableStateOf(viewModel.settingsRepository.getMaxRecentItems()) }
-    var statusBarTapEnabled by remember { mutableStateOf(viewModel.settingsRepository.getStatusBarTapEnabled()) }
-    var statusBarTriggerWidthPercent by remember { mutableStateOf(viewModel.settingsRepository.getStatusBarTriggerWidthPercent()) }
+    var bottomTriggerEnabled by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerEnabled()) }
+    var bottomTriggerCenterGapPercent by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerCenterGapPercent()) }
+    var bottomTriggerHeightDp by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerHeightDp()) }
     var debugMode by remember { mutableStateOf(viewModel.settingsRepository.getDebugMode()) }
 
     val context = LocalContext.current
@@ -137,19 +138,19 @@ fun SettingsScreen(viewModel: MainViewModel) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Status Bar Tap Trigger
+                // Bottom Trigger
                 Text("Features", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 ListItem(
-                    headlineContent = { Text("Status Bar Tap Trigger") },
-                    supportingContent = { Text("Tap the top of the screen to open launcher.") },
+                    headlineContent = { Text("Bottom Corners Trigger") },
+                    supportingContent = { Text("Tap the bottom corners of the screen to open launcher.") },
                     trailingContent = {
                         Switch(
-                            checked = statusBarTapEnabled,
+                            checked = bottomTriggerEnabled,
                             onCheckedChange = {
-                                statusBarTapEnabled = it
-                                viewModel.settingsRepository.setStatusBarTapEnabled(it)
+                                bottomTriggerEnabled = it
+                                viewModel.settingsRepository.setBottomTriggerEnabled(it)
                                 if (it && !checkAccessibilityPermission(context)) {
                                     Toast.makeText(context, "Please enable Accessibility Service", Toast.LENGTH_LONG).show()
                                     viewModel.openPermissions()
@@ -158,9 +159,9 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         )
                     },
                     modifier = Modifier.clickable {
-                         val newState = !statusBarTapEnabled
-                         statusBarTapEnabled = newState
-                         viewModel.settingsRepository.setStatusBarTapEnabled(newState)
+                         val newState = !bottomTriggerEnabled
+                         bottomTriggerEnabled = newState
+                         viewModel.settingsRepository.setBottomTriggerEnabled(newState)
                          if (newState && !checkAccessibilityPermission(context)) {
                             Toast.makeText(context, "Please enable Accessibility Service", Toast.LENGTH_LONG).show()
                             viewModel.openPermissions()
@@ -168,20 +169,32 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     }
                 )
 
-                if (statusBarTapEnabled) {
+                if (bottomTriggerEnabled) {
                     ListItem(
-                        headlineContent = { Text("Trigger Width: ${statusBarTriggerWidthPercent}%") },
-                        supportingContent = { Text("Aligns to the right side of the status bar.") },
-                        trailingContent = {
-                            // No content slot here, slider below
-                        }
+                        headlineContent = { Text("Center Gap: ${bottomTriggerCenterGapPercent}%") },
+                        supportingContent = { Text("Percentage of center area to ignore.") },
+                        trailingContent = {}
                     )
                     Slider(
-                        value = statusBarTriggerWidthPercent.toFloat(),
-                        onValueChange = { statusBarTriggerWidthPercent = it.toInt() },
-                        onValueChangeFinished = { viewModel.settingsRepository.setStatusBarTriggerWidthPercent(statusBarTriggerWidthPercent) },
-                        valueRange = 5f..100f,
-                        steps = 19,
+                        value = bottomTriggerCenterGapPercent.toFloat(),
+                        onValueChange = { bottomTriggerCenterGapPercent = it.toInt() },
+                        onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerCenterGapPercent(bottomTriggerCenterGapPercent) },
+                        valueRange = 0f..90f,
+                        steps = 17, // 5% steps roughly
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
+                     ListItem(
+                        headlineContent = { Text("Trigger Height: ${if (bottomTriggerHeightDp == 0) "Auto" else "$bottomTriggerHeightDp dp"}") },
+                        supportingContent = { Text("0 = Auto (Navigation Bar Height)") },
+                        trailingContent = {}
+                    )
+                    Slider(
+                        value = bottomTriggerHeightDp.toFloat(),
+                        onValueChange = { bottomTriggerHeightDp = it.toInt() },
+                        onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerHeightDp(bottomTriggerHeightDp) },
+                        valueRange = 0f..100f,
+                        steps = 19, // 5dp steps
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
                 }
@@ -246,8 +259,9 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         viewModel.settingsRepository.clearAllSettings()
                         // Reload state
                         maxRecent = viewModel.settingsRepository.getMaxRecentItems()
-                        statusBarTapEnabled = viewModel.settingsRepository.getStatusBarTapEnabled()
-                        statusBarTriggerWidthPercent = viewModel.settingsRepository.getStatusBarTriggerWidthPercent()
+                        bottomTriggerEnabled = viewModel.settingsRepository.getBottomTriggerEnabled()
+                        bottomTriggerCenterGapPercent = viewModel.settingsRepository.getBottomTriggerCenterGapPercent()
+                        bottomTriggerHeightDp = viewModel.settingsRepository.getBottomTriggerHeightDp()
                         debugMode = viewModel.settingsRepository.getDebugMode()
                         viewModel.reloadApps()
                         Toast.makeText(context, "Settings reset.", Toast.LENGTH_SHORT).show()

@@ -9,6 +9,9 @@ data class AppBackupData(
     val aliases: Map<String, String>,
     val maxRecentItems: Int,
     val history: List<HistoryItem>,
-    val statusBarTapEnabled: Boolean = false,
-    val statusBarTriggerWidthPercent: Int = 30
+    val statusBarTapEnabled: Boolean = false, // Deprecated / Reused as general toggle? No, clearer to keep for legacy import.
+    val statusBarTriggerWidthPercent: Int = 30, // Deprecated
+    val bottomTriggerEnabled: Boolean = false,
+    val bottomTriggerCenterGapPercent: Int = 40,
+    val bottomTriggerHeightDp: Int = 0 // 0 = Auto
 )

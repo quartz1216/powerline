@@ -24,8 +24,11 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
 
     private lateinit var settingsRepository: SettingsRepository
     private var windowManager: WindowManager? = null
-    private var overlayView: View? = null
-    private var isOverlayAdded = false
+
+    // Bottom Triggers
+    private var leftOverlayView: View? = null
+    private var rightOverlayView: View? = null
+    private var isOverlaysAdded = false
 
     // Touch handling
     private var startY = 0f
@@ -52,60 +55,87 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        if (key == "status_bar_tap_enabled" || key == "debug_mode" || key == "status_bar_trigger_width_percent") {
+        if (key == "bottom_trigger_enabled" ||
+            key == "debug_mode" ||
+            key == "bottom_trigger_center_gap_percent" ||
+            key == "bottom_trigger_height_dp") {
             updateOverlayState()
         }
     }
 
     private fun updateOverlayState() {
-        val enabled = settingsRepository.getStatusBarTapEnabled()
+        val enabled = settingsRepository.getBottomTriggerEnabled()
         val debug = settingsRepository.getDebugMode()
 
         if (enabled || debug) {
             // Ensure overlay exists
-            if (!isOverlayAdded) {
-                createOverlay()
+            if (!isOverlaysAdded) {
+                createOverlays()
             } else {
                 updateOverlayLayout()
             }
             // Update visual (debug color)
-            overlayView?.setBackgroundColor(if (debug) 0x55FF0000 else Color.TRANSPARENT)
+            val color = if (debug) 0x55FF0000 else Color.TRANSPARENT
+            leftOverlayView?.setBackgroundColor(color)
+            rightOverlayView?.setBackgroundColor(color)
         } else {
             // Remove overlay
-            removeOverlay()
+            removeOverlays()
         }
+    }
+
+    private fun getTriggerHeight(): Int {
+        val manualDp = settingsRepository.getBottomTriggerHeightDp()
+        if (manualDp > 0) {
+            val density = resources.displayMetrics.density
+            return (manualDp * density).toInt()
+        }
+        return getNavigationBarHeight()
     }
 
     private fun updateOverlayLayout() {
-        if (!isOverlayAdded || overlayView == null || windowManager == null) return
+        if (!isOverlaysAdded || windowManager == null) return
 
-        val params = overlayView!!.layoutParams as WindowManager.LayoutParams
-
-        val widthPercent = settingsRepository.getStatusBarTriggerWidthPercent()
         val displayMetrics = resources.displayMetrics
-        val width = (displayMetrics.widthPixels * (widthPercent / 100f)).toInt()
+        val screenWidth = displayMetrics.widthPixels
+        val gapPercent = settingsRepository.getBottomTriggerCenterGapPercent()
 
-        params.width = width
-        params.gravity = Gravity.TOP or Gravity.END
+        // Width of one side = (100% - gap%) / 2
+        val widthPercent = (100 - gapPercent) / 2f
+        val width = (screenWidth * (widthPercent / 100f)).toInt()
+        val height = getTriggerHeight()
 
-        try {
-            windowManager?.updateViewLayout(overlayView, params)
-        } catch (e: Exception) {
-            e.printStackTrace()
+        // Update Left
+        if (leftOverlayView != null) {
+            val params = leftOverlayView!!.layoutParams as WindowManager.LayoutParams
+            params.width = width
+            params.height = height
+            params.gravity = Gravity.BOTTOM or Gravity.START
+            try { windowManager?.updateViewLayout(leftOverlayView, params) } catch (e: Exception) { e.printStackTrace() }
+        }
+
+        // Update Right
+        if (rightOverlayView != null) {
+            val params = rightOverlayView!!.layoutParams as WindowManager.LayoutParams
+            params.width = width
+            params.height = height
+            params.gravity = Gravity.BOTTOM or Gravity.END
+            try { windowManager?.updateViewLayout(rightOverlayView, params) } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
-    private fun createOverlay() {
-        if (isOverlayAdded) return
+    private fun createOverlays() {
+        if (isOverlaysAdded) return
 
-        val statusBarHeight = getStatusBarHeight()
-        val height = if (statusBarHeight > 0) statusBarHeight else 60 // Fallback ~24dp
-
-        val widthPercent = settingsRepository.getStatusBarTriggerWidthPercent()
         val displayMetrics = resources.displayMetrics
-        val width = (displayMetrics.widthPixels * (widthPercent / 100f)).toInt()
+        val screenWidth = displayMetrics.widthPixels
+        val gapPercent = settingsRepository.getBottomTriggerCenterGapPercent()
 
-        val params = WindowManager.LayoutParams(
+        val widthPercent = (100 - gapPercent) / 2f
+        val width = (screenWidth * (widthPercent / 100f)).toInt()
+        val height = getTriggerHeight()
+
+        val baseParams = WindowManager.LayoutParams(
             width,
             height,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
@@ -115,11 +145,35 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         )
-        params.gravity = Gravity.TOP or Gravity.END
 
-        val view = FrameLayout(this)
-        view.setBackgroundColor(if (settingsRepository.getDebugMode()) 0x55FF0000 else Color.TRANSPARENT)
+        // Left View
+        val leftView = FrameLayout(this)
+        leftView.setBackgroundColor(if (settingsRepository.getDebugMode()) 0x55FF0000 else Color.TRANSPARENT)
+        setupTouchListener(leftView)
+        val leftParams = WindowManager.LayoutParams().apply { copyFrom(baseParams) }
+        leftParams.gravity = Gravity.BOTTOM or Gravity.START
 
+        // Right View
+        val rightView = FrameLayout(this)
+        rightView.setBackgroundColor(if (settingsRepository.getDebugMode()) 0x55FF0000 else Color.TRANSPARENT)
+        setupTouchListener(rightView)
+        val rightParams = WindowManager.LayoutParams().apply { copyFrom(baseParams) }
+        rightParams.gravity = Gravity.BOTTOM or Gravity.END
+
+        try {
+            windowManager?.addView(leftView, leftParams)
+            leftOverlayView = leftView
+
+            windowManager?.addView(rightView, rightParams)
+            rightOverlayView = rightView
+
+            isOverlaysAdded = true
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun setupTouchListener(view: View) {
         view.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -130,14 +184,11 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
                 }
                 MotionEvent.ACTION_MOVE -> {
                     if (!isGestureTriggered) {
-                        val deltaY = event.rawY - startY
-                        val deltaX = event.rawX - startX
+                        val deltaY = startY - event.rawY // Swipe UP is negative Y, so Start - End > 0
 
-                        // Check for vertical swipe down
-                        // Allow some horizontal movement, but it should be primarily vertical?
-                        // Actually, simplified check: just moving down enough triggers it.
+                        // Check for vertical swipe UP
                         if (deltaY > swipeThreshold) {
-                            performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
+                            launchOverlay()
                             isGestureTriggered = true
                         }
                     }
@@ -150,11 +201,7 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
 
                         // Treat as tap if movement is minimal
                         if (deltaY < touchSlop && deltaX < touchSlop) {
-                            if (settingsRepository.getStatusBarTapEnabled()) {
-                                val intent = Intent(this@StatusBarAccessibilityService, OverlayActivity::class.java)
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                startActivity(intent)
-                            }
+                           launchOverlay()
                         }
                     }
                     true
@@ -162,33 +209,42 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
                 else -> false
             }
         }
+    }
 
+    private fun launchOverlay() {
+         if (settingsRepository.getBottomTriggerEnabled()) {
+            val intent = Intent(this@StatusBarAccessibilityService, OverlayActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        }
+    }
+
+    private fun removeOverlays() {
         try {
-            windowManager?.addView(view, params)
-            overlayView = view
-            isOverlayAdded = true
+            if (leftOverlayView != null) {
+                windowManager?.removeView(leftOverlayView)
+                leftOverlayView = null
+            }
+            if (rightOverlayView != null) {
+                windowManager?.removeView(rightOverlayView)
+                rightOverlayView = null
+            }
+            isOverlaysAdded = false
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-    private fun removeOverlay() {
-        if (isOverlayAdded && overlayView != null) {
-            try {
-                windowManager?.removeView(overlayView)
-                isOverlayAdded = false
-                overlayView = null
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    private fun getStatusBarHeight(): Int {
+    private fun getNavigationBarHeight(): Int {
         var result = 0
-        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        val resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
         if (resourceId > 0) {
             result = resources.getDimensionPixelSize(resourceId)
+        }
+        // Fallback if 0 (e.g. gesture nav might report 0 on some APIs)
+        if (result == 0) {
+            val density = resources.displayMetrics.density
+            result = (48 * density).toInt() // Standard ~48dp
         }
         return result
     }
@@ -203,7 +259,7 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
 
     override fun onDestroy() {
         super.onDestroy()
-        removeOverlay()
+        removeOverlays()
         getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
             .unregisterOnSharedPreferenceChangeListener(this)
     }
