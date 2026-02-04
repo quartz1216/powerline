@@ -17,6 +17,9 @@ class StatusBarAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         settingsRepository = SettingsRepository(this)
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(this, "Powerline Service Connected", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -27,8 +30,15 @@ class StatusBarAccessibilityService : AccessibilityService() {
 
         if (!settingsRepository.getStatusBarTapEnabled() && !isDebug) return
 
-        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED &&
-            event.packageName == "com.android.systemui") {
+        if (isDebug) {
+            val typeName = AccessibilityEvent.eventTypeToString(event.eventType)
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(this, "Event: $typeName, Pkg: ${event.packageName}", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Filter for Click events (or Touch Interaction if supported)
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
 
             val source = event.source ?: return
             try {
@@ -37,7 +47,7 @@ class StatusBarAccessibilityService : AccessibilityService() {
 
                 if (isDebug) {
                     Handler(Looper.getMainLooper()).post {
-                        Toast.makeText(this, "Event: ${event.packageName}, top: ${rect.top}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Click: ${event.packageName}, top: ${rect.top}", Toast.LENGTH_SHORT).show()
                     }
                 }
 
