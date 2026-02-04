@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -65,7 +66,15 @@ fun WelcomeScreen(
     settingsRepository: SettingsRepository,
     onFinish: () -> Unit
 ) {
-    val pagerState = rememberPagerState(pageCount = { 5 })
+    var initialPage by rememberSaveable { mutableStateOf(0) }
+    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { 5 })
+
+    // Update the saved initialPage whenever the page changes, so if the activity restarts,
+    // we start from the last viewed page.
+    LaunchedEffect(pagerState.currentPage) {
+        initialPage = pagerState.currentPage
+    }
+
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
