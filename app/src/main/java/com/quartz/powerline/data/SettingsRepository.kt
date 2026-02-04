@@ -174,6 +174,15 @@ class SettingsRepository(context: Context) {
         prefs.edit().putString("home_screen_text", text).apply()
     }
 
+    // --- Onboarding ---
+    fun getOnboardingCompleted(): Boolean {
+        return prefs.getBoolean("onboarding_completed", false)
+    }
+
+    fun setOnboardingCompleted(completed: Boolean) {
+        prefs.edit().putBoolean("onboarding_completed", completed).apply()
+    }
+
     // --- History ---
     fun getHistory(): List<HistoryItem> {
         val json = prefs.getString("history", "[]")

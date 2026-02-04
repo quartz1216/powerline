@@ -17,6 +17,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.quartz.powerline.PurchaseActivity
+import com.quartz.powerline.WelcomeActivity
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -109,6 +111,26 @@ fun SettingsScreen(
                 // General / Tools
                 Text("General", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
+
+                ListItem(
+                    headlineContent = { Text("Welcome Tutorial") },
+                    supportingContent = { Text("Replay the onboarding introduction.") },
+                    modifier = Modifier.clickable {
+                        context.startActivity(Intent(context, WelcomeActivity::class.java))
+                    }
+                )
+
+                Divider()
+
+                ListItem(
+                    headlineContent = { Text("Premium Features") },
+                    supportingContent = { Text("View purchase options.") },
+                    modifier = Modifier.clickable {
+                        context.startActivity(Intent(context, PurchaseActivity::class.java))
+                    }
+                )
+
+                Divider()
 
                 ListItem(
                     headlineContent = { Text("Appearance") },
