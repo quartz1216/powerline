@@ -28,17 +28,7 @@ class OverlayActivity : ComponentActivity() {
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[MainViewModel::class.java]
 
-        // Apply appearance settings
-        val dimAmount = viewModel.settingsRepository.getOverlayDimAmount()
-        val blurRadius = viewModel.settingsRepository.getOverlayBlurRadius()
-
-        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        val params = window.attributes
-        params.dimAmount = dimAmount
-        if (Build.VERSION.SDK_INT >= 31) {
-            params.blurBehindRadius = blurRadius
-        }
-        window.attributes = params
+        applyWindowAttributes(viewModel)
 
         setContent {
             CommandLauncherTheme(dynamicColor = false) {
@@ -69,5 +59,27 @@ class OverlayActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val viewModel = ViewModelProvider(
+            this,
+            ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        )[MainViewModel::class.java]
+        applyWindowAttributes(viewModel)
+    }
+
+    private fun applyWindowAttributes(viewModel: MainViewModel) {
+        val dimAmount = viewModel.settingsRepository.getOverlayDimAmount()
+        val blurRadius = viewModel.settingsRepository.getOverlayBlurRadius()
+
+        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        val params = window.attributes
+        params.dimAmount = dimAmount
+        if (Build.VERSION.SDK_INT >= 31) {
+            params.blurBehindRadius = blurRadius
+        }
+        window.attributes = params
     }
 }
