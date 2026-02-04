@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -101,6 +102,7 @@ fun LauncherScreen(
                             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                             shape = MaterialTheme.shapes.medium
                         )
+                        .clip(MaterialTheme.shapes.medium)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
