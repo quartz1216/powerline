@@ -103,6 +103,16 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 Text("General", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
 
+                ListItem(
+                    headlineContent = { Text("Appearance") },
+                    supportingContent = { Text("Customize overlay background dimming and blur.") },
+                    modifier = Modifier.clickable {
+                        viewModel.openAppearanceSettings()
+                    }
+                )
+
+                Divider()
+
                 Button(
                     onClick = { viewModel.openPermissions() },
                     modifier = Modifier.fillMaxWidth()

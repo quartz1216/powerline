@@ -93,6 +93,22 @@ class SettingsRepository(context: Context) {
         prefs.edit().putBoolean("overlay_close_on_background_tap", enabled).apply()
     }
 
+    fun getOverlayDimAmount(): Float {
+        return prefs.getFloat("overlay_dim_amount", 0.5f)
+    }
+
+    fun setOverlayDimAmount(amount: Float) {
+        prefs.edit().putFloat("overlay_dim_amount", amount).apply()
+    }
+
+    fun getOverlayBlurRadius(): Int {
+        return prefs.getInt("overlay_blur_radius", 0)
+    }
+
+    fun setOverlayBlurRadius(radius: Int) {
+        prefs.edit().putInt("overlay_blur_radius", radius).apply()
+    }
+
     // --- Debug Mode ---
     fun getDebugMode(): Boolean {
         return prefs.getBoolean("debug_mode", false)
@@ -174,6 +190,8 @@ class SettingsRepository(context: Context) {
             bottomTriggerCenterGapPercent = getBottomTriggerCenterGapPercent(),
             bottomTriggerHeightDp = getBottomTriggerHeightDp(),
             overlayCloseOnBackgroundTap = getOverlayCloseOnBackgroundTap(),
+            overlayDimAmount = getOverlayDimAmount(),
+            overlayBlurRadius = getOverlayBlurRadius(),
             favoriteApps = getFavoriteApps(),
             appWeights = getAppWeights(),
             enableWeightSearch = getEnableWeightSearch(),
@@ -194,6 +212,8 @@ class SettingsRepository(context: Context) {
         setBottomTriggerCenterGapPercent(data.bottomTriggerCenterGapPercent)
         setBottomTriggerHeightDp(data.bottomTriggerHeightDp)
         setOverlayCloseOnBackgroundTap(data.overlayCloseOnBackgroundTap ?: true)
+        setOverlayDimAmount(data.overlayDimAmount ?: 0.5f)
+        setOverlayBlurRadius(data.overlayBlurRadius ?: 0)
         setFavoriteApps(data.favoriteApps)
         setAppWeights(data.appWeights)
         setEnableWeightSearch(data.enableWeightSearch ?: true)

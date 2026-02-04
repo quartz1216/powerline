@@ -15,6 +15,8 @@ data class AppBackupData(
     val bottomTriggerCenterGapPercent: Int = 40,
     val bottomTriggerHeightDp: Int = 0, // 0 = Auto
     val overlayCloseOnBackgroundTap: Boolean? = true,
+    val overlayDimAmount: Float? = 0.5f,
+    val overlayBlurRadius: Int? = 0,
 
     // New Features
     val favoriteApps: Set<String> = emptySet(),

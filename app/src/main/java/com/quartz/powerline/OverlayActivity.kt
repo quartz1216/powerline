@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import android.os.Build
+import android.view.WindowManager
 import androidx.lifecycle.ViewModelProvider
 import com.quartz.powerline.ui.LauncherScreen
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
@@ -25,6 +27,8 @@ class OverlayActivity : ComponentActivity() {
             this,
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[MainViewModel::class.java]
+
+        applyWindowAttributes(viewModel)
 
         setContent {
             CommandLauncherTheme(dynamicColor = false) {
@@ -55,5 +59,31 @@ class OverlayActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val viewModel = ViewModelProvider(
+            this,
+            ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        )[MainViewModel::class.java]
+        applyWindowAttributes(viewModel)
+    }
+
+    private fun applyWindowAttributes(viewModel: MainViewModel) {
+        val dimAmount = viewModel.settingsRepository.getOverlayDimAmount()
+        val blurRadius = viewModel.settingsRepository.getOverlayBlurRadius()
+
+        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        if (Build.VERSION.SDK_INT >= 31) {
+             window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+        }
+
+        val params = window.attributes
+        params.dimAmount = dimAmount
+        if (Build.VERSION.SDK_INT >= 31) {
+            params.blurBehindRadius = blurRadius
+        }
+        window.attributes = params
     }
 }
