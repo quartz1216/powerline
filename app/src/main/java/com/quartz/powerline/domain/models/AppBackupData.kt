@@ -14,5 +14,11 @@ data class AppBackupData(
     val bottomTriggerEnabled: Boolean = false,
     val bottomTriggerCenterGapPercent: Int = 40,
     val bottomTriggerHeightDp: Int = 0, // 0 = Auto
-    val overlayCloseOnBackgroundTap: Boolean? = true
+    val overlayCloseOnBackgroundTap: Boolean? = true,
+
+    // New Features
+    val favoriteApps: Set<String> = emptySet(),
+    val appWeights: Map<String, Int> = emptyMap(),
+    val enableWeightSearch: Boolean? = true,
+    val enablePackageSearch: Boolean? = true
 )
