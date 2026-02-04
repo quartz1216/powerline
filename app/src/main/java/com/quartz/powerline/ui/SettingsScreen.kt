@@ -31,6 +31,7 @@ import com.quartz.powerline.domain.models.AppInfo
 fun SettingsScreen(viewModel: MainViewModel) {
     var maxRecent by remember { mutableStateOf(viewModel.settingsRepository.getMaxRecentItems()) }
     var statusBarTapEnabled by remember { mutableStateOf(viewModel.settingsRepository.getStatusBarTapEnabled()) }
+    var statusBarTriggerWidthPercent by remember { mutableStateOf(viewModel.settingsRepository.getStatusBarTriggerWidthPercent()) }
     var debugMode by remember { mutableStateOf(viewModel.settingsRepository.getDebugMode()) }
 
     val context = LocalContext.current
@@ -167,6 +168,24 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     }
                 )
 
+                if (statusBarTapEnabled) {
+                    ListItem(
+                        headlineContent = { Text("Trigger Width: ${statusBarTriggerWidthPercent}%") },
+                        supportingContent = { Text("Aligns to the right side of the status bar.") },
+                        trailingContent = {
+                            // No content slot here, slider below
+                        }
+                    )
+                    Slider(
+                        value = statusBarTriggerWidthPercent.toFloat(),
+                        onValueChange = { statusBarTriggerWidthPercent = it.toInt() },
+                        onValueChangeFinished = { viewModel.settingsRepository.setStatusBarTriggerWidthPercent(statusBarTriggerWidthPercent) },
+                        valueRange = 5f..100f,
+                        steps = 19,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Debug / Tools
@@ -228,6 +247,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         // Reload state
                         maxRecent = viewModel.settingsRepository.getMaxRecentItems()
                         statusBarTapEnabled = viewModel.settingsRepository.getStatusBarTapEnabled()
+                        statusBarTriggerWidthPercent = viewModel.settingsRepository.getStatusBarTriggerWidthPercent()
                         debugMode = viewModel.settingsRepository.getDebugMode()
                         viewModel.reloadApps()
                         Toast.makeText(context, "Settings reset.", Toast.LENGTH_SHORT).show()

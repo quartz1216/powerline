@@ -51,6 +51,14 @@ class SettingsRepository(context: Context) {
         prefs.edit().putBoolean("status_bar_tap_enabled", enabled).apply()
     }
 
+    fun getStatusBarTriggerWidthPercent(): Int {
+        return prefs.getInt("status_bar_trigger_width_percent", 30)
+    }
+
+    fun setStatusBarTriggerWidthPercent(percent: Int) {
+        prefs.edit().putInt("status_bar_trigger_width_percent", percent).apply()
+    }
+
     // --- Debug Mode ---
     fun getDebugMode(): Boolean {
         return prefs.getBoolean("debug_mode", false)
@@ -87,7 +95,8 @@ class SettingsRepository(context: Context) {
             aliases = getAliases(),
             maxRecentItems = getMaxRecentItems(),
             history = getHistory(),
-            statusBarTapEnabled = getStatusBarTapEnabled()
+            statusBarTapEnabled = getStatusBarTapEnabled(),
+            statusBarTriggerWidthPercent = getStatusBarTriggerWidthPercent()
         )
         return gson.toJson(data)
     }
@@ -99,6 +108,7 @@ class SettingsRepository(context: Context) {
         setMaxRecentItems(data.maxRecentItems)
         saveHistory(data.history)
         setStatusBarTapEnabled(data.statusBarTapEnabled)
+        setStatusBarTriggerWidthPercent(data.statusBarTriggerWidthPercent)
     }
 
     fun clearAllSettings() {

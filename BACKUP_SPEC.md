@@ -19,6 +19,7 @@ The backup file is a standard JSON file.
 | `maxRecentItems` | Integer | The maximum number of recent items to display. |
 | `history` | Array<Object> | The usage history. |
 | `statusBarTapEnabled` | Boolean | Whether the status bar tap trigger is enabled. |
+| `statusBarTriggerWidthPercent` | Integer | The width percentage (0-100) of the status bar trigger area, aligned to the right. |
 
 ### History Item Object
 
@@ -52,6 +53,7 @@ The backup file is a standard JSON file.
       "timestamp": 1715599900000
     }
   ],
-  "statusBarTapEnabled": false
+  "statusBarTapEnabled": false,
+  "statusBarTriggerWidthPercent": 30
 }
 ```

@@ -52,7 +52,7 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        if (key == "status_bar_tap_enabled" || key == "debug_mode") {
+        if (key == "status_bar_tap_enabled" || key == "debug_mode" || key == "status_bar_trigger_width_percent") {
             updateOverlayState()
         }
     }
@@ -65,6 +65,8 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
             // Ensure overlay exists
             if (!isOverlayAdded) {
                 createOverlay()
+            } else {
+                updateOverlayLayout()
             }
             // Update visual (debug color)
             overlayView?.setBackgroundColor(if (debug) 0x55FF0000 else Color.TRANSPARENT)
@@ -74,14 +76,37 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
         }
     }
 
+    private fun updateOverlayLayout() {
+        if (!isOverlayAdded || overlayView == null || windowManager == null) return
+
+        val params = overlayView!!.layoutParams as WindowManager.LayoutParams
+
+        val widthPercent = settingsRepository.getStatusBarTriggerWidthPercent()
+        val displayMetrics = resources.displayMetrics
+        val width = (displayMetrics.widthPixels * (widthPercent / 100f)).toInt()
+
+        params.width = width
+        params.gravity = Gravity.TOP or Gravity.END
+
+        try {
+            windowManager?.updateViewLayout(overlayView, params)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun createOverlay() {
         if (isOverlayAdded) return
 
         val statusBarHeight = getStatusBarHeight()
         val height = if (statusBarHeight > 0) statusBarHeight else 60 // Fallback ~24dp
 
+        val widthPercent = settingsRepository.getStatusBarTriggerWidthPercent()
+        val displayMetrics = resources.displayMetrics
+        val width = (displayMetrics.widthPixels * (widthPercent / 100f)).toInt()
+
         val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
+            width,
             height,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -90,7 +115,7 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         )
-        params.gravity = Gravity.TOP
+        params.gravity = Gravity.TOP or Gravity.END
 
         val view = FrameLayout(this)
         view.setBackgroundColor(if (settingsRepository.getDebugMode()) 0x55FF0000 else Color.TRANSPARENT)

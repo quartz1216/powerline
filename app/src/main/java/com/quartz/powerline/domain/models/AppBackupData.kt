@@ -9,5 +9,6 @@ data class AppBackupData(
     val aliases: Map<String, String>,
     val maxRecentItems: Int,
     val history: List<HistoryItem>,
-    val statusBarTapEnabled: Boolean = false
+    val statusBarTapEnabled: Boolean = false,
+    val statusBarTriggerWidthPercent: Int = 30
 )
