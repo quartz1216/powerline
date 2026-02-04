@@ -47,10 +47,10 @@ class WebSearchPlugin : Plugin {
         // Search Web (Fallthrough)
         results.add(
             SearchResult(
-                id = "web_search",
+                id = "web_search:$trimmedQuery",
                 pluginId = id,
-                title = "Search Web",
-                subtitle = trimmedQuery,
+                title = trimmedQuery,
+                subtitle = "Search Web",
                 type = ResultType.WEB,
                 payload = trimmedQuery
             )
