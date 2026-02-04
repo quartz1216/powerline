@@ -68,7 +68,7 @@ fun LauncherScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             // Spacer to push it down a bit from top status bar
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(64.dp))
 
             CommandBar(
                 query = query,
@@ -115,7 +115,7 @@ fun LauncherScreen(
         ) {
             IconButton(
                 onClick = { showMenu = true },
-                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), CircleShape)
             ) {
                 Icon(Icons.Default.MoreVert, contentDescription = "Menu")
             }
