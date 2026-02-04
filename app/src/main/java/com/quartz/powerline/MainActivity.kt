@@ -7,18 +7,11 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModelProvider
-import com.quartz.powerline.ui.AppearanceSettingsScreen
 import com.quartz.powerline.ui.LauncherScreen
-import com.quartz.powerline.ui.PermissionsScreen
-import com.quartz.powerline.ui.SettingsScreen
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
 import com.quartz.powerline.ui.viewmodel.MainViewModel
-import com.quartz.powerline.ui.viewmodel.Screen
 import com.quartz.powerline.utils.ActionExecutor
 
 class MainActivity : ComponentActivity() {
@@ -37,54 +30,25 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CommandLauncherTheme(dynamicColor = false) {
-                val currentScreen by viewModel.currentScreen.collectAsState()
-
-                when (currentScreen) {
-                    Screen.LAUNCHER -> {
-                        LauncherScreen(
-                            viewModel = viewModel,
-                            onResultClick = { result ->
-                                if (result.payload == "settings_action") {
-                                    viewModel.openSettings()
-                                    viewModel.onQueryChange("")
-                                } else {
-                                    ActionExecutor.execute(this@MainActivity, result, viewModel.settingsRepository, viewModel.pluginManager)
-                                    viewModel.onQueryChange("")
-                                }
-                            }
-                        )
-                    }
-                    Screen.SETTINGS -> {
-                        BackHandler {
-                            viewModel.closeSettings()
-                        }
-                        SettingsScreen(viewModel = viewModel)
-                    }
-                    Screen.APPEARANCE_SETTINGS -> {
-                        BackHandler {
-                            viewModel.closeSettings()
-                        }
-                        AppearanceSettingsScreen(viewModel = viewModel)
-                    }
-                    Screen.PERMISSIONS -> {
-                        BackHandler {
-                            viewModel.closePermissions()
-                        }
-                        PermissionsScreen(onBack = { viewModel.closePermissions() })
-                    }
-                    Screen.PLUGIN_SETTINGS -> {
-                        BackHandler {
-                            viewModel.closeSettings()
-                        }
-                        val pluginId by viewModel.selectedPluginId.collectAsState()
-                        val plugin = pluginId?.let { viewModel.pluginManager.getPlugin(it) }
-                        if (plugin != null) {
-                            com.quartz.powerline.ui.PluginSettingsScreen(viewModel = viewModel, plugin = plugin)
+                // Main Activity only shows Launcher. Settings and Memo are separate Activities.
+                LauncherScreen(
+                    viewModel = viewModel,
+                    onResultClick = { result ->
+                        if (result.payload == "settings_action") {
+                            startActivity(Intent(this, SettingsActivity::class.java))
+                            viewModel.onQueryChange("")
                         } else {
-                            viewModel.closeSettings()
+                            ActionExecutor.execute(this@MainActivity, result, viewModel.settingsRepository, viewModel.pluginManager)
+                            viewModel.onQueryChange("")
                         }
+                    },
+                    onMemoClick = {
+                        startActivity(Intent(this, MemoActivity::class.java))
+                    },
+                    onSettingsClick = {
+                        startActivity(Intent(this, SettingsActivity::class.java))
                     }
-                }
+                )
             }
         }
     }

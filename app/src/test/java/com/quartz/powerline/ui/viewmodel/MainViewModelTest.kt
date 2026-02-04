@@ -56,7 +56,7 @@ class MainViewModelTest {
         // But AppRepository calls packageManager which Robolectric handles.
 
         val results = viewModel.results.first { it.isNotEmpty() }
-        assertEquals(2, results.size) // Calc + Web
+        assertEquals(3, results.size) // Calc + Web + Memo
 
         // Initial selection should be 0
         assertEquals(0, viewModel.selectedIndex.value)
@@ -65,8 +65,16 @@ class MainViewModelTest {
         viewModel.selectNext()
         assertEquals(1, viewModel.selectedIndex.value)
 
-        // Move Down again -> should stay at 1 (last index)
+        // Move Down -> 2
         viewModel.selectNext()
+        assertEquals(2, viewModel.selectedIndex.value)
+
+        // Move Down again -> should stay at 2 (last index)
+        viewModel.selectNext()
+        assertEquals(2, viewModel.selectedIndex.value)
+
+        // Move Up -> 1
+        viewModel.selectPrevious()
         assertEquals(1, viewModel.selectedIndex.value)
 
         // Move Up -> 0

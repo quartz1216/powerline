@@ -3,8 +3,10 @@ package com.quartz.powerline.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,14 +18,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,13 +45,14 @@ import com.quartz.powerline.ui.viewmodel.MainViewModel
 @Composable
 fun LauncherScreen(
     viewModel: MainViewModel,
-    onResultClick: (SearchResult) -> Unit
+    onResultClick: (SearchResult) -> Unit,
+    onMemoClick: () -> Unit,
+    onSettingsClick: () -> Unit
 ) {
     val query by viewModel.query.collectAsState()
     val results by viewModel.results.collectAsState()
     val selectedIndex by viewModel.selectedIndex.collectAsState()
     val listState = rememberLazyListState()
-    var showMenu by remember { mutableStateOf(false) }
     var longPressedResult by remember { mutableStateOf<SearchResult?>(null) }
     val homeScreenText by viewModel.homeScreenText.collectAsState()
     var showHomeTextDialog by remember { mutableStateOf(false) }
@@ -162,24 +162,17 @@ fun LauncherScreen(
             modifier = Modifier.align(Alignment.TopEnd)
         ) {
             IconButton(
-                onClick = { showMenu = true },
+                onClick = onMemoClick,
                 modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), CircleShape)
             ) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                Icon(Icons.Default.Edit, contentDescription = "Memos")
             }
 
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false }
+            IconButton(
+                onClick = onSettingsClick,
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), CircleShape)
             ) {
-                DropdownMenuItem(
-                    text = { Text("Settings") },
-                    leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                    onClick = {
-                        showMenu = false
-                        viewModel.openSettings()
-                    }
-                )
+                Icon(Icons.Default.Settings, contentDescription = "Settings")
             }
         }
 

@@ -3,7 +3,7 @@ package com.quartz.powerline.plugins
 import android.content.Context
 import androidx.compose.runtime.Composable
 import com.quartz.powerline.domain.models.SearchResult
-import com.quartz.powerline.ui.viewmodel.MainViewModel
+import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 
 interface Plugin {
     val id: String
@@ -14,5 +14,5 @@ interface Plugin {
     fun execute(context: Context, result: SearchResult): Boolean
 
     @Composable
-    fun SettingsScreen(viewModel: MainViewModel)
+    fun SettingsScreen(viewModel: SettingsViewModel)
 }

@@ -14,7 +14,7 @@ import com.quartz.powerline.domain.Calculator
 import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.plugins.Plugin
-import com.quartz.powerline.ui.viewmodel.MainViewModel
+import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 import java.util.UUID
 
 class CalculatorPlugin : Plugin {
@@ -51,7 +51,7 @@ class CalculatorPlugin : Plugin {
     }
 
     @Composable
-    override fun SettingsScreen(viewModel: MainViewModel) {
+    override fun SettingsScreen(viewModel: SettingsViewModel) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Text("Calculator Settings", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(16.dp))
