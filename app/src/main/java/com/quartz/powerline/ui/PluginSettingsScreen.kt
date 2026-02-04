@@ -7,17 +7,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.quartz.powerline.plugins.Plugin
-import com.quartz.powerline.ui.viewmodel.MainViewModel
+import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PluginSettingsScreen(viewModel: MainViewModel, plugin: Plugin) {
+fun PluginSettingsScreen(
+    viewModel: SettingsViewModel,
+    plugin: Plugin,
+    onBack: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(plugin.name) },
                 navigationIcon = {
-                    IconButton(onClick = { viewModel.closeSettings() }) {
+                    IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }

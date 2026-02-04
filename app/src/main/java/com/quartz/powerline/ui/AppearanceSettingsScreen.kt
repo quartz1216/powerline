@@ -9,11 +9,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.quartz.powerline.ui.viewmodel.MainViewModel
+import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppearanceSettingsScreen(viewModel: MainViewModel) {
+fun AppearanceSettingsScreen(
+    viewModel: SettingsViewModel,
+    onBack: () -> Unit
+) {
     var overlayDimAmount by remember { mutableStateOf(viewModel.settingsRepository.getOverlayDimAmount()) }
     var overlayBlurRadius by remember { mutableStateOf(viewModel.settingsRepository.getOverlayBlurRadius()) }
 
@@ -22,7 +25,7 @@ fun AppearanceSettingsScreen(viewModel: MainViewModel) {
             TopAppBar(
                 title = { Text("Appearance") },
                 navigationIcon = {
-                    IconButton(onClick = { viewModel.closeSettings() }) {
+                    IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
