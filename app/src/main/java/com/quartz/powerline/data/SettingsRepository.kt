@@ -84,6 +84,14 @@ class SettingsRepository(context: Context) {
         prefs.edit().putInt("bottom_trigger_height_dp", heightDp).apply()
     }
 
+    fun getHideTriggersOnKeyboard(): Boolean {
+        return prefs.getBoolean("hide_triggers_on_keyboard", false)
+    }
+
+    fun setHideTriggersOnKeyboard(enabled: Boolean) {
+        prefs.edit().putBoolean("hide_triggers_on_keyboard", enabled).apply()
+    }
+
     // --- Overlay Behavior ---
     fun getOverlayCloseOnBackgroundTap(): Boolean {
         return prefs.getBoolean("overlay_close_on_background_tap", true)
@@ -198,6 +206,7 @@ class SettingsRepository(context: Context) {
             bottomTriggerEnabled = getBottomTriggerEnabled(),
             bottomTriggerCenterGapPercent = getBottomTriggerCenterGapPercent(),
             bottomTriggerHeightDp = getBottomTriggerHeightDp(),
+            hideTriggersOnKeyboard = getHideTriggersOnKeyboard(),
             overlayCloseOnBackgroundTap = getOverlayCloseOnBackgroundTap(),
             overlayDimAmount = getOverlayDimAmount(),
             overlayBlurRadius = getOverlayBlurRadius(),
@@ -221,6 +230,7 @@ class SettingsRepository(context: Context) {
         setBottomTriggerEnabled(data.bottomTriggerEnabled)
         setBottomTriggerCenterGapPercent(data.bottomTriggerCenterGapPercent)
         setBottomTriggerHeightDp(data.bottomTriggerHeightDp)
+        setHideTriggersOnKeyboard(data.hideTriggersOnKeyboard ?: false)
         setOverlayCloseOnBackgroundTap(data.overlayCloseOnBackgroundTap ?: true)
         setOverlayDimAmount(data.overlayDimAmount ?: 0.5f)
         setOverlayBlurRadius(data.overlayBlurRadius ?: 0)

@@ -36,6 +36,7 @@ fun SettingsScreen(
     var bottomTriggerEnabled by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerEnabled()) }
     var bottomTriggerCenterGapPercent by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerCenterGapPercent()) }
     var bottomTriggerHeightDp by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerHeightDp()) }
+    var hideTriggersOnKeyboard by remember { mutableStateOf(viewModel.settingsRepository.getHideTriggersOnKeyboard()) }
     var overlayCloseOnBackgroundTap by remember { mutableStateOf(viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()) }
     var debugMode by remember { mutableStateOf(viewModel.settingsRepository.getDebugMode()) }
     val homeScreenText by viewModel.homeScreenText.collectAsState()
@@ -72,6 +73,7 @@ fun SettingsScreen(
                     bottomTriggerEnabled = viewModel.settingsRepository.getBottomTriggerEnabled()
                     bottomTriggerCenterGapPercent = viewModel.settingsRepository.getBottomTriggerCenterGapPercent()
                     bottomTriggerHeightDp = viewModel.settingsRepository.getBottomTriggerHeightDp()
+                    hideTriggersOnKeyboard = viewModel.settingsRepository.getHideTriggersOnKeyboard()
                     overlayCloseOnBackgroundTap = viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()
                     debugMode = viewModel.settingsRepository.getDebugMode()
                     // Reload viewmodel data
@@ -249,6 +251,25 @@ fun SettingsScreen(
                         steps = 19, // 5dp steps
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
+
+                    ListItem(
+                        headlineContent = { Text("Hide on Keyboard") },
+                        supportingContent = { Text("Disable triggers when keyboard is visible.") },
+                        trailingContent = {
+                            Switch(
+                                checked = hideTriggersOnKeyboard,
+                                onCheckedChange = {
+                                    hideTriggersOnKeyboard = it
+                                    viewModel.settingsRepository.setHideTriggersOnKeyboard(it)
+                                }
+                            )
+                        },
+                        modifier = Modifier.clickable {
+                            val newState = !hideTriggersOnKeyboard
+                            hideTriggersOnKeyboard = newState
+                            viewModel.settingsRepository.setHideTriggersOnKeyboard(newState)
+                        }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -314,6 +335,7 @@ fun SettingsScreen(
                         bottomTriggerEnabled = viewModel.settingsRepository.getBottomTriggerEnabled()
                         bottomTriggerCenterGapPercent = viewModel.settingsRepository.getBottomTriggerCenterGapPercent()
                         bottomTriggerHeightDp = viewModel.settingsRepository.getBottomTriggerHeightDp()
+                        hideTriggersOnKeyboard = viewModel.settingsRepository.getHideTriggersOnKeyboard()
                         overlayCloseOnBackgroundTap = viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()
                         debugMode = viewModel.settingsRepository.getDebugMode()
                         viewModel.reloadApps()
