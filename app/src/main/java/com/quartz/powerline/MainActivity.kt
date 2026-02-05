@@ -20,9 +20,6 @@ class MainActivity : ComponentActivity() {
 
         checkOverlayPermission()
 
-        // Show persistent notification
-        com.quartz.powerline.utils.NotificationHelper.showNotification(this)
-
         val viewModel = ViewModelProvider(
             this,
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
@@ -69,9 +66,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         if (Build.VERSION.SDK_INT >= 33) { // Android 13+
-            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
-            }
+            // POST_NOTIFICATIONS removed
         }
     }
 

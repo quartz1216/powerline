@@ -1,5 +1,7 @@
 package com.quartz.powerline.ui
 
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -13,20 +15,24 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import com.quartz.powerline.PurchaseActivity
-import com.quartz.powerline.WelcomeActivity
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.quartz.powerline.ui.viewmodel.SettingsViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.quartz.powerline.PurchaseActivity
+import com.quartz.powerline.WelcomeActivity
 import com.quartz.powerline.domain.models.AppInfo
+import com.quartz.powerline.services.StatusBarAccessibilityService
+import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,17 +40,304 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit
 ) {
-    var maxRecent by remember { mutableStateOf(viewModel.settingsRepository.getMaxRecentItems()) }
+    val context = LocalContext.current
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Settings") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            item {
+                Text("General", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ListItem(
+                    headlineContent = { Text("Powerline Advanced") },
+                    supportingContent = { Text("View purchase options.") },
+                    modifier = Modifier.clickable {
+                        context.startActivity(Intent(context, PurchaseActivity::class.java))
+                    }
+                )
+
+                Divider()
+
+                ListItem(
+                    headlineContent = { Text("Overlay") },
+                    supportingContent = { Text("Configure triggers, appearance, and permissions.") },
+                    modifier = Modifier.clickable {
+                        viewModel.openOverlaySettings()
+                    }
+                )
+
+                Divider()
+
+                ListItem(
+                    headlineContent = { Text("Additional Settings") },
+                    supportingContent = { Text("Backup, system tools, and launcher options.") },
+                    modifier = Modifier.clickable {
+                        viewModel.openAdditionalSettings()
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text("Powerline Functions", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            items(viewModel.pluginManager.plugins) { plugin ->
+                ListItem(
+                    headlineContent = { Text(plugin.name) },
+                    supportingContent = { Text(plugin.description) },
+                    modifier = Modifier.clickable {
+                        viewModel.openPluginSettings(plugin.id)
+                    }
+                )
+                Divider()
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                 ListItem(
+                    headlineContent = { Text("Welcome Tutorial") },
+                    supportingContent = { Text("Replay the onboarding introduction.") },
+                    modifier = Modifier.clickable {
+                        context.startActivity(Intent(context, WelcomeActivity::class.java))
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OverlaySettingsSubpage(
+    viewModel: SettingsViewModel,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
     var bottomTriggerEnabled by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerEnabled()) }
-    var bottomTriggerCenterGapPercent by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerCenterGapPercent()) }
-    var bottomTriggerHeightDp by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerHeightDp()) }
-    var hideTriggersOnKeyboard by remember { mutableStateOf(viewModel.settingsRepository.getHideTriggersOnKeyboard()) }
-    var overlayCloseOnBackgroundTap by remember { mutableStateOf(viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()) }
-    var debugMode by remember { mutableStateOf(viewModel.settingsRepository.getDebugMode()) }
+    var dimAmount by remember { mutableStateOf(viewModel.settingsRepository.getOverlayDimAmount()) }
+    var blurRadius by remember { mutableStateOf(viewModel.settingsRepository.getOverlayBlurRadius()) }
+    var centerGap by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerCenterGapPercent()) }
+    var triggerHeight by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerHeightDp()) }
+    var closeOnBgTap by remember { mutableStateOf(viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()) }
+    var hideOnKeyboard by remember { mutableStateOf(viewModel.settingsRepository.getHideTriggersOnKeyboard()) }
+
+    // Auto-enable debug mode (highlight) when entering this screen
+    DisposableEffect(Unit) {
+        viewModel.setDebugMode(true)
+        onDispose {
+            viewModel.setDebugMode(false)
+        }
+    }
+
+    // Lifecycle observer to refresh permissions state when returning from system settings
+    var overlayPermissionGranted by remember { mutableStateOf(false) }
+    var accessibilityPermissionGranted by remember { mutableStateOf(false) }
+
+    fun checkPermissions() {
+        overlayPermissionGranted = Settings.canDrawOverlays(context)
+        accessibilityPermissionGranted = checkAccessibilityPermission(context)
+    }
+
+    // Check initially
+    LaunchedEffect(Unit) {
+        checkPermissions()
+    }
+
+    // Check on resume
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                checkPermissions()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Overlay") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            item {
+                ListItem(
+                    headlineContent = { Text("Enable Overlay & Trigger") },
+                    trailingContent = {
+                        Switch(
+                            checked = bottomTriggerEnabled,
+                            onCheckedChange = {
+                                bottomTriggerEnabled = it
+                                viewModel.settingsRepository.setBottomTriggerEnabled(it)
+                            }
+                        )
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Permissions", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AssistChip(
+                        onClick = {
+                             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
+                             context.startActivity(intent)
+                        },
+                        label = { Text("Overlay") },
+                        leadingIcon = {
+                            Icon(
+                                if (overlayPermissionGranted) Icons.Default.Check else Icons.Default.Close,
+                                contentDescription = null,
+                                tint = if (overlayPermissionGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                            )
+                        }
+                    )
+
+                    AssistChip(
+                        onClick = {
+                             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                             context.startActivity(intent)
+                        },
+                        label = { Text("Accessibility") },
+                        leadingIcon = {
+                             Icon(
+                                if (accessibilityPermissionGranted) Icons.Default.Check else Icons.Default.Close,
+                                contentDescription = null,
+                                tint = if (accessibilityPermissionGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                            )
+                        }
+                    )
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 16.dp))
+
+                Text("Appearance", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Background Dim Amount: ${(dimAmount * 100).toInt()}%")
+                Slider(
+                    value = dimAmount,
+                    onValueChange = { dimAmount = it },
+                    onValueChangeFinished = { viewModel.settingsRepository.setOverlayDimAmount(dimAmount) },
+                    valueRange = 0f..1f
+                )
+
+                Text("Background Blur Amount: $blurRadius px")
+                Slider(
+                    value = blurRadius.toFloat(),
+                    onValueChange = { blurRadius = it.toInt() },
+                    onValueChangeFinished = { viewModel.settingsRepository.setOverlayBlurRadius(blurRadius) },
+                    valueRange = 0f..50f,
+                    steps = 49
+                )
+
+                Divider(modifier = Modifier.padding(vertical = 16.dp))
+
+                Text("Trigger", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Center Gap: $centerGap%")
+                Slider(
+                    value = centerGap.toFloat(),
+                    onValueChange = { centerGap = it.toInt() },
+                    onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerCenterGapPercent(centerGap) },
+                    valueRange = 0f..90f,
+                    steps = 17
+                )
+
+                Text("Trigger Height: ${if (triggerHeight == 0) "Auto" else "$triggerHeight dp"}")
+                Slider(
+                    value = triggerHeight.toFloat(),
+                    onValueChange = { triggerHeight = it.toInt() },
+                    onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerHeightDp(triggerHeight) },
+                    valueRange = 0f..100f,
+                    steps = 19
+                )
+
+                Divider(modifier = Modifier.padding(vertical = 16.dp))
+
+                Text("Features", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                 ListItem(
+                    headlineContent = { Text("Close Overlay on Background Tap") },
+                    trailingContent = {
+                        Switch(
+                            checked = closeOnBgTap,
+                            onCheckedChange = {
+                                closeOnBgTap = it
+                                viewModel.settingsRepository.setOverlayCloseOnBackgroundTap(it)
+                            }
+                        )
+                    }
+                )
+
+                ListItem(
+                    headlineContent = { Text("Disable Trigger on Keyboard") },
+                    trailingContent = {
+                        Switch(
+                            checked = hideOnKeyboard,
+                            onCheckedChange = {
+                                hideOnKeyboard = it
+                                viewModel.settingsRepository.setHideTriggersOnKeyboard(it)
+                            }
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AdditionalSettingsSubpage(
+    viewModel: SettingsViewModel,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
     val homeScreenText by viewModel.homeScreenText.collectAsState()
     var showHomeTextDialog by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
+    // Helper to reload settings after import/reset
+    fun reloadState() {
+        viewModel.reloadApps()
+    }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -70,17 +363,7 @@ fun SettingsScreen(
                 context.contentResolver.openInputStream(it)?.use { `is` ->
                     val json = `is`.bufferedReader().use { reader -> reader.readText() }
                     viewModel.settingsRepository.importSettings(json)
-                    // Reload state from repository
-                    maxRecent = viewModel.settingsRepository.getMaxRecentItems()
-                    bottomTriggerEnabled = viewModel.settingsRepository.getBottomTriggerEnabled()
-                    bottomTriggerCenterGapPercent = viewModel.settingsRepository.getBottomTriggerCenterGapPercent()
-                    bottomTriggerHeightDp = viewModel.settingsRepository.getBottomTriggerHeightDp()
-                    hideTriggersOnKeyboard = viewModel.settingsRepository.getHideTriggersOnKeyboard()
-                    overlayCloseOnBackgroundTap = viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()
-                    debugMode = viewModel.settingsRepository.getDebugMode()
-                    // Reload viewmodel data
-                    viewModel.reloadApps()
-
+                    reloadState()
                     Toast.makeText(context, "Settings imported successfully", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
@@ -92,7 +375,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text("Additional Settings") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -108,57 +391,20 @@ fun SettingsScreen(
                 .padding(16.dp)
         ) {
             item {
-                // General / Tools
-                Text("General", style = MaterialTheme.typography.titleMedium)
+                Text("Launcher", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 ListItem(
-                    headlineContent = { Text("Welcome Tutorial") },
-                    supportingContent = { Text("Replay the onboarding introduction.") },
-                    modifier = Modifier.clickable {
-                        context.startActivity(Intent(context, WelcomeActivity::class.java))
-                    }
-                )
-
-                Divider()
-
-                ListItem(
-                    headlineContent = { Text("Powerline Advanced") },
-                    supportingContent = { Text("View purchase options.") },
-                    modifier = Modifier.clickable {
-                        context.startActivity(Intent(context, PurchaseActivity::class.java))
-                    }
-                )
-
-                Divider()
-
-                ListItem(
-                    headlineContent = { Text("Appearance") },
-                    supportingContent = { Text("Customize overlay background dimming and blur.") },
-                    modifier = Modifier.clickable {
-                        viewModel.openAppearanceSettings()
-                    }
-                )
-
-                Divider()
-
-                ListItem(
-                    headlineContent = { Text("Home Screen Text") },
+                    headlineContent = { Text("Custom Header Text") },
                     supportingContent = { Text(if (homeScreenText.isNotEmpty()) homeScreenText else "Tap to set text") },
                     modifier = Modifier.clickable {
                         showHomeTextDialog = true
                     }
                 )
 
-                Divider()
+                Divider(modifier = Modifier.padding(vertical = 16.dp))
 
-                Button(
-                    onClick = { viewModel.openPermissions() },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Check Permissions & Defaults")
-                }
-
+                Text("Backup", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
@@ -179,147 +425,10 @@ fun SettingsScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Divider(modifier = Modifier.padding(vertical = 16.dp))
 
-                // Max Recent Items
-                Text("Max Recent Items: $maxRecent", style = MaterialTheme.typography.titleMedium)
-                Slider(
-                    value = maxRecent.toFloat(),
-                    onValueChange = { maxRecent = it.toInt() },
-                    onValueChangeFinished = { viewModel.settingsRepository.setMaxRecentItems(maxRecent) },
-                    valueRange = 1f..20f,
-                    steps = 19
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Bottom Trigger
-                Text("Features", style = MaterialTheme.typography.titleMedium)
+                Text("System", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
-
-                ListItem(
-                    headlineContent = { Text("Close Overlay on Background Tap") },
-                    supportingContent = { Text("When the overlay is open, tapping the empty background area will close it.") },
-                    trailingContent = {
-                        Switch(
-                            checked = overlayCloseOnBackgroundTap,
-                            onCheckedChange = {
-                                overlayCloseOnBackgroundTap = it
-                                viewModel.settingsRepository.setOverlayCloseOnBackgroundTap(it)
-                            }
-                        )
-                    },
-                    modifier = Modifier.clickable {
-                        val newState = !overlayCloseOnBackgroundTap
-                        overlayCloseOnBackgroundTap = newState
-                        viewModel.settingsRepository.setOverlayCloseOnBackgroundTap(newState)
-                    }
-                )
-
-                Divider()
-
-                ListItem(
-                    headlineContent = { Text("Bottom Corners Trigger") },
-                    supportingContent = { Text("Tap the bottom corners of the screen to open launcher.") },
-                    trailingContent = {
-                        Switch(
-                            checked = bottomTriggerEnabled,
-                            onCheckedChange = {
-                                bottomTriggerEnabled = it
-                                viewModel.settingsRepository.setBottomTriggerEnabled(it)
-                                if (it && !checkAccessibilityPermission(context)) {
-                                    Toast.makeText(context, "Please enable Accessibility Service", Toast.LENGTH_LONG).show()
-                                    viewModel.openPermissions()
-                                }
-                            }
-                        )
-                    },
-                    modifier = Modifier.clickable {
-                         val newState = !bottomTriggerEnabled
-                         bottomTriggerEnabled = newState
-                         viewModel.settingsRepository.setBottomTriggerEnabled(newState)
-                         if (newState && !checkAccessibilityPermission(context)) {
-                            Toast.makeText(context, "Please enable Accessibility Service", Toast.LENGTH_LONG).show()
-                            viewModel.openPermissions()
-                         }
-                    }
-                )
-
-                if (bottomTriggerEnabled) {
-                    ListItem(
-                        headlineContent = { Text("Center Gap: ${bottomTriggerCenterGapPercent}%") },
-                        supportingContent = { Text("Percentage of center area to ignore.") },
-                        trailingContent = {}
-                    )
-                    Slider(
-                        value = bottomTriggerCenterGapPercent.toFloat(),
-                        onValueChange = { bottomTriggerCenterGapPercent = it.toInt() },
-                        onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerCenterGapPercent(bottomTriggerCenterGapPercent) },
-                        valueRange = 0f..90f,
-                        steps = 17, // 5% steps roughly
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-
-                     ListItem(
-                        headlineContent = { Text("Trigger Height: ${if (bottomTriggerHeightDp == 0) "Auto" else "$bottomTriggerHeightDp dp"}") },
-                        supportingContent = { Text("0 = Auto (Navigation Bar Height)") },
-                        trailingContent = {}
-                    )
-                    Slider(
-                        value = bottomTriggerHeightDp.toFloat(),
-                        onValueChange = { bottomTriggerHeightDp = it.toInt() },
-                        onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerHeightDp(bottomTriggerHeightDp) },
-                        valueRange = 0f..100f,
-                        steps = 19, // 5dp steps
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-
-                    ListItem(
-                        headlineContent = { Text("Hide on Keyboard") },
-                        supportingContent = { Text("Disable triggers when keyboard is visible.") },
-                        trailingContent = {
-                            Switch(
-                                checked = hideTriggersOnKeyboard,
-                                onCheckedChange = {
-                                    hideTriggersOnKeyboard = it
-                                    viewModel.settingsRepository.setHideTriggersOnKeyboard(it)
-                                }
-                            )
-                        },
-                        modifier = Modifier.clickable {
-                            val newState = !hideTriggersOnKeyboard
-                            hideTriggersOnKeyboard = newState
-                            viewModel.settingsRepository.setHideTriggersOnKeyboard(newState)
-                        }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Debug / Tools
-                Text("Debug & Maintenance", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                ListItem(
-                    headlineContent = { Text("Debug Mode") },
-                    supportingContent = { Text("Show toasts for accessibility events.") },
-                    trailingContent = {
-                        Switch(
-                            checked = debugMode,
-                            onCheckedChange = {
-                                debugMode = it
-                                viewModel.settingsRepository.setDebugMode(it)
-                            }
-                        )
-                    },
-                    modifier = Modifier.clickable {
-                        val newState = !debugMode
-                        debugMode = newState
-                        viewModel.settingsRepository.setDebugMode(newState)
-                    }
-                )
-
-                Divider()
 
                 ListItem(
                     headlineContent = { Text("App Info") },
@@ -330,8 +439,6 @@ fun SettingsScreen(
                         context.startActivity(intent)
                     }
                 )
-
-                Divider()
 
                 ListItem(
                     headlineContent = { Text("Restart App") },
@@ -345,42 +452,15 @@ fun SettingsScreen(
                     }
                 )
 
-                Divider()
-
                 ListItem(
                     headlineContent = { Text("Reset App Settings") },
                     supportingContent = { Text("Clears all internal preferences and history.") },
                     modifier = Modifier.clickable {
                         viewModel.settingsRepository.clearAllSettings()
-                        // Reload state
-                        maxRecent = viewModel.settingsRepository.getMaxRecentItems()
-                        bottomTriggerEnabled = viewModel.settingsRepository.getBottomTriggerEnabled()
-                        bottomTriggerCenterGapPercent = viewModel.settingsRepository.getBottomTriggerCenterGapPercent()
-                        bottomTriggerHeightDp = viewModel.settingsRepository.getBottomTriggerHeightDp()
-                        hideTriggersOnKeyboard = viewModel.settingsRepository.getHideTriggersOnKeyboard()
-                        overlayCloseOnBackgroundTap = viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()
-                        debugMode = viewModel.settingsRepository.getDebugMode()
-                        viewModel.reloadApps()
+                        reloadState()
                         Toast.makeText(context, "Settings reset.", Toast.LENGTH_SHORT).show()
                     }
                 )
-
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text("Plugins", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            items(viewModel.pluginManager.plugins) { plugin ->
-                ListItem(
-                    headlineContent = { Text(plugin.name) },
-                    supportingContent = { Text(plugin.description) },
-                    modifier = Modifier.clickable {
-                        viewModel.openPluginSettings(plugin.id)
-                    }
-                )
-                Divider()
             }
         }
 
@@ -393,6 +473,55 @@ fun SettingsScreen(
                     showHomeTextDialog = false
                 }
             )
+        }
+    }
+}
+
+// Reuse existing dialogs
+@Composable
+fun EditHomeScreenTextDialog(
+    initialText: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var text by remember { mutableStateOf(initialText) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Edit Home Screen Text", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text("Text") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    text = "Leave empty to hide.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    Button(
+                        onClick = { onSave(text) }
+                    ) { Text("Save") }
+                }
+            }
         }
     }
 }
@@ -513,50 +642,3 @@ fun AddAliasDialog(
     }
 }
 
-@Composable
-fun EditHomeScreenTextDialog(
-    initialText: String,
-    onDismiss: () -> Unit,
-    onSave: (String) -> Unit
-) {
-    var text by remember { mutableStateOf(initialText) }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Edit Home Screen Text", style = MaterialTheme.typography.titleLarge)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    label = { Text("Text") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Text(
-                    text = "Leave empty to hide.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
-                    Button(
-                        onClick = { onSave(text) }
-                    ) { Text("Save") }
-                }
-            }
-        }
-    }
-}

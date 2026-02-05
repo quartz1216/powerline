@@ -11,6 +11,8 @@ import com.quartz.powerline.ui.AppearanceSettingsScreen
 import com.quartz.powerline.ui.PermissionsScreen
 import com.quartz.powerline.ui.PluginSettingsScreen
 import com.quartz.powerline.ui.SettingsScreen
+import com.quartz.powerline.ui.OverlaySettingsSubpage
+import com.quartz.powerline.ui.AdditionalSettingsSubpage
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
 import com.quartz.powerline.ui.viewmodel.SettingsNav
 import com.quartz.powerline.ui.viewmodel.SettingsViewModel
@@ -22,7 +24,7 @@ class SettingsActivity : ComponentActivity() {
         val viewModel = ViewModelProvider(this)[SettingsViewModel::class.java]
 
         setContent {
-            CommandLauncherTheme(dynamicColor = false) {
+            CommandLauncherTheme(dynamicColor = true) {
                 val currentNav by viewModel.currentNav.collectAsState()
 
                 // Handle system back button to navigate within settings or finish activity
@@ -37,6 +39,18 @@ class SettingsActivity : ComponentActivity() {
                         SettingsScreen(
                             viewModel = viewModel,
                             onBack = { finish() }
+                        )
+                    }
+                    SettingsNav.OVERLAY -> {
+                        OverlaySettingsSubpage(
+                            viewModel = viewModel,
+                            onBack = { viewModel.navigateBack() }
+                        )
+                    }
+                    SettingsNav.ADDITIONAL -> {
+                        AdditionalSettingsSubpage(
+                            viewModel = viewModel,
+                            onBack = { viewModel.navigateBack() }
                         )
                     }
                     SettingsNav.APPEARANCE -> {
