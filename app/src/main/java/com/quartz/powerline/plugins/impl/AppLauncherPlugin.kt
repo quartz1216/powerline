@@ -23,6 +23,7 @@ import com.quartz.powerline.ui.AddAliasDialog
 import com.quartz.powerline.ui.HiddenAppsDialog
 import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 import kotlinx.coroutines.flow.StateFlow
+import kotlin.math.max
 
 class AppLauncherPlugin(
     private val settingsRepository: SettingsRepository,
@@ -47,45 +48,50 @@ class AppLauncherPlugin(
         val enableWeightSearch = settingsRepository.getEnableWeightSearch()
         val enablePackageSearch = settingsRepository.getEnablePackageSearch()
 
-        // Legacy history scores (kept for compatibility or mixed usage)
-        val history = settingsRepository.getHistory()
-        val historyScores = history.groupingBy { it.id }.eachCount()
-
         val aliasPackage = aliases[trimmedQuery]
 
         val appMatches = visibleApps.mapNotNull { app ->
             val isFavorite = favorites.contains(app.packageName)
             val isAlias = aliasPackage == app.packageName
-            val fuzzyScore = fuzzyMatch(trimmedQuery, app.label)
-            val pkgScore = if (enablePackageSearch) fuzzyMatch(trimmedQuery, app.packageName) else 0
 
-            var baseScore = 0
+            var finalScore = 0
             var matched = false
 
-            // Priority: Favorite > Alias > Name > Package
-            if (isFavorite && (fuzzyScore > 0 || isAlias || pkgScore > 0)) {
-                baseScore = 1_000_000 + fuzzyScore
+            if (isAlias) {
+                finalScore = 500_000
                 matched = true
-            } else if (isAlias) {
-                baseScore = 500_000
-                matched = true
-            } else if (fuzzyScore > 0) {
-                baseScore = fuzzyScore * 100 // Scale up to separate from package matches
-                matched = true
-            } else if (pkgScore > 0) {
-                baseScore = pkgScore // Lowest priority
-                matched = true
+            } else {
+                val nameScore = fuzzyMatch(trimmedQuery, app.label)
+
+                var pkgScore = 0
+                if (enablePackageSearch) {
+                    val searchPkg = if (app.packageName.contains('.')) {
+                        app.packageName.substringAfter('.')
+                    } else {
+                        app.packageName
+                    }
+                    pkgScore = fuzzyMatch(trimmedQuery, searchPkg)
+                }
+
+                val matchScore = max(nameScore, pkgScore)
+
+                if (matchScore > 0) {
+                    var baseScore = matchScore
+
+                    if (enableWeightSearch) {
+                        baseScore += (weights[app.packageName] ?: 0)
+                    }
+
+                    if (isFavorite) {
+                        baseScore += 100_000
+                    }
+
+                    finalScore = baseScore
+                    matched = true
+                }
             }
 
             if (matched) {
-                var finalScore = baseScore
-                if (enableWeightSearch) {
-                    val weight = weights[app.packageName] ?: 0
-                    finalScore += weight
-                }
-                // Add history score as a tie breaker or boost
-                finalScore += (historyScores[app.packageName] ?: 0)
-
                 app to finalScore
             } else {
                 null
@@ -96,10 +102,10 @@ class AppLauncherPlugin(
         )
 
         return appMatches.map { (app, _) ->
-            val subtitle = when {
-                aliasPackage == app.packageName -> "Alias"
-                app.packageName == trimmedQuery || app.packageName.contains(trimmedQuery, ignoreCase = true) -> app.packageName
-                else -> "Application"
+            val subtitle = if (aliasPackage == app.packageName) {
+                "Alias: ${app.packageName}"
+            } else {
+                app.packageName
             }
 
             SearchResult(
@@ -119,20 +125,22 @@ class AppLauncherPlugin(
         if (query.isEmpty()) return 0
         val q = query.lowercase()
         val t = target.lowercase()
-        if (t == q) return 1000
-        if (t.startsWith(q)) return 100
-        if (t.contains(q)) return 50
+
+        // Exact, Prefix, Substring
+        if (t.contains(q)) return 100
+
+        // Discontinuous (Subsequence)
         var qIdx = 0
         var tIdx = 0
-        var matches = 0
         while (qIdx < q.length && tIdx < t.length) {
             if (q[qIdx] == t[tIdx]) {
-                matches++
                 qIdx++
             }
             tIdx++
         }
-        return if (matches == q.length) 10 else 0
+        if (qIdx == q.length) return 50
+
+        return 0
     }
 
     override fun execute(context: Context, result: SearchResult): Boolean {
@@ -145,14 +153,27 @@ class AppLauncherPlugin(
                 if (settingsRepository.getEnableWeightSearch()) {
                     val weights = settingsRepository.getAppWeights().toMutableMap()
 
-                    // Decay all
-                    for ((pkg, w) in weights) {
-                        weights[pkg] = (w * 0.95).toInt()
-                    }
+                    // Decay all existing weights and add newly executed app if missing
+                    val allApps = weights.keys.toMutableSet()
+                    allApps.add(result.packageName)
 
-                    // Boost current
-                    val currentWeight = weights[result.packageName] ?: 0
-                    weights[result.packageName] = currentWeight + 50
+                    for (pkg in allApps) {
+                        val current = weights[pkg] ?: 0
+                        var next = (current * 0.95).toInt()
+
+                        if (pkg == result.packageName) {
+                            next += 5
+                        }
+
+                        // Optional: Clean up 0 weights to keep map small?
+                        // Requirement doesn't say, but keeping them allows them to decay properly if they were high.
+                        // However, 0 * 0.95 is 0.
+                        if (next > 0) {
+                            weights[pkg] = next
+                        } else {
+                            weights.remove(pkg)
+                        }
+                    }
 
                     settingsRepository.setAppWeights(weights)
                 }
