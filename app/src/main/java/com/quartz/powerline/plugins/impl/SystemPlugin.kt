@@ -2,6 +2,8 @@ package com.quartz.powerline.plugins.impl
 
 import android.content.Context
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +20,7 @@ class SystemPlugin : Plugin {
     override val id = "system"
     override val name = "System"
     override val description = "System commands and settings"
+    override val icon = Icons.Default.Settings
 
     override fun search(query: String, context: Context): List<SearchResult> {
         if (query.trim().lowercase() == "settings") {

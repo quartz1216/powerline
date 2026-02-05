@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,6 +30,7 @@ class MemoPlugin : Plugin {
     override val id = "memo"
     override val name = "Memo"
     override val description = "Save quick notes"
+    override val icon = Icons.Default.Edit
 
     override fun search(query: String, context: Context): List<SearchResult> {
         if (query.isBlank()) return emptyList()

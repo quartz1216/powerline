@@ -14,9 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -66,27 +64,23 @@ fun SettingsScreen(
 
                 ListItem(
                     headlineContent = { Text("Powerline Advanced") },
-                    supportingContent = { Text("View purchase options.") },
+                    leadingContent = { Icon(Icons.Default.Star, contentDescription = null) },
                     modifier = Modifier.clickable {
                         context.startActivity(Intent(context, PurchaseActivity::class.java))
                     }
                 )
 
-                Divider()
-
                 ListItem(
                     headlineContent = { Text("Overlay Settings") },
-                    supportingContent = { Text("Configure triggers, appearance, and permissions.") },
+                    leadingContent = { Icon(Icons.Default.Layers, contentDescription = null) },
                     modifier = Modifier.clickable {
                         viewModel.openOverlaySettings()
                     }
                 )
 
-                Divider()
-
                 ListItem(
                     headlineContent = { Text("Additional Settings") },
-                    supportingContent = { Text("Backup, system tools, and launcher options.") },
+                    leadingContent = { Icon(Icons.Default.Settings, contentDescription = null) },
                     modifier = Modifier.clickable {
                         viewModel.openAdditionalSettings()
                     }
@@ -101,12 +95,11 @@ fun SettingsScreen(
             items(viewModel.pluginManager.plugins) { plugin ->
                 ListItem(
                     headlineContent = { Text(plugin.name) },
-                    supportingContent = { Text(plugin.description) },
+                    leadingContent = { Icon(plugin.icon, contentDescription = null) },
                     modifier = Modifier.clickable {
                         viewModel.openPluginSettings(plugin.id)
                     }
                 )
-                Divider()
             }
 
             item {
@@ -186,6 +179,7 @@ fun OverlaySettingsSubpage(
             item {
                 ListItem(
                     headlineContent = { Text("Enable Overlay & Trigger") },
+                    leadingContent = { Icon(Icons.Default.PowerSettingsNew, contentDescription = null) },
                     trailingContent = {
                         Switch(
                             checked = bottomTriggerEnabled,
@@ -221,58 +215,76 @@ fun OverlaySettingsSubpage(
                 }
 
                 if (bottomTriggerEnabled) {
-                    Divider(modifier = Modifier.padding(vertical = 16.dp))
-
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text("Appearance", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Text("Background Dim Amount: ${(dimAmount * 100).toInt()}%")
-                    Slider(
-                        value = dimAmount,
-                        onValueChange = { dimAmount = it },
-                        onValueChangeFinished = { viewModel.settingsRepository.setOverlayDimAmount(dimAmount) },
-                        valueRange = 0f..1f
+                    ListItem(
+                        headlineContent = { Text("Background Dim Amount: ${(dimAmount * 100).toInt()}%") },
+                        supportingContent = {
+                            Slider(
+                                value = dimAmount,
+                                onValueChange = { dimAmount = it },
+                                onValueChangeFinished = { viewModel.settingsRepository.setOverlayDimAmount(dimAmount) },
+                                valueRange = 0f..1f
+                            )
+                        },
+                        leadingContent = { Icon(Icons.Default.Opacity, contentDescription = null) }
                     )
 
-                    Text("Background Blur Amount: $blurRadius px")
-                    Slider(
-                        value = blurRadius.toFloat(),
-                        onValueChange = { blurRadius = it.toInt() },
-                        onValueChangeFinished = { viewModel.settingsRepository.setOverlayBlurRadius(blurRadius) },
-                        valueRange = 0f..50f,
-                        steps = 49
+                    ListItem(
+                        headlineContent = { Text("Background Blur Amount: $blurRadius px") },
+                        supportingContent = {
+                            Slider(
+                                value = blurRadius.toFloat(),
+                                onValueChange = { blurRadius = it.toInt() },
+                                onValueChangeFinished = { viewModel.settingsRepository.setOverlayBlurRadius(blurRadius) },
+                                valueRange = 0f..50f,
+                                steps = 49
+                            )
+                        },
+                        leadingContent = { Icon(Icons.Default.BlurOn, contentDescription = null) }
                     )
 
-                    Divider(modifier = Modifier.padding(vertical = 16.dp))
-
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text("Trigger", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Text("Center Gap: $centerGap%")
-                    Slider(
-                        value = centerGap.toFloat(),
-                        onValueChange = { centerGap = it.toInt() },
-                        onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerCenterGapPercent(centerGap) },
-                        valueRange = 0f..90f,
-                        steps = 17
+                    ListItem(
+                        headlineContent = { Text("Center Gap: $centerGap%") },
+                        supportingContent = {
+                            Slider(
+                                value = centerGap.toFloat(),
+                                onValueChange = { centerGap = it.toInt() },
+                                onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerCenterGapPercent(centerGap) },
+                                valueRange = 0f..90f,
+                                steps = 17
+                            )
+                        },
+                        leadingContent = { Icon(Icons.Default.SpaceBar, contentDescription = null) }
                     )
 
-                    Text("Trigger Height: ${if (triggerHeight == 0) "Auto" else "$triggerHeight dp"}")
-                    Slider(
-                        value = triggerHeight.toFloat(),
-                        onValueChange = { triggerHeight = it.toInt() },
-                        onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerHeightDp(triggerHeight) },
-                        valueRange = 0f..100f,
-                        steps = 19
+                    ListItem(
+                        headlineContent = { Text("Trigger Height: ${if (triggerHeight == 0) "Auto" else "$triggerHeight dp"}") },
+                        supportingContent = {
+                            Slider(
+                                value = triggerHeight.toFloat(),
+                                onValueChange = { triggerHeight = it.toInt() },
+                                onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerHeightDp(triggerHeight) },
+                                valueRange = 0f..100f,
+                                steps = 19
+                            )
+                        },
+                        leadingContent = { Icon(Icons.Default.Height, contentDescription = null) }
                     )
 
-                    Divider(modifier = Modifier.padding(vertical = 16.dp))
-
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text("Features", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
 
                      ListItem(
                         headlineContent = { Text("Close Overlay on Background Tap") },
+                        leadingContent = { Icon(Icons.Default.TouchApp, contentDescription = null) },
                         trailingContent = {
                             Switch(
                                 checked = closeOnBgTap,
@@ -286,6 +298,7 @@ fun OverlaySettingsSubpage(
 
                     ListItem(
                         headlineContent = { Text("Disable Trigger on Keyboard") },
+                        leadingContent = { Icon(Icons.Default.KeyboardHide, contentDescription = null) },
                         trailingContent = {
                             Switch(
                                 checked = hideOnKeyboard,
@@ -373,44 +386,35 @@ fun AdditionalSettingsSubpage(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 ListItem(
-                    headlineContent = { Text("Custom Header Text") },
-                    supportingContent = { Text(if (homeScreenText.isNotEmpty()) homeScreenText else "Tap to set text") },
+                    headlineContent = { Text("Custom Header: ${homeScreenText.ifEmpty { "(Not set)" }}") },
+                    leadingContent = { Icon(Icons.Default.Title, contentDescription = null) },
                     modifier = Modifier.clickable {
                         showHomeTextDialog = true
                     }
                 )
 
-                Divider(modifier = Modifier.padding(vertical = 16.dp))
-
+                Spacer(modifier = Modifier.height(16.dp))
                 Text("Backup", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { exportLauncher.launch("powerline_backup.json") },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Export Settings")
-                    }
-                    OutlinedButton(
-                        onClick = { importLauncher.launch(arrayOf("application/json")) },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Import Settings")
-                    }
-                }
+                ListItem(
+                    headlineContent = { Text("Export Settings") },
+                    leadingContent = { Icon(Icons.Default.FileUpload, contentDescription = null) },
+                    modifier = Modifier.clickable { exportLauncher.launch("powerline_backup.json") }
+                )
+                ListItem(
+                    headlineContent = { Text("Import Settings") },
+                    leadingContent = { Icon(Icons.Default.FileDownload, contentDescription = null) },
+                    modifier = Modifier.clickable { importLauncher.launch(arrayOf("application/json")) }
+                )
 
-                Divider(modifier = Modifier.padding(vertical = 16.dp))
-
+                Spacer(modifier = Modifier.height(16.dp))
                 Text("System", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 ListItem(
                     headlineContent = { Text("Welcome Tutorial") },
-                    supportingContent = { Text("Replay the onboarding introduction.") },
+                    leadingContent = { Icon(Icons.Default.Help, contentDescription = null) },
                     modifier = Modifier.clickable {
                         context.startActivity(Intent(context, WelcomeActivity::class.java))
                     }
@@ -418,6 +422,7 @@ fun AdditionalSettingsSubpage(
 
                 ListItem(
                     headlineContent = { Text("App Info") },
+                    leadingContent = { Icon(Icons.Default.Info, contentDescription = null) },
                     modifier = Modifier.clickable {
                         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                             data = Uri.parse("package:${context.packageName}")
@@ -428,6 +433,7 @@ fun AdditionalSettingsSubpage(
 
                 ListItem(
                     headlineContent = { Text("Restart App") },
+                    leadingContent = { Icon(Icons.Default.Refresh, contentDescription = null) },
                     modifier = Modifier.clickable {
                         val pm = context.packageManager
                         val intent = pm.getLaunchIntentForPackage(context.packageName)
@@ -440,7 +446,7 @@ fun AdditionalSettingsSubpage(
 
                 ListItem(
                     headlineContent = { Text("Reset App Settings") },
-                    supportingContent = { Text("Clears all internal preferences and history.") },
+                    leadingContent = { Icon(Icons.Default.DeleteForever, contentDescription = null) },
                     modifier = Modifier.clickable {
                         viewModel.settingsRepository.clearAllSettings()
                         reloadState()

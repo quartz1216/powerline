@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +33,7 @@ class AppLauncherPlugin(
     override val id = "app_launcher"
     override val name = "Apps"
     override val description = "Search and launch installed applications"
+    override val icon = Icons.Default.Apps
 
     override fun search(query: String, context: Context): List<SearchResult> {
         val apps = installedAppsFlow.value
