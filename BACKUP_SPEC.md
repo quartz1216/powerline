@@ -1,6 +1,6 @@
 # Settings Backup Specification
 
-This document describes the JSON format used for importing and exporting settings in the Command Launcher app.
+This document describes the JSON format used for importing and exporting settings in the Powerline Launcher app.
 
 ## File Format
 

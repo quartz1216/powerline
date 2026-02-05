@@ -123,7 +123,7 @@ fun SettingsScreen(
                 Divider()
 
                 ListItem(
-                    headlineContent = { Text("Premium Features") },
+                    headlineContent = { Text("Powerline Advanced") },
                     supportingContent = { Text("View purchase options.") },
                     modifier = Modifier.clickable {
                         context.startActivity(Intent(context, PurchaseActivity::class.java))

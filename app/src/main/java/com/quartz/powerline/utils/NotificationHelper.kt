@@ -22,10 +22,10 @@ object NotificationHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Command Launcher Overlay",
+                "Powerline Launcher Overlay",
                 NotificationManager.IMPORTANCE_LOW // Low importance = no sound/peek, just in shade
             ).apply {
-                description = "Tap to open Command Launcher"
+                description = "Tap to open Powerline Launcher"
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -43,7 +43,7 @@ object NotificationHelper {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_search)
-            .setContentTitle("Command Launcher")
+            .setContentTitle("Powerline Launcher")
             .setContentText("Tap to search...")
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
