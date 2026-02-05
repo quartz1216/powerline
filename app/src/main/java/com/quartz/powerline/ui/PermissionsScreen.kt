@@ -1,6 +1,7 @@
 package com.quartz.powerline.ui
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.quartz.powerline.services.StatusBarAccessibilityService
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -171,7 +173,16 @@ fun checkDefaultHome(context: Context): Boolean {
 }
 
 fun checkAccessibilityPermission(context: Context): Boolean {
-    val serviceName = "${context.packageName}/.services.StatusBarAccessibilityService"
-    val enabledServices = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
-    return enabledServices?.contains(serviceName) == true
+    val expectedComponentName = ComponentName(context, StatusBarAccessibilityService::class.java)
+    val enabledServices = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
+    val colonSplitter = android.text.TextUtils.SimpleStringSplitter(':')
+    colonSplitter.setString(enabledServices)
+    while (colonSplitter.hasNext()) {
+        val componentNameString = colonSplitter.next()
+        val enabledComponent = ComponentName.unflattenFromString(componentNameString)
+        if (enabledComponent != null && enabledComponent == expectedComponentName) {
+            return true
+        }
+    }
+    return false
 }

@@ -75,7 +75,7 @@ fun SettingsScreen(
                 Divider()
 
                 ListItem(
-                    headlineContent = { Text("Overlay") },
+                    headlineContent = { Text("Overlay Settings") },
                     supportingContent = { Text("Configure triggers, appearance, and permissions.") },
                     modifier = Modifier.clickable {
                         viewModel.openOverlaySettings()
@@ -111,13 +111,6 @@ fun SettingsScreen(
 
             item {
                 Spacer(modifier = Modifier.height(24.dp))
-                 ListItem(
-                    headlineContent = { Text("Welcome Tutorial") },
-                    supportingContent = { Text("Replay the onboarding introduction.") },
-                    modifier = Modifier.clickable {
-                        context.startActivity(Intent(context, WelcomeActivity::class.java))
-                    }
-                )
             }
         }
     }
@@ -244,81 +237,83 @@ fun OverlaySettingsSubpage(
                     )
                 }
 
-                Divider(modifier = Modifier.padding(vertical = 16.dp))
+                if (bottomTriggerEnabled) {
+                    Divider(modifier = Modifier.padding(vertical = 16.dp))
 
-                Text("Appearance", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.height(8.dp))
+                    Text("Appearance", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Text("Background Dim Amount: ${(dimAmount * 100).toInt()}%")
-                Slider(
-                    value = dimAmount,
-                    onValueChange = { dimAmount = it },
-                    onValueChangeFinished = { viewModel.settingsRepository.setOverlayDimAmount(dimAmount) },
-                    valueRange = 0f..1f
-                )
+                    Text("Background Dim Amount: ${(dimAmount * 100).toInt()}%")
+                    Slider(
+                        value = dimAmount,
+                        onValueChange = { dimAmount = it },
+                        onValueChangeFinished = { viewModel.settingsRepository.setOverlayDimAmount(dimAmount) },
+                        valueRange = 0f..1f
+                    )
 
-                Text("Background Blur Amount: $blurRadius px")
-                Slider(
-                    value = blurRadius.toFloat(),
-                    onValueChange = { blurRadius = it.toInt() },
-                    onValueChangeFinished = { viewModel.settingsRepository.setOverlayBlurRadius(blurRadius) },
-                    valueRange = 0f..50f,
-                    steps = 49
-                )
+                    Text("Background Blur Amount: $blurRadius px")
+                    Slider(
+                        value = blurRadius.toFloat(),
+                        onValueChange = { blurRadius = it.toInt() },
+                        onValueChangeFinished = { viewModel.settingsRepository.setOverlayBlurRadius(blurRadius) },
+                        valueRange = 0f..50f,
+                        steps = 49
+                    )
 
-                Divider(modifier = Modifier.padding(vertical = 16.dp))
+                    Divider(modifier = Modifier.padding(vertical = 16.dp))
 
-                Text("Trigger", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.height(8.dp))
+                    Text("Trigger", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Text("Center Gap: $centerGap%")
-                Slider(
-                    value = centerGap.toFloat(),
-                    onValueChange = { centerGap = it.toInt() },
-                    onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerCenterGapPercent(centerGap) },
-                    valueRange = 0f..90f,
-                    steps = 17
-                )
+                    Text("Center Gap: $centerGap%")
+                    Slider(
+                        value = centerGap.toFloat(),
+                        onValueChange = { centerGap = it.toInt() },
+                        onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerCenterGapPercent(centerGap) },
+                        valueRange = 0f..90f,
+                        steps = 17
+                    )
 
-                Text("Trigger Height: ${if (triggerHeight == 0) "Auto" else "$triggerHeight dp"}")
-                Slider(
-                    value = triggerHeight.toFloat(),
-                    onValueChange = { triggerHeight = it.toInt() },
-                    onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerHeightDp(triggerHeight) },
-                    valueRange = 0f..100f,
-                    steps = 19
-                )
+                    Text("Trigger Height: ${if (triggerHeight == 0) "Auto" else "$triggerHeight dp"}")
+                    Slider(
+                        value = triggerHeight.toFloat(),
+                        onValueChange = { triggerHeight = it.toInt() },
+                        onValueChangeFinished = { viewModel.settingsRepository.setBottomTriggerHeightDp(triggerHeight) },
+                        valueRange = 0f..100f,
+                        steps = 19
+                    )
 
-                Divider(modifier = Modifier.padding(vertical = 16.dp))
+                    Divider(modifier = Modifier.padding(vertical = 16.dp))
 
-                Text("Features", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.height(8.dp))
+                    Text("Features", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                 ListItem(
-                    headlineContent = { Text("Close Overlay on Background Tap") },
-                    trailingContent = {
-                        Switch(
-                            checked = closeOnBgTap,
-                            onCheckedChange = {
-                                closeOnBgTap = it
-                                viewModel.settingsRepository.setOverlayCloseOnBackgroundTap(it)
-                            }
-                        )
-                    }
-                )
+                     ListItem(
+                        headlineContent = { Text("Close Overlay on Background Tap") },
+                        trailingContent = {
+                            Switch(
+                                checked = closeOnBgTap,
+                                onCheckedChange = {
+                                    closeOnBgTap = it
+                                    viewModel.settingsRepository.setOverlayCloseOnBackgroundTap(it)
+                                }
+                            )
+                        }
+                    )
 
-                ListItem(
-                    headlineContent = { Text("Disable Trigger on Keyboard") },
-                    trailingContent = {
-                        Switch(
-                            checked = hideOnKeyboard,
-                            onCheckedChange = {
-                                hideOnKeyboard = it
-                                viewModel.settingsRepository.setHideTriggersOnKeyboard(it)
-                            }
-                        )
-                    }
-                )
+                    ListItem(
+                        headlineContent = { Text("Disable Trigger on Keyboard") },
+                        trailingContent = {
+                            Switch(
+                                checked = hideOnKeyboard,
+                                onCheckedChange = {
+                                    hideOnKeyboard = it
+                                    viewModel.settingsRepository.setHideTriggersOnKeyboard(it)
+                                }
+                            )
+                        }
+                    )
+                }
             }
         }
     }
@@ -429,6 +424,14 @@ fun AdditionalSettingsSubpage(
 
                 Text("System", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
+
+                ListItem(
+                    headlineContent = { Text("Welcome Tutorial") },
+                    supportingContent = { Text("Replay the onboarding introduction.") },
+                    modifier = Modifier.clickable {
+                        context.startActivity(Intent(context, WelcomeActivity::class.java))
+                    }
+                )
 
                 ListItem(
                     headlineContent = { Text("App Info") },
