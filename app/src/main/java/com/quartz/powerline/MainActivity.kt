@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            CommandLauncherTheme(dynamicColor = false) {
+            CommandLauncherTheme(dynamicColor = true) {
                 // Main Activity only shows Launcher. Settings and Memo are separate Activities.
                 LauncherScreen(
                     viewModel = viewModel,
