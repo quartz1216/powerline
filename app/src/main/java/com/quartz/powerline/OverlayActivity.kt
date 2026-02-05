@@ -32,7 +32,7 @@ class OverlayActivity : ComponentActivity() {
         applyWindowAttributes(viewModel)
 
         setContent {
-            CommandLauncherTheme(dynamicColor = false) {
+            CommandLauncherTheme(dynamicColor = true) {
                 // Transparent container that detects clicks outside to close
                 Box(
                     modifier = Modifier
