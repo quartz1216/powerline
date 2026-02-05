@@ -1,6 +1,7 @@
 package com.quartz.powerline.ui
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.quartz.powerline.services.StatusBarAccessibilityService
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +35,6 @@ fun PermissionsScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    var overlayGranted by remember { mutableStateOf(checkOverlayPermission(context)) }
     var notificationGranted by remember { mutableStateOf(checkNotificationPermission(context)) }
     var accessibilityGranted by remember { mutableStateOf(checkAccessibilityPermission(context)) }
     var isDefaultHome by remember { mutableStateOf(checkDefaultHome(context)) }
@@ -41,7 +42,6 @@ fun PermissionsScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                overlayGranted = checkOverlayPermission(context)
                 notificationGranted = checkNotificationPermission(context)
                 accessibilityGranted = checkAccessibilityPermission(context)
                 isDefaultHome = checkDefaultHome(context)
@@ -71,18 +71,6 @@ fun PermissionsScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            PermissionItem(
-                title = "Overlay Permission",
-                description = "Required to display the search bar over other apps.",
-                isGranted = overlayGranted,
-                onClick = {
-                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                        data = Uri.parse("package:${context.packageName}")
-                    }
-                    context.startActivity(intent)
-                }
-            )
-            Divider()
             PermissionItem(
                 title = "Notification Permission",
                 description = "Required to post notifications.",
@@ -147,14 +135,6 @@ fun PermissionItem(
     )
 }
 
-fun checkOverlayPermission(context: Context): Boolean {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        Settings.canDrawOverlays(context)
-    } else {
-        true // Implicitly granted below M
-    }
-}
-
 fun checkNotificationPermission(context: Context): Boolean {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
@@ -171,7 +151,16 @@ fun checkDefaultHome(context: Context): Boolean {
 }
 
 fun checkAccessibilityPermission(context: Context): Boolean {
-    val serviceName = "${context.packageName}/.services.StatusBarAccessibilityService"
-    val enabledServices = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
-    return enabledServices?.contains(serviceName) == true
+    val expectedComponentName = ComponentName(context, StatusBarAccessibilityService::class.java)
+    val enabledServices = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
+    val colonSplitter = android.text.TextUtils.SimpleStringSplitter(':')
+    colonSplitter.setString(enabledServices)
+    while (colonSplitter.hasNext()) {
+        val componentNameString = colonSplitter.next()
+        val enabledComponent = ComponentName.unflattenFromString(componentNameString)
+        if (enabledComponent != null && enabledComponent == expectedComponentName) {
+            return true
+        }
+    }
+    return false
 }

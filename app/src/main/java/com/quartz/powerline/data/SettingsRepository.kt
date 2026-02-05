@@ -85,7 +85,7 @@ class SettingsRepository(context: Context) {
     }
 
     fun getHideTriggersOnKeyboard(): Boolean {
-        return prefs.getBoolean("hide_triggers_on_keyboard", false)
+        return prefs.getBoolean("hide_triggers_on_keyboard", true)
     }
 
     fun setHideTriggersOnKeyboard(enabled: Boolean) {
@@ -110,7 +110,7 @@ class SettingsRepository(context: Context) {
     }
 
     fun getOverlayBlurRadius(): Int {
-        return prefs.getInt("overlay_blur_radius", 0)
+        return prefs.getInt("overlay_blur_radius", 16)
     }
 
     fun setOverlayBlurRadius(radius: Int) {

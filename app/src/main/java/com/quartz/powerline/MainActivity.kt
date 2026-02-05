@@ -18,11 +18,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        checkOverlayPermission()
-
-        // Show persistent notification
-        com.quartz.powerline.utils.NotificationHelper.showNotification(this)
-
         val viewModel = ViewModelProvider(
             this,
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
@@ -56,21 +51,6 @@ class MainActivity : ComponentActivity() {
                         startActivity(Intent(this, SettingsActivity::class.java))
                     }
                 )
-            }
-        }
-    }
-
-    private fun checkOverlayPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(this)) {
-                Toast.makeText(this, "Please grant Overlay permission for full functionality", Toast.LENGTH_LONG).show()
-                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-                startActivity(intent)
-            }
-        }
-        if (Build.VERSION.SDK_INT >= 33) { // Android 13+
-            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
             }
         }
     }
