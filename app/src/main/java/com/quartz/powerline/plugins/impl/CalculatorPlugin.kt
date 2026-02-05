@@ -5,6 +5,8 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,6 +23,7 @@ class CalculatorPlugin : Plugin {
     override val id = "calculator"
     override val name = "Calculator"
     override val description = "Perform quick calculations"
+    override val icon = Icons.Default.Calculate
 
     override fun search(query: String, context: Context): List<SearchResult> {
         if (query.isBlank()) return emptyList()

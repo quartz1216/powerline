@@ -2,6 +2,8 @@ package com.quartz.powerline.plugins.impl
 
 import android.content.Context
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +25,7 @@ class RecentsPlugin(
     override val id = "recents"
     override val name = "Recent Activity"
     override val description = "Shows recently used apps and searches"
+    override val icon = Icons.Default.History
 
     override fun search(query: String, context: Context): List<SearchResult> {
         if (query.isNotBlank()) return emptyList()
