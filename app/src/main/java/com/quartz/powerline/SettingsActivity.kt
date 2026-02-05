@@ -2,6 +2,7 @@ package com.quartz.powerline
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.collectAsState
@@ -19,6 +20,7 @@ import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 
 class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         val viewModel = ViewModelProvider(this)[SettingsViewModel::class.java]
