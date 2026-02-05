@@ -140,11 +140,9 @@ fun OverlaySettingsSubpage(
     }
 
     // Lifecycle observer to refresh permissions state when returning from system settings
-    var overlayPermissionGranted by remember { mutableStateOf(false) }
     var accessibilityPermissionGranted by remember { mutableStateOf(false) }
 
     fun checkPermissions() {
-        overlayPermissionGranted = Settings.canDrawOverlays(context)
         accessibilityPermissionGranted = checkAccessibilityPermission(context)
     }
 
@@ -206,21 +204,6 @@ fun OverlaySettingsSubpage(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    AssistChip(
-                        onClick = {
-                             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
-                             context.startActivity(intent)
-                        },
-                        label = { Text("Overlay") },
-                        leadingIcon = {
-                            Icon(
-                                if (overlayPermissionGranted) Icons.Default.Check else Icons.Default.Close,
-                                contentDescription = null,
-                                tint = if (overlayPermissionGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                            )
-                        }
-                    )
-
                     AssistChip(
                         onClick = {
                              val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)

@@ -79,15 +79,9 @@ fun WelcomeScreen(
     val context = LocalContext.current
 
     // Observe permission states
-    var isOverlayGranted by remember { mutableStateOf(false) }
     var isAccessibilityGranted by remember { mutableStateOf(false) }
 
     fun checkPermissions() {
-        isOverlayGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Settings.canDrawOverlays(context)
-        } else {
-            true
-        }
         // Accessibility check is a bit manual
         val accessibilityEnabled = try {
              Settings.Secure.getInt(
@@ -165,7 +159,6 @@ fun WelcomeScreen(
                         onNext = { scope.launch { pagerState.animateScrollToPage(3) } }
                     )
                     3 -> SetOverlayPage(
-                        isOverlayGranted = isOverlayGranted,
                         isAccessibilityGranted = isAccessibilityGranted,
                         onSkip = {
                             // Disable features if skipped
@@ -319,7 +312,6 @@ fun SetHomePage(onSkip: () -> Unit, onNext: () -> Unit) {
 
 @Composable
 fun SetOverlayPage(
-    isOverlayGranted: Boolean,
     isAccessibilityGranted: Boolean,
     onSkip: () -> Unit,
     onNext: () -> Unit
@@ -347,28 +339,6 @@ fun SetOverlayPage(
         )
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Overlay Permission
-        OutlinedButton(
-            onClick = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
-                    context.startActivity(intent)
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = if (isOverlayGranted) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-            )
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("1. Grant Overlay Permission")
-                Spacer(modifier = Modifier.weight(1f))
-                if (isOverlayGranted) Icon(Icons.Default.Check, null)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         // Accessibility Permission
         OutlinedButton(
             onClick = {
@@ -381,7 +351,7 @@ fun SetOverlayPage(
             )
         ) {
              Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("2. Enable Accessibility Service")
+                Text("Enable Accessibility Service")
                 Spacer(modifier = Modifier.weight(1f))
                 if (isAccessibilityGranted) Icon(Icons.Default.Check, null)
             }
@@ -395,7 +365,7 @@ fun SetOverlayPage(
             }
             Button(
                 onClick = onNext,
-                enabled = isOverlayGranted && isAccessibilityGranted
+                enabled = isAccessibilityGranted
             ) {
                 Text("Enable & Continue")
             }
