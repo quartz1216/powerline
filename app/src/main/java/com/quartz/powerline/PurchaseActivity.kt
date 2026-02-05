@@ -26,7 +26,7 @@ class PurchaseActivity : ComponentActivity() {
                 Scaffold(
                     topBar = {
                         TopAppBar(
-                            title = { Text("Premium Features") },
+                            title = { Text("Powerline Advanced") },
                             actions = {
                                 IconButton(onClick = {
                                     settingsRepository.setOnboardingCompleted(true)

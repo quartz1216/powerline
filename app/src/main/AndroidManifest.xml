@@ -13,7 +13,7 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="Command Launcher"
+        android:label="Powerline"
         android:supportsRtl="true"
         android:theme="@style/Theme.CommandLauncher">
 
@@ -66,7 +66,7 @@
         <service
             android:name=".services.QuickSettingsService"
             android:icon="@android:drawable/ic_menu_search"
-            android:label="Command Launcher"
+            android:label="Powerline"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
             android:exported="true">
             <intent-filter>

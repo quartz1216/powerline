@@ -225,7 +225,7 @@ fun WelcomePage(onNext: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(32.dp))
         Text(
-            text = "Welcome to Command Launcher",
+            text = "Welcome to Powerline Launcher",
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
@@ -258,7 +258,7 @@ fun AppRolePage(onNext: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Command Launcher allows you to access apps, settings, and tools instantly from anywhere.\n\n" +
+            text = "Powerline Launcher allows you to access apps, settings, and tools instantly from anywhere.\n\n" +
                    "Just type what you need, or use the overlay trigger to launch your apps without leaving your current screen.",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Start
@@ -289,7 +289,7 @@ fun SetHomePage(onSkip: () -> Unit, onNext: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "To get the best experience, set Command Launcher as your default home app.",
+            text = "To get the best experience, set Powerline Launcher as your default home app.",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center
         )
