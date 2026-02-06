@@ -24,6 +24,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,8 +69,14 @@ fun CommandBar(
                     false
                 }
             },
-        placeholder = { Text("Search apps, web, math...") },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+        placeholder = {
+            Text(
+                "Search apps, web, math...",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
+        textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
         trailingIcon = if (query.isNotEmpty()) {
             {
                 IconButton(onClick = { onQueryChange("") }) {
