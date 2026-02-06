@@ -77,6 +77,7 @@ fun CommandBar(
             )
         },
         textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
         trailingIcon = if (query.isNotEmpty()) {
             {
                 IconButton(onClick = { onQueryChange("") }) {
