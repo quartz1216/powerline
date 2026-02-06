@@ -52,13 +52,13 @@ class MainViewModelTest {
         // Wait for results
         // "1+1" should yield:
         // 1. Calculator (2)
-        // 2. Web Search ("1+1")
-        // 3. Memo ("Save '1+1'")
-        // 4-9. Integration (Share, Maps, YouTube, Play Store, Amazon, Twitter) -> 6 items
-        // Total: 9 items
+        // 2-8. Web Search (7 Default Custom Engines) -> Google, YT Music, Maps, X, YouTube, Wikipedia, Play Store
+        // 9. Memo ("Save '1+1'")
+        // 10. Integration (Share Text)
+        // Total: 10 items
 
         val results = viewModel.results.first { it.isNotEmpty() }
-        assertEquals(9, results.size)
+        assertEquals(10, results.size)
 
         // Initial selection should be 0
         assertEquals(0, viewModel.selectedIndex.value)
@@ -67,30 +67,22 @@ class MainViewModelTest {
         viewModel.selectNext()
         assertEquals(1, viewModel.selectedIndex.value)
 
-        // Move Down -> 2
-        viewModel.selectNext()
-        assertEquals(2, viewModel.selectedIndex.value)
-
-        // Move Down -> 3
-        viewModel.selectNext()
-        assertEquals(3, viewModel.selectedIndex.value)
-
-        // Move to the end (index 8)
-        for (i in 4..8) {
+        // Move to the end (index 9)
+        for (i in 2..9) {
             viewModel.selectNext()
             assertEquals(i, viewModel.selectedIndex.value)
         }
 
-        // Move Down again -> should stay at 8 (last index)
+        // Move Down again -> should stay at 9 (last index)
         viewModel.selectNext()
+        assertEquals(9, viewModel.selectedIndex.value)
+
+        // Move Up -> 8
+        viewModel.selectPrevious()
         assertEquals(8, viewModel.selectedIndex.value)
 
-        // Move Up -> 7
-        viewModel.selectPrevious()
-        assertEquals(7, viewModel.selectedIndex.value)
-
         // Move back to start
-        for (i in 6 downTo 0) {
+        for (i in 7 downTo 0) {
             viewModel.selectPrevious()
             assertEquals(i, viewModel.selectedIndex.value)
         }

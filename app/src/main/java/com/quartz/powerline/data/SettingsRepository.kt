@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.quartz.powerline.domain.models.AppBackupData
 import com.quartz.powerline.domain.models.ResultType
+import com.quartz.powerline.domain.models.SearchEngine
 
 class SettingsRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
@@ -175,6 +176,30 @@ class SettingsRepository(context: Context) {
         prefs.edit().putStringSet("integration_enabled_apps", apps).apply()
     }
 
+    // --- Custom Search Engines ---
+    fun getCustomSearchEngines(): List<SearchEngine> {
+        val json = prefs.getString("custom_search_engines", null)
+        if (json != null) {
+            val type = object : TypeToken<List<SearchEngine>>() {}.type
+            return gson.fromJson(json, type)
+        }
+        // Defaults
+        return listOf(
+            SearchEngine(title = "Google", urlTemplate = "https://www.google.com/search?q=%s"),
+            SearchEngine(title = "YouTube Music", urlTemplate = "https://music.youtube.com/search?q=%s"),
+            SearchEngine(title = "Maps", urlTemplate = "geo:0,0?q=%s"),
+            SearchEngine(title = "X (Twitter)", urlTemplate = "https://x.com/search?q=%s"),
+            SearchEngine(title = "YouTube", urlTemplate = "https://www.youtube.com/results?search_query=%s"),
+            SearchEngine(title = "Wikipedia", urlTemplate = "https://wikipedia.org/wiki/Special:Search?search=%s"),
+            SearchEngine(title = "Play Store", urlTemplate = "https://play.google.com/store/search?q=%s&c=apps")
+        )
+    }
+
+    fun setCustomSearchEngines(engines: List<SearchEngine>) {
+        val json = gson.toJson(engines)
+        prefs.edit().putString("custom_search_engines", json).apply()
+    }
+
     // --- Home Screen Text ---
     fun getHomeScreenText(): String {
         return prefs.getString("home_screen_text", "") ?: ""
@@ -234,7 +259,8 @@ class SettingsRepository(context: Context) {
             enableWeightSearch = getEnableWeightSearch(),
             enablePackageSearch = getEnablePackageSearch(),
             homeScreenText = getHomeScreenText(),
-            integrationEnabledApps = getIntegrationEnabledApps()
+            integrationEnabledApps = getIntegrationEnabledApps(),
+            customSearchEngines = getCustomSearchEngines()
         )
         return gson.toJson(data)
     }
@@ -260,6 +286,7 @@ class SettingsRepository(context: Context) {
         setEnablePackageSearch(data.enablePackageSearch ?: true)
         setHomeScreenText(data.homeScreenText ?: "")
         setIntegrationEnabledApps(data.integrationEnabledApps ?: setOf("share", "maps", "youtube", "play_store", "amazon", "twitter"))
+        data.customSearchEngines?.let { setCustomSearchEngines(it) }
     }
 
     fun clearAllSettings() {
