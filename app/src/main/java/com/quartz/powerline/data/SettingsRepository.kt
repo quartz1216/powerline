@@ -165,6 +165,16 @@ class SettingsRepository(context: Context) {
         prefs.edit().putBoolean("enable_package_search", enabled).apply()
     }
 
+    // --- Integration Plugin Settings ---
+    fun getIntegrationEnabledApps(): Set<String> {
+        return prefs.getStringSet("integration_enabled_apps", null)
+            ?: setOf("share", "maps", "youtube", "play_store", "amazon", "twitter")
+    }
+
+    fun setIntegrationEnabledApps(apps: Set<String>) {
+        prefs.edit().putStringSet("integration_enabled_apps", apps).apply()
+    }
+
     // --- Home Screen Text ---
     fun getHomeScreenText(): String {
         return prefs.getString("home_screen_text", "") ?: ""
@@ -223,7 +233,8 @@ class SettingsRepository(context: Context) {
             appWeights = getAppWeights(),
             enableWeightSearch = getEnableWeightSearch(),
             enablePackageSearch = getEnablePackageSearch(),
-            homeScreenText = getHomeScreenText()
+            homeScreenText = getHomeScreenText(),
+            integrationEnabledApps = getIntegrationEnabledApps()
         )
         return gson.toJson(data)
     }
@@ -248,6 +259,7 @@ class SettingsRepository(context: Context) {
         setEnableWeightSearch(data.enableWeightSearch ?: true)
         setEnablePackageSearch(data.enablePackageSearch ?: true)
         setHomeScreenText(data.homeScreenText ?: "")
+        setIntegrationEnabledApps(data.integrationEnabledApps ?: setOf("share", "maps", "youtube", "play_store", "amazon", "twitter"))
     }
 
     fun clearAllSettings() {
