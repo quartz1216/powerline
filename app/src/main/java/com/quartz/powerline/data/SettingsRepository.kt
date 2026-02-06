@@ -183,15 +183,15 @@ class SettingsRepository(context: Context) {
             val type = object : TypeToken<List<SearchEngine>>() {}.type
             return gson.fromJson(json, type)
         }
-        // Defaults
+        // Defaults with stable IDs
         return listOf(
-            SearchEngine(title = "Google", urlTemplate = "https://www.google.com/search?q=%s"),
-            SearchEngine(title = "YouTube Music", urlTemplate = "https://music.youtube.com/search?q=%s"),
-            SearchEngine(title = "Maps", urlTemplate = "geo:0,0?q=%s"),
-            SearchEngine(title = "X (Twitter)", urlTemplate = "https://x.com/search?q=%s"),
-            SearchEngine(title = "YouTube", urlTemplate = "https://www.youtube.com/results?search_query=%s"),
-            SearchEngine(title = "Wikipedia", urlTemplate = "https://wikipedia.org/wiki/Special:Search?search=%s"),
-            SearchEngine(title = "Play Store", urlTemplate = "https://play.google.com/store/search?q=%s&c=apps")
+            SearchEngine(id = "default_google", title = "Google", urlTemplate = "https://www.google.com/search?q=%s"),
+            SearchEngine(id = "default_yt_music", title = "YouTube Music", urlTemplate = "https://music.youtube.com/search?q=%s"),
+            SearchEngine(id = "default_maps", title = "Maps", urlTemplate = "geo:0,0?q=%s"),
+            SearchEngine(id = "default_twitter", title = "X (Twitter)", urlTemplate = "https://x.com/search?q=%s"),
+            SearchEngine(id = "default_youtube", title = "YouTube", urlTemplate = "https://www.youtube.com/results?search_query=%s"),
+            SearchEngine(id = "default_wikipedia", title = "Wikipedia", urlTemplate = "https://wikipedia.org/wiki/Special:Search?search=%s"),
+            SearchEngine(id = "default_play_store", title = "Play Store", urlTemplate = "https://play.google.com/store/search?q=%s&c=apps")
         )
     }
 
