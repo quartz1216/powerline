@@ -99,6 +99,17 @@ class RecentsPlugin(
                         payload = item.title
                     )
                 }
+                ResultType.INTEGRATION -> {
+                    val query = item.id.removePrefix("integration_gemini:")
+                    SearchResult(
+                        id = item.id,
+                        pluginId = "integration",
+                        title = item.title,
+                        subtitle = query,
+                        type = ResultType.INTEGRATION,
+                        payload = query
+                    )
+                }
             }
         }
     }

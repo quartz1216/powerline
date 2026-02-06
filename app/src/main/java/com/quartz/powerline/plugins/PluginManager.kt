@@ -15,7 +15,8 @@ class PluginManager(
         AppLauncherPlugin(settingsRepository, installedAppsFlow),
         CalculatorPlugin(),
         WebSearchPlugin(),
-        MemoPlugin()
+        MemoPlugin(),
+        IntegrationPlugin()
     )
 
     fun getPlugin(id: String): Plugin? {
