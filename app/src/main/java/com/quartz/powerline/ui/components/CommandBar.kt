@@ -1,6 +1,7 @@
 package com.quartz.powerline.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -24,6 +25,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,14 +79,24 @@ fun CommandBar(
             )
         },
         textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-        trailingIcon = if (query.isNotEmpty()) {
-            {
-                IconButton(onClick = { onQueryChange("") }) {
-                    Icon(Icons.Default.Close, contentDescription = "Clear")
-                }
+        leadingIcon = {
+            IconButton(
+                onClick = {},
+                enabled = false,
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Icon(Icons.Default.Search, contentDescription = "Search")
             }
-        } else null,
+        },
+        trailingIcon = {
+            IconButton(
+                onClick = { onQueryChange("") },
+                enabled = query.isNotEmpty(),
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Icon(Icons.Default.Close, contentDescription = "Clear")
+            }
+        },
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
         keyboardActions = KeyboardActions(onGo = { onEnter() }),
