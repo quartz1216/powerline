@@ -50,13 +50,15 @@ class MainViewModelTest {
         viewModel.onQueryChange("1+1")
 
         // Wait for results
-        // "1+1" should yield Calc(2) and Web("1+1") -> 2 items
-        // Wait until results are populated. Since we use runTest and unconfined dispatcher, it should be quick.
-        // However, AppRepository is real and does IO. That might be tricky in unit test without mocking repository.
-        // But AppRepository calls packageManager which Robolectric handles.
+        // "1+1" should yield:
+        // 1. Calculator (2)
+        // 2. Web Search ("1+1")
+        // 3. Memo ("Save '1+1'")
+        // 4-9. Integration (Share, Maps, YouTube, Play Store, Amazon, Twitter) -> 6 items
+        // Total: 9 items
 
         val results = viewModel.results.first { it.isNotEmpty() }
-        assertEquals(4, results.size) // Calc + Web + Memo + Integration
+        assertEquals(9, results.size)
 
         // Initial selection should be 0
         assertEquals(0, viewModel.selectedIndex.value)
@@ -73,21 +75,25 @@ class MainViewModelTest {
         viewModel.selectNext()
         assertEquals(3, viewModel.selectedIndex.value)
 
-        // Move Down again -> should stay at 3 (last index)
+        // Move to the end (index 8)
+        for (i in 4..8) {
+            viewModel.selectNext()
+            assertEquals(i, viewModel.selectedIndex.value)
+        }
+
+        // Move Down again -> should stay at 8 (last index)
         viewModel.selectNext()
-        assertEquals(3, viewModel.selectedIndex.value)
+        assertEquals(8, viewModel.selectedIndex.value)
 
-        // Move Up -> 2
+        // Move Up -> 7
         viewModel.selectPrevious()
-        assertEquals(2, viewModel.selectedIndex.value)
+        assertEquals(7, viewModel.selectedIndex.value)
 
-        // Move Up -> 1
-        viewModel.selectPrevious()
-        assertEquals(1, viewModel.selectedIndex.value)
-
-        // Move Up -> 0
-        viewModel.selectPrevious()
-        assertEquals(0, viewModel.selectedIndex.value)
+        // Move back to start
+        for (i in 6 downTo 0) {
+            viewModel.selectPrevious()
+            assertEquals(i, viewModel.selectedIndex.value)
+        }
 
         // Move Up again -> should stay at 0
         viewModel.selectPrevious()
