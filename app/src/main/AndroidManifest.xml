@@ -40,10 +40,6 @@
             android:theme="@style/Theme.CommandLauncher.Overlay"
             android:windowSoftInputMode="adjustResize|stateAlwaysVisible" />
 
-        <activity
-            android:name=".MemoActivity"
-            android:exported="false"
-            android:theme="@style/Theme.CommandLauncher" />
 
         <activity
             android:name=".SettingsActivity"

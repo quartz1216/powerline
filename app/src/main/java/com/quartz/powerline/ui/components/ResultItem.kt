@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
@@ -112,16 +111,6 @@ fun ResultIcon(result: SearchResult) {
                     )
                 }
             }
-        }
-        ResultType.MEMO -> {
-            result.icon?.let { drawable ->
-                AppIcon(drawable = drawable)
-            } ?: Icon(
-                imageVector = Icons.Default.Edit,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
         }
         ResultType.SHARE -> {
             Icon(

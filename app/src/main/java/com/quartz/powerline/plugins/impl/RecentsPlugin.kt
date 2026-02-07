@@ -89,17 +89,6 @@ class RecentsPlugin(
                         payload = item.payload ?: item.title
                     )
                 }
-                ResultType.MEMO -> {
-                    SearchResult(
-                        id = item.id,
-                        pluginId = "memo",
-                        title = item.title,
-                        subtitle = item.subtitle ?: "Recent Memo",
-                        icon = ContextCompat.getDrawable(context, android.R.drawable.ic_menu_edit),
-                        type = ResultType.MEMO,
-                        payload = item.payload ?: item.title
-                    )
-                }
                 ResultType.SHARE -> {
                     SearchResult(
                         id = item.id,

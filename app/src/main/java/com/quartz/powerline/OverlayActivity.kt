@@ -60,10 +60,6 @@ class OverlayActivity : ComponentActivity() {
                                     finish()
                                 }
                             },
-                            onMemoClick = {
-                                startActivity(Intent(this@OverlayActivity, MemoActivity::class.java))
-                                finish()
-                            },
                             onSettingsClick = {
                                 startActivity(Intent(this@OverlayActivity, SettingsActivity::class.java))
                                 finish()
