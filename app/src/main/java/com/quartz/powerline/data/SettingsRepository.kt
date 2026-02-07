@@ -283,7 +283,7 @@ class SettingsRepository(context: Context) {
         setEnableWeightSearch(data.enableWeightSearch ?: true)
         setEnablePackageSearch(data.enablePackageSearch ?: true)
         setHomeScreenText(data.homeScreenText ?: "")
-        setCustomSearchEngines(data.customSearchEngines)
+        setCustomSearchEngines(data.customSearchEngines ?: emptyList())
     }
 
     fun clearAllSettings() {

@@ -119,9 +119,7 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
     override fun SettingsScreen(viewModel: SettingsViewModel) {
         var engines by remember { mutableStateOf(settingsRepository.getCustomSearchEngines()) }
         var showDialog by remember { mutableStateOf(false) }
-        var showOptionsDialog by remember { mutableStateOf(false) }
         var engineToEdit by remember { mutableStateOf<CustomSearchEngine?>(null) }
-        var selectedEngine by remember { mutableStateOf<CustomSearchEngine?>(null) }
 
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -135,8 +133,8 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
                     items(engines) { engine ->
                         ListItem(
                             modifier = Modifier.clickable {
-                                selectedEngine = engine
-                                showOptionsDialog = true
+                                engineToEdit = engine
+                                showDialog = true
                             },
                             headlineContent = { Text(engine.name) },
                             supportingContent = {
@@ -174,37 +172,6 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
             }
         }
 
-        if (showOptionsDialog && selectedEngine != null) {
-            AlertDialog(
-                onDismissRequest = { showOptionsDialog = false },
-                title = { Text(selectedEngine!!.name) },
-                text = { Text("Choose an action") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showOptionsDialog = false
-                            engineToEdit = selectedEngine
-                            showDialog = true
-                        }
-                    ) {
-                        Text("Edit")
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            val updated = engines.filter { it.id != selectedEngine!!.id }
-                            settingsRepository.setCustomSearchEngines(updated)
-                            engines = updated
-                            showOptionsDialog = false
-                        }
-                    ) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
-                    }
-                }
-            )
-        }
-
         if (showDialog) {
             AddEditEngineDialog(
                 engine = engineToEdit,
@@ -218,7 +185,15 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
                     settingsRepository.setCustomSearchEngines(updated)
                     engines = updated
                     showDialog = false
-                }
+                },
+                onDelete = if (engineToEdit != null) {
+                    {
+                        val updated = engines.filter { it.id != engineToEdit!!.id }
+                        settingsRepository.setCustomSearchEngines(updated)
+                        engines = updated
+                        showDialog = false
+                    }
+                } else null
             )
         }
     }
@@ -227,7 +202,8 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
     private fun AddEditEngineDialog(
         engine: CustomSearchEngine?,
         onDismiss: () -> Unit,
-        onSave: (CustomSearchEngine) -> Unit
+        onSave: (CustomSearchEngine) -> Unit,
+        onDelete: (() -> Unit)? = null
     ) {
         var name by remember { mutableStateOf(engine?.name ?: "") }
         var url by remember { mutableStateOf(engine?.url ?: "") }
@@ -292,8 +268,15 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
                 }
             },
             dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                Row {
+                    if (onDelete != null) {
+                        TextButton(onClick = onDelete) {
+                            Text("Delete", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
                 }
             }
         )
