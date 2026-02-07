@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.quartz.powerline.domain.models.AppBackupData
 import com.quartz.powerline.domain.models.ResultType
+import com.quartz.powerline.domain.models.SearchEngine
 
 class SettingsRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
@@ -166,6 +167,33 @@ class SettingsRepository(context: Context) {
         prefs.edit().putString("home_screen_text", text).apply()
     }
 
+    // --- Custom Search Engines ---
+    fun getCustomSearchEngines(): List<SearchEngine> {
+        val json = prefs.getString("custom_search_engines", "[]")
+        val type = object : TypeToken<List<SearchEngine>>() {}.type
+        val engines: List<SearchEngine> = gson.fromJson(json, type) ?: emptyList()
+
+        if (engines.isEmpty()) {
+            val defaults = listOf(
+                SearchEngine(name = "Google", url = "https://www.google.com/search?q=%s", isEnabled = true),
+                SearchEngine(name = "YouTube Music", url = "https://music.youtube.com/search?q=%s", alias = "ytm", isEnabled = true),
+                SearchEngine(name = "Maps", url = "https://www.google.com/maps/search/%s", alias = "map", isEnabled = true),
+                SearchEngine(name = "X", url = "https://x.com/search?q=%s", alias = "x", isEnabled = true),
+                SearchEngine(name = "YouTube", url = "https://www.youtube.com/results?search_query=%s", alias = "yt", isEnabled = true),
+                SearchEngine(name = "Wikipedia", url = "https://en.wikipedia.org/wiki/Special:Search?search=%s", alias = "wiki", isEnabled = true),
+                SearchEngine(name = "Play Store", url = "https://play.google.com/store/search?q=%s", alias = "play", isEnabled = true)
+            )
+            setCustomSearchEngines(defaults)
+            return defaults
+        }
+        return engines
+    }
+
+    fun setCustomSearchEngines(engines: List<SearchEngine>) {
+        val json = gson.toJson(engines)
+        prefs.edit().putString("custom_search_engines", json).apply()
+    }
+
     // --- History ---
     fun getHistory(): List<HistoryItem> {
         val json = prefs.getString("history", "[]")
@@ -205,7 +233,8 @@ class SettingsRepository(context: Context) {
             appWeights = getAppWeights(),
             enableWeightSearch = getEnableWeightSearch(),
             enablePackageSearch = getEnablePackageSearch(),
-            homeScreenText = getHomeScreenText()
+            homeScreenText = getHomeScreenText(),
+            customSearchEngines = getCustomSearchEngines()
         )
         return gson.toJson(data)
     }
@@ -229,6 +258,7 @@ class SettingsRepository(context: Context) {
         setEnableWeightSearch(data.enableWeightSearch ?: true)
         setEnablePackageSearch(data.enablePackageSearch ?: true)
         setHomeScreenText(data.homeScreenText ?: "")
+        setCustomSearchEngines(data.customSearchEngines ?: emptyList())
     }
 
     fun clearAllSettings() {

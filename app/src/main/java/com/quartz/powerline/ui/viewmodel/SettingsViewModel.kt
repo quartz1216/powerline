@@ -34,6 +34,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _selectedPluginId = MutableStateFlow<String?>(null)
     val selectedPluginId: StateFlow<String?> = _selectedPluginId.asStateFlow()
 
+    private val _homeScreenText = MutableStateFlow(settingsRepository.getHomeScreenText())
+    val homeScreenText: StateFlow<String> = _homeScreenText.asStateFlow()
+
     init {
         reloadApps()
     }
@@ -41,7 +44,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun reloadApps() {
         viewModelScope.launch {
             _installedApps.value = appRepository.getInstalledApps()
+            _homeScreenText.value = settingsRepository.getHomeScreenText()
         }
+    }
+
+    fun updateHomeScreenText(text: String) {
+        settingsRepository.setHomeScreenText(text)
+        _homeScreenText.value = text
     }
 
     fun openAppearanceSettings() {

@@ -22,6 +22,8 @@ object ActionExecutor {
                 id = result.id,
                 type = result.type,
                 title = result.title,
+                subtitle = result.subtitle,
+                payload = result.payload,
                 timestamp = System.currentTimeMillis()
             )
             settingsRepository.addToHistory(historyItem)

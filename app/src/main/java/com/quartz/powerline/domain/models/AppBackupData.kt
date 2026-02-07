@@ -23,5 +23,6 @@ data class AppBackupData(
     val appWeights: Map<String, Int> = emptyMap(),
     val enableWeightSearch: Boolean? = true,
     val enablePackageSearch: Boolean? = true,
-    val homeScreenText: String? = null
+    val homeScreenText: String? = null,
+    val customSearchEngines: List<SearchEngine> = emptyList()
 )

@@ -56,7 +56,7 @@ class RecentsPlugin(
                                 id = app.packageName,
                                 pluginId = "app_launcher",
                                 title = app.label,
-                                subtitle = "Recent",
+                                subtitle = item.subtitle ?: "Recent",
                                 icon = app.icon,
                                 type = ResultType.APP,
                                 packageName = app.packageName,
@@ -70,9 +70,9 @@ class RecentsPlugin(
                         id = item.id,
                         pluginId = "web_search",
                         title = item.title,
-                        subtitle = "Recent Web",
+                        subtitle = item.subtitle ?: "Recent Web",
                         type = ResultType.WEB,
-                        payload = item.title
+                        payload = item.payload ?: item.title
                     )
                 }
                 ResultType.CALC -> {
@@ -80,9 +80,9 @@ class RecentsPlugin(
                         id = item.id,
                         pluginId = "calculator",
                         title = item.title,
-                        subtitle = "Recent Calc",
+                        subtitle = item.subtitle ?: "Recent Calc",
                         type = ResultType.CALC,
-                        payload = item.title
+                        payload = item.payload ?: item.title
                     )
                 }
                 ResultType.MEMO -> {
@@ -90,10 +90,10 @@ class RecentsPlugin(
                         id = item.id,
                         pluginId = "memo",
                         title = item.title,
-                        subtitle = "Recent Memo",
+                        subtitle = item.subtitle ?: "Recent Memo",
                         icon = ContextCompat.getDrawable(context, android.R.drawable.ic_menu_edit),
                         type = ResultType.MEMO,
-                        payload = item.title
+                        payload = item.payload ?: item.title
                     )
                 }
             }
