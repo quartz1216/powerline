@@ -32,7 +32,18 @@ class OverlayActivity : ComponentActivity() {
         applyWindowAttributes(viewModel)
 
         setContent {
-            CommandLauncherTheme(dynamicColor = true) {
+            val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val dimAmount = viewModel.settingsRepository.getOverlayDimAmount()
+            val useDarkTheme = if (dimAmount > 0.4f) {
+                true
+            } else {
+                !systemDark
+            }
+
+            CommandLauncherTheme(
+                darkTheme = useDarkTheme,
+                dynamicColor = true
+            ) {
                 // Transparent container that detects clicks outside to close
                 Box(
                     modifier = Modifier
