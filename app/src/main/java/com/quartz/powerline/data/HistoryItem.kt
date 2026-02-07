@@ -8,5 +8,6 @@ data class HistoryItem(
     val title: String,
     val subtitle: String? = null,
     val payload: String? = null,
-    val timestamp: Long
+    val timestamp: Long,
+    val faviconUrl: String? = null
 )
