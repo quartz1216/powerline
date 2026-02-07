@@ -35,9 +35,9 @@ class OverlayActivity : ComponentActivity() {
             val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
             val dimAmount = viewModel.settingsRepository.getOverlayDimAmount()
             val useDarkTheme = if (dimAmount > 0.4f) {
-                true
+                true // High dim -> Dark background -> Light text -> Dark Theme
             } else {
-                !systemDark
+                systemDark // Low dim -> Background depends on system (Light/Dark) -> Match system theme (Dark BG->Light Text / Light BG->Dark Text)
             }
 
             CommandLauncherTheme(
