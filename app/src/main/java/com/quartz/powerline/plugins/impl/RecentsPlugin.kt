@@ -75,7 +75,8 @@ class RecentsPlugin(
                         title = item.title,
                         subtitle = item.subtitle ?: "Recent Web",
                         type = ResultType.WEB,
-                        payload = item.payload ?: item.title
+                        payload = item.payload ?: item.title,
+                        faviconUrl = item.faviconUrl
                     )
                 }
                 ResultType.CALC -> {

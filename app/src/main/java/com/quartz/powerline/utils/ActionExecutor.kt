@@ -24,7 +24,8 @@ object ActionExecutor {
                 title = result.title,
                 subtitle = result.subtitle,
                 payload = result.payload,
-                timestamp = System.currentTimeMillis()
+                timestamp = System.currentTimeMillis(),
+                faviconUrl = result.faviconUrl
             )
             settingsRepository.addToHistory(historyItem)
         }

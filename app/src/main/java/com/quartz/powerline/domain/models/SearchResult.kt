@@ -15,5 +15,6 @@ data class SearchResult(
     val type: ResultType,
     val packageName: String? = null,
     val className: String? = null,
-    val payload: String? = null // URL for web, Result for calc
+    val payload: String? = null, // URL for web, Result for calc
+    val faviconUrl: String? = null
 )
