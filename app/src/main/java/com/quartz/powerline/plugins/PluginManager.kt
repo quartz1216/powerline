@@ -14,7 +14,7 @@ class PluginManager(
         SystemPlugin(),
         AppLauncherPlugin(settingsRepository, installedAppsFlow),
         CalculatorPlugin(),
-        WebSearchPlugin(),
+        WebSearchPlugin(settingsRepository),
         MemoPlugin()
     )
 

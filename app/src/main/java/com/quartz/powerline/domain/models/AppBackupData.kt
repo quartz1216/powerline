@@ -24,5 +24,6 @@ data class AppBackupData(
     val enableWeightSearch: Boolean? = true,
     val enablePackageSearch: Boolean? = true,
     val homeScreenText: String? = null,
-    val hideTriggersOnKeyboard: Boolean? = false
+    val hideTriggersOnKeyboard: Boolean? = false,
+    val customSearchEngines: List<CustomSearchEngine>? = emptyList()
 )

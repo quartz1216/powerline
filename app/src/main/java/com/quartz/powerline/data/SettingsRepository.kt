@@ -5,11 +5,14 @@ import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.quartz.powerline.domain.models.AppBackupData
+import com.quartz.powerline.domain.models.CustomSearchEngine
 import com.quartz.powerline.domain.models.ResultType
 
 class SettingsRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
     private val gson = Gson()
+
+    private var cachedCustomSearchEngines: List<CustomSearchEngine>? = null
 
     // --- Hidden Apps ---
     fun getHiddenApps(): Set<String> {
@@ -165,6 +168,37 @@ class SettingsRepository(context: Context) {
         prefs.edit().putBoolean("enable_package_search", enabled).apply()
     }
 
+    // --- Custom Search Engines ---
+    fun getCustomSearchEngines(): List<CustomSearchEngine> {
+        if (cachedCustomSearchEngines != null) return cachedCustomSearchEngines!!
+
+        if (!prefs.contains("custom_search_engines")) {
+            // Initialize defaults
+            val defaults = listOf(
+                CustomSearchEngine(java.util.UUID.randomUUID().toString(), "Google", "https://www.google.com/search?q=%s", isEnabled = true),
+                CustomSearchEngine(java.util.UUID.randomUUID().toString(), "YouTube Music", "https://music.youtube.com/search?q=%s", "ytm", true),
+                CustomSearchEngine(java.util.UUID.randomUUID().toString(), "Maps", "https://www.google.com/maps/search/%s", "maps", true),
+                CustomSearchEngine(java.util.UUID.randomUUID().toString(), "X", "https://twitter.com/search?q=%s", "x", true),
+                CustomSearchEngine(java.util.UUID.randomUUID().toString(), "YouTube", "https://www.youtube.com/results?search_query=%s", "yt", true),
+                CustomSearchEngine(java.util.UUID.randomUUID().toString(), "Wikipedia", "https://en.wikipedia.org/wiki/Special:Search?search=%s", "wiki", true),
+                CustomSearchEngine(java.util.UUID.randomUUID().toString(), "Play Store", "https://play.google.com/store/search?q=%s", "play", true)
+            )
+            setCustomSearchEngines(defaults)
+            return defaults
+        }
+        val json = prefs.getString("custom_search_engines", "[]")
+        val type = object : TypeToken<List<CustomSearchEngine>>() {}.type
+        val engines: List<CustomSearchEngine> = gson.fromJson(json, type)
+        cachedCustomSearchEngines = engines
+        return engines
+    }
+
+    fun setCustomSearchEngines(engines: List<CustomSearchEngine>) {
+        cachedCustomSearchEngines = engines
+        val json = gson.toJson(engines)
+        prefs.edit().putString("custom_search_engines", json).apply()
+    }
+
     // --- Home Screen Text ---
     fun getHomeScreenText(): String {
         return prefs.getString("home_screen_text", "") ?: ""
@@ -223,7 +257,8 @@ class SettingsRepository(context: Context) {
             appWeights = getAppWeights(),
             enableWeightSearch = getEnableWeightSearch(),
             enablePackageSearch = getEnablePackageSearch(),
-            homeScreenText = getHomeScreenText()
+            homeScreenText = getHomeScreenText(),
+            customSearchEngines = getCustomSearchEngines()
         )
         return gson.toJson(data)
     }
@@ -248,6 +283,7 @@ class SettingsRepository(context: Context) {
         setEnableWeightSearch(data.enableWeightSearch ?: true)
         setEnablePackageSearch(data.enablePackageSearch ?: true)
         setHomeScreenText(data.homeScreenText ?: "")
+        setCustomSearchEngines(data.customSearchEngines ?: emptyList())
     }
 
     fun clearAllSettings() {
