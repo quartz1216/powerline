@@ -7,5 +7,6 @@ data class HistoryItem(
     val type: ResultType,
     val title: String,
     val subtitle: String? = null,
+    val payload: String? = null,
     val timestamp: Long
 )

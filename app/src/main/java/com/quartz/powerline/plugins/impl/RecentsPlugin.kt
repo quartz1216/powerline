@@ -47,7 +47,7 @@ class RecentsPlugin(
                             id = "settings_action",
                             pluginId = "system",
                             title = "Settings",
-                            subtitle = "Recent",
+                            subtitle = item.subtitle ?: "Recent",
                             icon = ContextCompat.getDrawable(context, android.R.drawable.ic_menu_preferences),
                             type = ResultType.APP,
                             payload = "settings_action"
@@ -58,8 +58,8 @@ class RecentsPlugin(
                             SearchResult(
                                 id = app.packageName,
                                 pluginId = "app_launcher",
-                                title = app.label,
-                                subtitle = "Recent",
+                                title = item.title, // Use stored title
+                                subtitle = item.subtitle ?: app.packageName, // Use stored subtitle or fallback
                                 icon = app.icon,
                                 type = ResultType.APP,
                                 packageName = app.packageName,
@@ -73,9 +73,9 @@ class RecentsPlugin(
                         id = item.id,
                         pluginId = "web_search",
                         title = item.title,
-                        subtitle = "Recent Web",
+                        subtitle = item.subtitle ?: "Web Search",
                         type = ResultType.WEB,
-                        payload = item.title
+                        payload = item.payload // Use stored payload for correct execution
                     )
                 }
                 ResultType.CALC -> {
@@ -83,31 +83,31 @@ class RecentsPlugin(
                         id = item.id,
                         pluginId = "calculator",
                         title = item.title,
-                        subtitle = "Recent Calc",
+                        subtitle = item.subtitle ?: "Calculator",
                         type = ResultType.CALC,
-                        payload = item.title
+                        payload = item.payload
                     )
                 }
                 ResultType.MEMO -> {
+                    // Legacy items only, new memos are not saved to history
                     SearchResult(
                         id = item.id,
                         pluginId = "memo",
                         title = item.title,
-                        subtitle = "Recent Memo",
+                        subtitle = "Memo",
                         icon = ContextCompat.getDrawable(context, android.R.drawable.ic_menu_edit),
                         type = ResultType.MEMO,
-                        payload = item.title
+                        payload = item.payload
                     )
                 }
                 ResultType.INTEGRATION -> {
-                    val query = item.id.removePrefix("integration_gemini:")
                     SearchResult(
                         id = item.id,
                         pluginId = "integration",
                         title = item.title,
-                        subtitle = query,
+                        subtitle = item.subtitle ?: "Share",
                         type = ResultType.INTEGRATION,
-                        payload = query
+                        payload = item.payload
                     )
                 }
             }

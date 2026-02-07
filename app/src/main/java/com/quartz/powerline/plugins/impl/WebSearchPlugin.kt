@@ -39,7 +39,7 @@ class WebSearchPlugin : Plugin {
                 SearchResult(
                     id = "web_direct",
                     pluginId = id,
-                    title = "Go to $trimmedQuery",
+                    title = trimmedQuery,
                     subtitle = "Web Address",
                     type = ResultType.WEB,
                     payload = if (trimmedQuery.startsWith("http")) trimmedQuery else "https://$trimmedQuery"
