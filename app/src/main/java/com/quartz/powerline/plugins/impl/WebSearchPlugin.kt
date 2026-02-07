@@ -68,8 +68,9 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
                 val realQuery = query.substring(engine.alias!!.length + 1).trim()
                 if (realQuery.isBlank()) continue
 
-                val finalUrl = engine.url.replace("%s", Uri.encode(realQuery))
-                val domain = Uri.parse(engine.url).host
+                val engineUrl = if (engine.url.startsWith("http")) engine.url else "https://${engine.url}"
+                val finalUrl = engineUrl.replace("%s", Uri.encode(realQuery))
+                val domain = Uri.parse(engineUrl).host
                 val faviconUrl = if (domain != null) "https://www.google.com/s2/favicons?sz=64&domain_url=$domain" else null
 
                 results.add(
@@ -89,8 +90,9 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
             val defaultEngines = engines.filter { it.alias.isNullOrBlank() }
 
             for (engine in defaultEngines) {
-                val finalUrl = engine.url.replace("%s", Uri.encode(trimmedQuery))
-                val domain = Uri.parse(engine.url).host
+                val engineUrl = if (engine.url.startsWith("http")) engine.url else "https://${engine.url}"
+                val finalUrl = engineUrl.replace("%s", Uri.encode(trimmedQuery))
+                val domain = Uri.parse(engineUrl).host
                 val faviconUrl = if (domain != null) "https://www.google.com/s2/favicons?sz=64&domain_url=$domain" else null
 
                 results.add(
