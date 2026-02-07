@@ -44,9 +44,6 @@ class MainActivity : ComponentActivity() {
                             viewModel.onQueryChange("")
                         }
                     },
-                    onMemoClick = {
-                        startActivity(Intent(this, MemoActivity::class.java))
-                    },
                     onSettingsClick = {
                         startActivity(Intent(this, SettingsActivity::class.java))
                     }

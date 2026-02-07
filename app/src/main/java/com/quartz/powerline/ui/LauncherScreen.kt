@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,7 +47,6 @@ import com.quartz.powerline.ui.viewmodel.MainViewModel
 fun LauncherScreen(
     viewModel: MainViewModel,
     onResultClick: (SearchResult) -> Unit,
-    onMemoClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     val query by viewModel.query.collectAsState()
@@ -165,13 +163,6 @@ fun LauncherScreen(
             modifier = Modifier.align(Alignment.TopEnd),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            IconButton(
-                onClick = onMemoClick,
-                modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), CircleShape)
-            ) {
-                Icon(Icons.Default.Edit, contentDescription = "Memos")
-            }
-
             IconButton(
                 onClick = onSettingsClick,
                 modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), CircleShape)

@@ -3,7 +3,7 @@ package com.quartz.powerline.domain.models
 import android.graphics.drawable.Drawable
 
 enum class ResultType {
-    APP, WEB, CALC, MEMO, SHARE
+    APP, WEB, CALC, SHARE
 }
 
 data class SearchResult(

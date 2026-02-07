@@ -235,10 +235,42 @@ class SettingsRepository(context: Context) {
     }
 
     // --- History ---
+
+    private data class LegacyHistoryItem(
+        val id: String,
+        val type: String,
+        val title: String,
+        val subtitle: String? = null,
+        val payload: String? = null,
+        val timestamp: Long,
+        val faviconUrl: String? = null
+    )
+
     fun getHistory(): List<HistoryItem> {
         val json = prefs.getString("history", "[]")
-        val type = object : TypeToken<List<HistoryItem>>() {}.type
-        return gson.fromJson(json, type)
+        return try {
+            val typeToken = object : TypeToken<List<LegacyHistoryItem>>() {}.type
+            val legacyItems: List<LegacyHistoryItem> = gson.fromJson(json, typeToken) ?: emptyList()
+
+            legacyItems.mapNotNull { legacy ->
+                try {
+                    if (legacy.type == "MEMO") return@mapNotNull null
+                    HistoryItem(
+                        id = legacy.id,
+                        type = ResultType.valueOf(legacy.type),
+                        title = legacy.title,
+                        subtitle = legacy.subtitle,
+                        payload = legacy.payload,
+                        timestamp = legacy.timestamp,
+                        faviconUrl = legacy.faviconUrl
+                    )
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     fun addToHistory(item: HistoryItem) {
@@ -281,26 +313,43 @@ class SettingsRepository(context: Context) {
     }
 
     fun importSettings(json: String) {
-        val data = gson.fromJson(json, AppBackupData::class.java)
-        setHiddenApps(data.hiddenApps)
-        setAliases(data.aliases)
-        setMaxRecentItems(data.maxRecentItems)
-        saveHistory(data.history)
-        setStatusBarTapEnabled(data.statusBarTapEnabled)
-        setStatusBarTriggerWidthPercent(data.statusBarTriggerWidthPercent)
-        setBottomTriggerEnabled(data.bottomTriggerEnabled)
-        setBottomTriggerCenterGapPercent(data.bottomTriggerCenterGapPercent)
-        setBottomTriggerHeightDp(data.bottomTriggerHeightDp)
-        setHideTriggersOnKeyboard(data.hideTriggersOnKeyboard ?: false)
-        setOverlayCloseOnBackgroundTap(data.overlayCloseOnBackgroundTap ?: true)
-        setOverlayDimAmount(data.overlayDimAmount ?: 0.5f)
-        setOverlayBlurRadius(data.overlayBlurRadius ?: 0)
-        setFavoriteApps(data.favoriteApps)
-        setAppWeights(data.appWeights)
-        setEnableWeightSearch(data.enableWeightSearch ?: true)
-        setEnablePackageSearch(data.enablePackageSearch ?: true)
-        setHomeScreenText(data.homeScreenText ?: "")
-        setCustomSearchEngines(data.customSearchEngines ?: emptyList())
+        try {
+            val jsonObject = com.google.gson.JsonParser.parseString(json).asJsonObject
+            if (jsonObject.has("history")) {
+                val historyArray = jsonObject.getAsJsonArray("history")
+                val newHistoryArray = com.google.gson.JsonArray()
+                historyArray.forEach { element ->
+                    val item = element.asJsonObject
+                    if (item.has("type") && item.get("type").asString != "MEMO") {
+                        newHistoryArray.add(item)
+                    }
+                }
+                jsonObject.add("history", newHistoryArray)
+            }
+
+            val data = gson.fromJson(jsonObject, AppBackupData::class.java)
+            setHiddenApps(data.hiddenApps)
+            setAliases(data.aliases)
+            setMaxRecentItems(data.maxRecentItems)
+            saveHistory(data.history)
+            setStatusBarTapEnabled(data.statusBarTapEnabled)
+            setStatusBarTriggerWidthPercent(data.statusBarTriggerWidthPercent)
+            setBottomTriggerEnabled(data.bottomTriggerEnabled)
+            setBottomTriggerCenterGapPercent(data.bottomTriggerCenterGapPercent)
+            setBottomTriggerHeightDp(data.bottomTriggerHeightDp)
+            setHideTriggersOnKeyboard(data.hideTriggersOnKeyboard ?: false)
+            setOverlayCloseOnBackgroundTap(data.overlayCloseOnBackgroundTap ?: true)
+            setOverlayDimAmount(data.overlayDimAmount ?: 0.5f)
+            setOverlayBlurRadius(data.overlayBlurRadius ?: 0)
+            setFavoriteApps(data.favoriteApps)
+            setAppWeights(data.appWeights)
+            setEnableWeightSearch(data.enableWeightSearch ?: true)
+            setEnablePackageSearch(data.enablePackageSearch ?: true)
+            setHomeScreenText(data.homeScreenText ?: "")
+            setCustomSearchEngines(data.customSearchEngines ?: emptyList())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun clearAllSettings() {
