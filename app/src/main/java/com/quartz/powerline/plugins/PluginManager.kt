@@ -15,6 +15,7 @@ class PluginManager(
         AppLauncherPlugin(settingsRepository, installedAppsFlow),
         CalculatorPlugin(),
         WebSearchPlugin(settingsRepository),
+        SharePlugin(settingsRepository),
         MemoPlugin()
     )
 
