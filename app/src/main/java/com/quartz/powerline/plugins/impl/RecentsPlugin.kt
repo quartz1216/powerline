@@ -100,6 +100,16 @@ class RecentsPlugin(
                         payload = item.payload ?: item.title
                     )
                 }
+                ResultType.SHARE -> {
+                    SearchResult(
+                        id = item.id,
+                        pluginId = "share",
+                        title = item.title,
+                        subtitle = item.subtitle ?: "Recent Share",
+                        type = ResultType.SHARE,
+                        payload = item.payload ?: item.title
+                    )
+                }
             }
         }
     }

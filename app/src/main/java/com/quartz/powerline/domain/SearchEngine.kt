@@ -19,6 +19,12 @@ class SearchEngine(
             return pluginManager.getPlugin("web_search")?.search(query, context) ?: emptyList()
         }
 
+        // Exclusive search for share
+        val shareAlias = settingsRepository.getShareAlias()
+        if (settingsRepository.getShareEnabled() && shareAlias.isNotEmpty() && query.startsWith("$shareAlias ")) {
+            return pluginManager.getPlugin("share")?.search(query, context) ?: emptyList()
+        }
+
         val results = mutableListOf<SearchResult>()
         for (plugin in pluginManager.plugins) {
             results.addAll(plugin.search(query, context))

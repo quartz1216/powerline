@@ -199,6 +199,23 @@ class SettingsRepository(context: Context) {
         prefs.edit().putString("custom_search_engines", json).apply()
     }
 
+    // --- Share Plugin ---
+    fun getShareEnabled(): Boolean {
+        return prefs.getBoolean("share_enabled", true)
+    }
+
+    fun setShareEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("share_enabled", enabled).apply()
+    }
+
+    fun getShareAlias(): String {
+        return prefs.getString("share_alias", "share") ?: "share"
+    }
+
+    fun setShareAlias(alias: String) {
+        prefs.edit().putString("share_alias", alias).apply()
+    }
+
     // --- Home Screen Text ---
     fun getHomeScreenText(): String {
         return prefs.getString("home_screen_text", "") ?: ""
