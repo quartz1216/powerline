@@ -10,21 +10,21 @@ import org.mockito.Mockito.mock
 class IntegrationPluginTest {
 
     @Test
-    fun testSearchQueryReturnsShareResult() {
+    fun testSearchQueryReturnsCorrectResult() {
         val plugin = IntegrationPlugin()
         val context = mock(Context::class.java)
-        val query = "cat"
+        val query = "Hello Gemini"
 
         val results = plugin.search(query, context)
 
-        // Only 1 result: Share
         assertEquals(1, results.size)
-
         val result = results[0]
-        assertEquals("integration:share:cat", result.id)
-        assertEquals("Share Text", result.title)
-        assertEquals("cat", result.payload)
+
+        assertEquals("integration_gemini:Hello Gemini", result.id)
+        assertEquals("Ask Gemini", result.title)
+        assertEquals("Hello Gemini", result.subtitle)
         assertEquals(ResultType.INTEGRATION, result.type)
+        assertEquals("Hello Gemini", result.payload)
     }
 
     @Test
