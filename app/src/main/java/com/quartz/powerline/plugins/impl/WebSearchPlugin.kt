@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -118,7 +119,9 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
     override fun SettingsScreen(viewModel: SettingsViewModel) {
         var engines by remember { mutableStateOf(settingsRepository.getCustomSearchEngines()) }
         var showDialog by remember { mutableStateOf(false) }
+        var showOptionsDialog by remember { mutableStateOf(false) }
         var engineToEdit by remember { mutableStateOf<CustomSearchEngine?>(null) }
+        var selectedEngine by remember { mutableStateOf<CustomSearchEngine?>(null) }
 
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -131,6 +134,10 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
                 ) {
                     items(engines) { engine ->
                         ListItem(
+                            modifier = Modifier.clickable {
+                                selectedEngine = engine
+                                showOptionsDialog = true
+                            },
                             headlineContent = { Text(engine.name) },
                             supportingContent = {
                                 Column {
@@ -141,30 +148,14 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
                                 }
                             },
                             trailingContent = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Switch(
-                                        checked = engine.isEnabled,
-                                        onCheckedChange = { isEnabled ->
-                                            val updated = engines.map { if (it.id == engine.id) it.copy(isEnabled = isEnabled) else it }
-                                            settingsRepository.setCustomSearchEngines(updated)
-                                            engines = updated
-                                        }
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    IconButton(onClick = {
-                                        engineToEdit = engine
-                                        showDialog = true
-                                    }) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Edit")
-                                    }
-                                    IconButton(onClick = {
-                                        val updated = engines.filter { it.id != engine.id }
+                                Switch(
+                                    checked = engine.isEnabled,
+                                    onCheckedChange = { isEnabled ->
+                                        val updated = engines.map { if (it.id == engine.id) it.copy(isEnabled = isEnabled) else it }
                                         settingsRepository.setCustomSearchEngines(updated)
                                         engines = updated
-                                    }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Delete")
                                     }
-                                }
+                                )
                             }
                         )
                         HorizontalDivider()
@@ -181,6 +172,37 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Engine")
             }
+        }
+
+        if (showOptionsDialog && selectedEngine != null) {
+            AlertDialog(
+                onDismissRequest = { showOptionsDialog = false },
+                title = { Text(selectedEngine!!.name) },
+                text = { Text("Choose an action") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showOptionsDialog = false
+                            engineToEdit = selectedEngine
+                            showDialog = true
+                        }
+                    ) {
+                        Text("Edit")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            val updated = engines.filter { it.id != selectedEngine!!.id }
+                            settingsRepository.setCustomSearchEngines(updated)
+                            engines = updated
+                            showOptionsDialog = false
+                        }
+                    ) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            )
         }
 
         if (showDialog) {

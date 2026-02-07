@@ -30,7 +30,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val installedApps: StateFlow<List<AppInfo>> = _installedApps.asStateFlow()
 
     val pluginManager = com.quartz.powerline.plugins.PluginManager(settingsRepository, _installedApps)
-    private val searchEngine = SearchEngine(application, pluginManager)
+    private val searchEngine = SearchEngine(application, pluginManager, settingsRepository)
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
