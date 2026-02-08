@@ -416,10 +416,10 @@ fun AdditionalSettingsSubpage(
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("オーバーレイが起動しない場合…", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Text("If Overlay doesn't start...", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "(Xiaomi HyperOSなどのタスク管理が厳しいOSでは、アクセシビリティサービスすら自動でタスクキルされる場合があります。アプリ情報から「Pause app activity if unused」のチェックをオフにしたり、バッテリー制限を「制限しない」などに設定する必要があるかもしれません。",
+                    text = "(On OSs with strict task management such as Xiaomi HyperOS, even accessibility services may be automatically killed. You may need to uncheck 'Pause app activity if unused' in App Info or set battery restrictions to 'No restrictions'.)",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 16.dp)
