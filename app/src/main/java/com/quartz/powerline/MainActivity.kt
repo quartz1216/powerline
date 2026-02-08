@@ -8,9 +8,11 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.lifecycle.ViewModelProvider
 import com.quartz.powerline.ui.LauncherScreen
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
+import com.quartz.powerline.ui.theme.rememberIsWallpaperLight
 import com.quartz.powerline.ui.viewmodel.MainViewModel
 import com.quartz.powerline.utils.ActionExecutor
 
@@ -31,7 +33,18 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            CommandLauncherTheme(dynamicColor = true) {
+            val isWallpaperLight = rememberIsWallpaperLight()
+            val systemDark = isSystemInDarkTheme()
+            val useDarkTheme = when (isWallpaperLight) {
+                true -> false // Wallpaper is light -> Use Light Theme (dark text)
+                false -> true // Wallpaper is dark -> Use Dark Theme (light text)
+                else -> systemDark // Fallback to system theme if undetermined
+            }
+
+            CommandLauncherTheme(
+                darkTheme = useDarkTheme,
+                dynamicColor = true
+            ) {
                 // Main Activity only shows Launcher. Settings and Memo are separate Activities.
                 LauncherScreen(
                     viewModel = viewModel,

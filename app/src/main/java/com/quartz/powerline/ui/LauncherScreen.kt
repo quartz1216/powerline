@@ -134,40 +134,51 @@ fun LauncherScreen(
             )
         }
 
-        // Home Screen Text (Top Left)
-        if (homeScreenText.isNotEmpty()) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .clickable { showHomeTextDialog = true }
-            ) {
-                val fontSize = when {
-                    homeScreenText.length > 35 -> 12.sp
-                    homeScreenText.length > 25 -> 14.sp
-                    homeScreenText.length > 15 -> 16.sp
-                    else -> 20.sp
-                }
-
-                Text(
-                    text = homeScreenText,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = fontSize),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-
-        // Hamburger Menu (Top Right)
+        // Header Row (Custom Text & Settings Button)
         Row(
-            modifier = Modifier.align(Alignment.TopEnd),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopStart), // Align row to top
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            // Home Screen Text (Top Left)
+            if (homeScreenText.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .clickable { showHomeTextDialog = true }
+                ) {
+                    val fontSize = when {
+                        homeScreenText.length > 35 -> 12.sp
+                        homeScreenText.length > 25 -> 14.sp
+                        homeScreenText.length > 15 -> 16.sp
+                        else -> 20.sp
+                    }
+
+                    Text(
+                        text = homeScreenText,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = fontSize),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.weight(1f)) // Fill space if no text
+            }
+
+            // Settings Button (Top Right)
             IconButton(
                 onClick = onSettingsClick,
-                modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), CircleShape)
+                modifier = Modifier
+                // Removed background as requested
+                // .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), CircleShape)
             ) {
-                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                Icon(
+                    Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    tint = MaterialTheme.colorScheme.onSurface // Use theme color
+                )
             }
         }
 
