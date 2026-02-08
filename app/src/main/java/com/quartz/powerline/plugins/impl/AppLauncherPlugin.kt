@@ -199,90 +199,114 @@ class AppLauncherPlugin(
         var showHiddenAppsDialog by remember { mutableStateOf(false) }
         var showAddAliasDialog by remember { mutableStateOf(false) }
 
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Text("App Launcher Settings", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Search Options
-            Text("Search Options", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Enable Weight Search")
-                Switch(
-                    checked = enableWeightSearch,
-                    onCheckedChange = {
-                        enableWeightSearch = it
-                        settingsRepository.setEnableWeightSearch(it)
-                    }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 80.dp)
+        ) {
+            // Search Options Section
+            item {
+                Text(
+                    "Search Options",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(16.dp)
                 )
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Enable Package Search")
-                Switch(
-                    checked = enablePackageSearch,
-                    onCheckedChange = {
-                        enablePackageSearch = it
-                        settingsRepository.setEnablePackageSearch(it)
-                    }
-                )
-            }
-
-            Divider(modifier = Modifier.padding(vertical = 16.dp))
-
-            // Hidden Apps
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Hidden Apps", style = MaterialTheme.typography.titleMedium)
-                Button(onClick = { showHiddenAppsDialog = true }) {
-                    Text("Manage (${hiddenApps.size})")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Aliases
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Aliases", style = MaterialTheme.typography.titleMedium)
-                IconButton(onClick = { showAddAliasDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Alias")
-                }
-            }
-
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(aliases.toList()) { (alias, packageName) ->
-                    val appName = allApps.find { it.packageName == packageName }?.label ?: packageName
-                    ListItem(
-                        headlineContent = { Text(alias) },
-                        supportingContent = { Text(appName) },
-                        trailingContent = {
-                            IconButton(onClick = {
-                                val newAliases = aliases.toMutableMap()
-                                newAliases.remove(alias)
-                                aliases = newAliases
-                                settingsRepository.setAliases(newAliases)
-                            }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete")
+            item {
+                ListItem(
+                    headlineContent = { Text("Enable Weight Search") },
+                    trailingContent = {
+                        Switch(
+                            checked = enableWeightSearch,
+                            onCheckedChange = {
+                                enableWeightSearch = it
+                                settingsRepository.setEnableWeightSearch(it)
                             }
+                        )
+                    }
+                )
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("Enable Package Search") },
+                    trailingContent = {
+                        Switch(
+                            checked = enablePackageSearch,
+                            onCheckedChange = {
+                                enablePackageSearch = it
+                                settingsRepository.setEnablePackageSearch(it)
+                            }
+                        )
+                    }
+                )
+            }
+
+            item { HorizontalDivider() }
+
+            // Hidden Apps Section
+            item {
+                Text(
+                    "Hidden Apps",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("Manage Hidden Apps") },
+                    supportingContent = { Text("${hiddenApps.size} hidden") },
+                    trailingContent = {
+                        Button(onClick = { showHiddenAppsDialog = true }) {
+                            Text("Manage")
                         }
+                    },
+                    modifier = Modifier.clickable { showHiddenAppsDialog = true }
+                )
+            }
+
+            item { HorizontalDivider() }
+
+            // Aliases Section
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Aliases",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
                     )
-                    Divider()
+                    IconButton(onClick = { showAddAliasDialog = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Alias")
+                    }
                 }
+            }
+
+            items(aliases.toList()) { (alias, packageName) ->
+                val appName = allApps.find { it.packageName == packageName }?.label ?: packageName
+                ListItem(
+                    headlineContent = { Text(alias) },
+                    supportingContent = { Text(appName) },
+                    trailingContent = {
+                        IconButton(onClick = {
+                            val newAliases = aliases.toMutableMap()
+                            newAliases.remove(alias)
+                            aliases = newAliases
+                            settingsRepository.setAliases(newAliases)
+                        }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
+                    }
+                )
+                HorizontalDivider()
             }
         }
 

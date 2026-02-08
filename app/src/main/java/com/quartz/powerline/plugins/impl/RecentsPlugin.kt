@@ -125,9 +125,6 @@ class RecentsPlugin(
         var maxRecentItems by remember { mutableFloatStateOf(settingsRepository.getMaxRecentItems().toFloat()) }
 
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Text("Recent Settings", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-
             ListItem(
                 headlineContent = { Text("Record History") },
                 supportingContent = { Text("Enable saving new items to history.") },
