@@ -43,10 +43,14 @@ class MainActivity : ComponentActivity() {
                 else -> systemDark // Fallback to system theme if undetermined
             }
             val materialYouEnabled by viewModel.materialYouEnabled.collectAsState()
+            val appTheme by viewModel.appTheme.collectAsState()
+            val customAccentColor by viewModel.customAccentColor.collectAsState()
 
             CommandLauncherTheme(
                 darkTheme = useDarkTheme,
-                dynamicColor = materialYouEnabled
+                dynamicColor = materialYouEnabled,
+                appTheme = appTheme,
+                customAccentColor = customAccentColor
             ) {
                 // Main Activity only shows Launcher. Settings and Memo are separate Activities.
                 LauncherScreen(

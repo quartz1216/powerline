@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.quartz.powerline.domain.models.AppTheme
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -51,15 +52,59 @@ fun CommandLauncherTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
+    appTheme: AppTheme = AppTheme.MATERIAL_YOU, // Default to Material You
+    customAccentColor: Int = 0xFF4CDC8F.toInt(), // Default to Brand Color
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    val context = LocalContext.current
+
+    val colorScheme = when (appTheme) {
+        AppTheme.BRAND -> {
+            if (darkTheme) BrandDarkColorScheme else BrandLightColorScheme
         }
-        darkTheme -> BrandDarkColorScheme
-        else -> BrandLightColorScheme
+        AppTheme.MATERIAL_YOU -> {
+             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+             } else {
+                 // Fallback to Brand if Material You not supported
+                 if (darkTheme) BrandDarkColorScheme else BrandLightColorScheme
+             }
+        }
+        AppTheme.LIGHT -> {
+            // Light background, custom accent
+            val accent = Color(customAccentColor)
+            lightColorScheme(
+                primary = accent,
+                secondary = PurpleGrey40,
+                tertiary = Pink40
+            )
+        }
+        AppTheme.DARK -> {
+            // Dark background, custom accent
+             val accent = Color(customAccentColor)
+             darkColorScheme(
+                primary = accent,
+                secondary = PurpleGrey80,
+                tertiary = Pink80
+            )
+        }
+        AppTheme.SYSTEM -> {
+            // Follow system dark/light, custom accent
+             val accent = Color(customAccentColor)
+             if (darkTheme) {
+                 darkColorScheme(
+                    primary = accent,
+                    secondary = PurpleGrey80,
+                    tertiary = Pink80
+                )
+             } else {
+                 lightColorScheme(
+                    primary = accent,
+                    secondary = PurpleGrey40,
+                    tertiary = Pink40
+                )
+             }
+        }
     }
     val view = LocalView.current
     if (!view.isInEditMode) {

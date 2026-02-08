@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.quartz.powerline.domain.models.AppBackupData
+import com.quartz.powerline.domain.models.AppTheme
 import com.quartz.powerline.domain.models.CustomSearchEngine
 import com.quartz.powerline.domain.models.ResultType
 
@@ -102,6 +103,36 @@ class SettingsRepository(context: Context) {
 
     fun setMaterialYouEnabled(enabled: Boolean) {
         prefs.edit().putBoolean("material_you_enabled", enabled).apply()
+    }
+
+    fun getAppTheme(): AppTheme {
+        val themeName = prefs.getString("app_theme", null)
+        return if (themeName != null) {
+            try {
+                AppTheme.valueOf(themeName)
+            } catch (e: IllegalArgumentException) {
+                // Migrate old setting
+                if (getMaterialYouEnabled()) AppTheme.MATERIAL_YOU else AppTheme.BRAND
+            }
+        } else {
+            // Default
+            if (getMaterialYouEnabled()) AppTheme.MATERIAL_YOU else AppTheme.BRAND
+        }
+    }
+
+    fun setAppTheme(theme: AppTheme) {
+        prefs.edit().putString("app_theme", theme.name).apply()
+        // Sync legacy toggle for backward compatibility if needed, though we should move away from it.
+        setMaterialYouEnabled(theme == AppTheme.MATERIAL_YOU)
+    }
+
+    fun getCustomAccentColor(): Int {
+        // Default to brand color if not set
+        return prefs.getInt("custom_accent_color", 0xFF4CDC8F.toInt())
+    }
+
+    fun setCustomAccentColor(color: Int) {
+        prefs.edit().putInt("custom_accent_color", color).apply()
     }
 
     // --- Overlay Behavior ---
@@ -317,7 +348,9 @@ class SettingsRepository(context: Context) {
             enablePackageSearch = getEnablePackageSearch(),
             homeScreenText = getHomeScreenText(),
             customSearchEngines = getCustomSearchEngines(),
-            materialYouEnabled = getMaterialYouEnabled()
+            materialYouEnabled = getMaterialYouEnabled(),
+            appTheme = getAppTheme().name,
+            customAccentColor = getCustomAccentColor()
         )
         return gson.toJson(data)
     }
@@ -358,6 +391,12 @@ class SettingsRepository(context: Context) {
             setHomeScreenText(data.homeScreenText ?: "")
             setCustomSearchEngines(data.customSearchEngines ?: emptyList())
             setMaterialYouEnabled(data.materialYouEnabled ?: true)
+            if (data.appTheme != null) {
+                setAppTheme(AppTheme.valueOf(data.appTheme))
+            }
+            if (data.customAccentColor != null) {
+                setCustomAccentColor(data.customAccentColor)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

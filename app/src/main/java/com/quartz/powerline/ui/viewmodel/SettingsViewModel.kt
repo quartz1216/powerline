@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.domain.AppRepository
 import com.quartz.powerline.domain.models.AppInfo
+import com.quartz.powerline.domain.models.AppTheme
 import com.quartz.powerline.plugins.PluginManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +43,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _materialYouEnabled = MutableStateFlow(settingsRepository.getMaterialYouEnabled())
     val materialYouEnabled: StateFlow<Boolean> = _materialYouEnabled.asStateFlow()
 
+    private val _appTheme = MutableStateFlow(settingsRepository.getAppTheme())
+    val appTheme: StateFlow<AppTheme> = _appTheme.asStateFlow()
+
+    private val _customAccentColor = MutableStateFlow(settingsRepository.getCustomAccentColor())
+    val customAccentColor: StateFlow<Int> = _customAccentColor.asStateFlow()
+
     init {
         reloadApps()
     }
@@ -49,6 +56,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setMaterialYouEnabled(enabled: Boolean) {
         settingsRepository.setMaterialYouEnabled(enabled)
         _materialYouEnabled.value = enabled
+    }
+
+    fun setAppTheme(theme: AppTheme) {
+        settingsRepository.setAppTheme(theme)
+        _appTheme.value = theme
+        // Sync legacy toggle
+        _materialYouEnabled.value = (theme == AppTheme.MATERIAL_YOU)
+    }
+
+    fun setCustomAccentColor(color: Int) {
+        settingsRepository.setCustomAccentColor(color)
+        _customAccentColor.value = color
     }
 
     fun reloadApps() {
