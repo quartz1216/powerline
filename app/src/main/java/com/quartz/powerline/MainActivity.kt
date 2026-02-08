@@ -37,15 +37,25 @@ class MainActivity : ComponentActivity() {
         setContent {
             val isWallpaperLight = rememberIsWallpaperLight()
             val systemDark = isSystemInDarkTheme()
-            val useDarkTheme = when (isWallpaperLight) {
-                true -> false // Wallpaper is light -> Use Light Theme (dark text)
-                false -> true // Wallpaper is dark -> Use Dark Theme (light text)
-                else -> systemDark // Fallback to system theme if undetermined
-            }
             val materialYouEnabled by viewModel.materialYouEnabled.collectAsState()
             val appTheme by viewModel.appTheme.collectAsState()
             val customAccentColor by viewModel.customAccentColor.collectAsState()
 
+            // When user manually selects Light or Dark mode, we should respect it.
+            // When using Brand/MaterialYou or System, we might want to respect wallpaper contrast or system theme.
+            val useDarkTheme = when (appTheme) {
+                AppTheme.LIGHT -> false
+                AppTheme.DARK -> true
+                AppTheme.SYSTEM -> systemDark
+                AppTheme.BRAND, AppTheme.MATERIAL_YOU -> {
+                     // Legacy/Smart behavior: check wallpaper
+                     when (isWallpaperLight) {
+                        true -> false
+                        false -> true
+                        else -> systemDark
+                    }
+                }
+            }
             CommandLauncherTheme(
                 darkTheme = useDarkTheme,
                 dynamicColor = materialYouEnabled,

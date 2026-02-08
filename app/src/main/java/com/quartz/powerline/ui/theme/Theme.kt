@@ -73,17 +73,31 @@ fun CommandLauncherTheme(
         AppTheme.LIGHT -> {
             // Light background, custom accent
             val accent = Color(customAccentColor)
+            // Generate container colors for consistency
+            val primaryContainer = accent.copy(alpha = 0.2f) // Light tint
+            val onPrimaryContainer = Color.Black // Dark text on light tint
+
             lightColorScheme(
                 primary = accent,
+                onPrimary = Color.White,
+                primaryContainer = primaryContainer,
+                onPrimaryContainer = onPrimaryContainer,
                 secondary = PurpleGrey40,
                 tertiary = Pink40
             )
         }
         AppTheme.DARK -> {
             // Dark background, custom accent
-             val accent = Color(customAccentColor)
-             darkColorScheme(
+            val accent = Color(customAccentColor)
+            // Generate container colors
+            val primaryContainer = accent.copy(alpha = 0.3f) // Darker tint
+            val onPrimaryContainer = Color.White // Light text on dark tint
+
+            darkColorScheme(
                 primary = accent,
+                onPrimary = Color.Black,
+                primaryContainer = primaryContainer,
+                onPrimaryContainer = onPrimaryContainer,
                 secondary = PurpleGrey80,
                 tertiary = Pink80
             )
@@ -92,14 +106,24 @@ fun CommandLauncherTheme(
             // Follow system dark/light, custom accent
              val accent = Color(customAccentColor)
              if (darkTheme) {
+                 val primaryContainer = accent.copy(alpha = 0.3f)
+                 val onPrimaryContainer = Color.White
                  darkColorScheme(
                     primary = accent,
+                    onPrimary = Color.Black,
+                    primaryContainer = primaryContainer,
+                    onPrimaryContainer = onPrimaryContainer,
                     secondary = PurpleGrey80,
                     tertiary = Pink80
                 )
              } else {
+                 val primaryContainer = accent.copy(alpha = 0.2f)
+                 val onPrimaryContainer = Color.Black
                  lightColorScheme(
                     primary = accent,
+                    onPrimary = Color.White,
+                    primaryContainer = primaryContainer,
+                    onPrimaryContainer = onPrimaryContainer,
                     secondary = PurpleGrey40,
                     tertiary = Pink40
                 )

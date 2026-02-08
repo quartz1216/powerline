@@ -65,11 +65,11 @@ fun AppearanceSettingsScreen(
                         supportingContent = {
                             Text(
                                 text = when (appTheme) {
-                                    AppTheme.BRAND -> "Brand"
+                                    AppTheme.BRAND -> "ブランド"
                                     AppTheme.MATERIAL_YOU -> "Material You"
-                                    AppTheme.LIGHT -> "Light Mode"
-                                    AppTheme.DARK -> "Dark Mode"
-                                    AppTheme.SYSTEM -> "System Default"
+                                    AppTheme.LIGHT -> "ライトモード"
+                                    AppTheme.DARK -> "ダークモード"
+                                    AppTheme.SYSTEM -> "端末に合わせる"
                                 }
                             )
                         },
@@ -87,11 +87,11 @@ fun AppearanceSettingsScreen(
                                 text = {
                                     Text(
                                         when (theme) {
-                                            AppTheme.BRAND -> "Brand"
+                                            AppTheme.BRAND -> "ブランド"
                                             AppTheme.MATERIAL_YOU -> "Material You"
-                                            AppTheme.LIGHT -> "Light Mode"
-                                            AppTheme.DARK -> "Dark Mode"
-                                            AppTheme.SYSTEM -> "System Default"
+                                            AppTheme.LIGHT -> "ライトモード"
+                                            AppTheme.DARK -> "ダークモード"
+                                            AppTheme.SYSTEM -> "端末に合わせる"
                                         }
                                     )
                                 },
@@ -122,6 +122,43 @@ fun AppearanceSettingsScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Accent Color", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
+
+                    var hexInput by remember(customAccentColor) {
+                        mutableStateOf(String.format("#%06X", (0xFFFFFF and customAccentColor)))
+                    }
+                    var isHexError by remember { mutableStateOf(false) }
+
+                    OutlinedTextField(
+                        value = hexInput,
+                        onValueChange = { input ->
+                            hexInput = input
+                            if (input.matches(Regex("^#([A-Fa-f0-9]{6})$"))) {
+                                isHexError = false
+                                try {
+                                    val color = android.graphics.Color.parseColor(input)
+                                    viewModel.setCustomAccentColor(color)
+                                } catch (e: Exception) {
+                                    isHexError = true
+                                }
+                            } else {
+                                isHexError = true
+                            }
+                        },
+                        label = { Text("Hex Color (#RRGGBB)") },
+                        singleLine = true,
+                        isError = isHexError,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        trailingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(customAccentColor))
+                            )
+                        }
+                    )
 
                     val colors = listOf(
                         0xFF4CDC8F, // Brand Green

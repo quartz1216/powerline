@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import android.os.Build
 import android.view.WindowManager
 import androidx.lifecycle.ViewModelProvider
+import com.quartz.powerline.domain.models.AppTheme
 import com.quartz.powerline.ui.LauncherScreen
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
 import com.quartz.powerline.ui.viewmodel.MainViewModel
@@ -34,15 +35,28 @@ class OverlayActivity : ComponentActivity() {
         setContent {
             val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
             val dimAmount = viewModel.settingsRepository.getOverlayDimAmount()
-            val useDarkTheme = if (dimAmount > 0.4f) {
-                true // High dim -> Dark background -> Light text -> Dark Theme
-            } else {
-                systemDark // Low dim -> Background depends on system (Light/Dark) -> Match system theme (Dark BG->Light Text / Light BG->Dark Text)
+
+            // App Theme logic
+            val appTheme = viewModel.settingsRepository.getAppTheme()
+            val customAccentColor = viewModel.settingsRepository.getCustomAccentColor()
+            val materialYouEnabled = viewModel.settingsRepository.getMaterialYouEnabled()
+
+            // Determine if we should use dark theme based on settings or fallback to dim amount heuristic
+            val useDarkTheme = when (appTheme) {
+                AppTheme.LIGHT -> false
+                AppTheme.DARK -> true
+                AppTheme.SYSTEM -> systemDark
+                AppTheme.BRAND, AppTheme.MATERIAL_YOU -> {
+                     // For Brand/MaterialYou, we stick to original logic: depends on Dim or System
+                     if (dimAmount > 0.4f) true else systemDark
+                }
             }
 
             CommandLauncherTheme(
                 darkTheme = useDarkTheme,
-                dynamicColor = true
+                dynamicColor = materialYouEnabled,
+                appTheme = appTheme,
+                customAccentColor = customAccentColor
             ) {
                 // Transparent container that detects clicks outside to close
                 Box(
