@@ -26,5 +26,12 @@ data class AppBackupData(
     val homeScreenText: String? = null,
     val hideTriggersOnKeyboard: Boolean? = false,
     val customSearchEngines: List<CustomSearchEngine>? = emptyList(),
-    val materialYouEnabled: Boolean? = true
+    val materialYouEnabled: Boolean? = true,
+
+    // Plugin Settings
+    val calculatorEnabled: Boolean? = true,
+    val calculatorAlias: String? = null,
+    val historyEnabled: Boolean? = true,
+    val recentsShowOnEmpty: Boolean? = true,
+    val recentsAlias: String? = null
 )

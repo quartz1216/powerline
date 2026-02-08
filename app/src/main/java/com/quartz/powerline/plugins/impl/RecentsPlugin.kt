@@ -4,9 +4,16 @@ import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -23,12 +30,24 @@ class RecentsPlugin(
     private val installedAppsFlow: StateFlow<List<AppInfo>>
 ) : Plugin {
     override val id = "recents"
-    override val name = "Recent Activity"
+    override val name = "Recent"
     override val description = "Shows recently used apps and searches"
     override val icon = Icons.Default.History
 
     override fun search(query: String, context: Context): List<SearchResult> {
-        if (query.isNotBlank()) return emptyList()
+        val showOnEmpty = settingsRepository.getRecentsShowOnEmpty()
+        val alias = settingsRepository.getRecentsAlias()
+
+        if (query.isNotBlank()) {
+            if (alias.isEmpty() || query != alias) {
+                return emptyList()
+            }
+        } else {
+            // query is blank
+            if (!showOnEmpty) {
+                return emptyList()
+            }
+        }
 
         val history = settingsRepository.getHistory()
         val maxRecent = settingsRepository.getMaxRecentItems()
@@ -111,10 +130,61 @@ class RecentsPlugin(
 
     @Composable
     override fun SettingsScreen(viewModel: SettingsViewModel) {
+        var recordHistory by remember { mutableStateOf(settingsRepository.getHistoryEnabled()) }
+        var showOnEmpty by remember { mutableStateOf(settingsRepository.getRecentsShowOnEmpty()) }
+        var alias by remember { mutableStateOf(settingsRepository.getRecentsAlias()) }
+
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Text("Recent Activity Settings", style = MaterialTheme.typography.titleLarge)
+            Text("Recent Settings", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("This plugin displays your recent history.")
+
+            ListItem(
+                headlineContent = { Text("Record History") },
+                supportingContent = { Text("Enable saving new items to history.") },
+                trailingContent = {
+                    Switch(
+                        checked = recordHistory,
+                        onCheckedChange = {
+                            recordHistory = it
+                            settingsRepository.setHistoryEnabled(it)
+                        }
+                    )
+                }
+            )
+
+            ListItem(
+                headlineContent = { Text("Show on Empty Input") },
+                supportingContent = { Text("Show recents when search bar is empty.") },
+                trailingContent = {
+                    Switch(
+                        checked = showOnEmpty,
+                        onCheckedChange = {
+                            showOnEmpty = it
+                            settingsRepository.setRecentsShowOnEmpty(it)
+                        }
+                    )
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = alias,
+                onValueChange = {
+                    alias = it
+                    settingsRepository.setRecentsAlias(it)
+                },
+                label = { Text("Alias (Optional)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Text(
+                text = "Type this alias to show recents even if search bar is not empty.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
+            )
         }
     }
 }

@@ -33,6 +33,8 @@ class RecentsPluginTest {
     fun setup() {
         MockitoAnnotations.openMocks(this)
         plugin = RecentsPlugin(settingsRepository, installedAppsFlow)
+        `when`(settingsRepository.getRecentsShowOnEmpty()).thenReturn(true)
+        `when`(settingsRepository.getRecentsAlias()).thenReturn("")
     }
 
     @Test
@@ -55,5 +57,39 @@ class RecentsPluginTest {
         assertEquals(1, results.size)
         val result = results[0]
         assertEquals("https://favicon.com/icon.png", result.faviconUrl)
+    }
+
+    @Test
+    fun testShowOnEmptyFalse() {
+        `when`(settingsRepository.getRecentsShowOnEmpty()).thenReturn(false)
+        val results = plugin.search("", context)
+        assertEquals(0, results.size)
+    }
+
+    @Test
+    fun testAliasMatching() {
+        `when`(settingsRepository.getRecentsAlias()).thenReturn("history")
+
+        val historyItem = HistoryItem(
+            id = "test",
+            type = ResultType.WEB,
+            title = "test",
+            timestamp = 0
+        )
+        `when`(settingsRepository.getHistory()).thenReturn(listOf(historyItem))
+        `when`(settingsRepository.getMaxRecentItems()).thenReturn(5)
+        `when`(settingsRepository.getHiddenApps()).thenReturn(emptySet())
+
+        // search("") -> returns results because showOnEmpty is true (default mock in setup)
+        var results = plugin.search("", context)
+        assertEquals(1, results.size)
+
+        // search("history") -> returns results
+        results = plugin.search("history", context)
+        assertEquals(1, results.size)
+
+        // search("hist") -> returns empty
+        results = plugin.search("hist", context)
+        assertEquals(0, results.size)
     }
 }
