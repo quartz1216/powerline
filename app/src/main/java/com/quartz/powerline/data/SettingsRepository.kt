@@ -251,22 +251,6 @@ class SettingsRepository(context: Context) {
         prefs.edit().putBoolean("history_enabled", enabled).apply()
     }
 
-    fun getRecentsShowOnEmpty(): Boolean {
-        return prefs.getBoolean("recents_show_on_empty", true)
-    }
-
-    fun setRecentsShowOnEmpty(enabled: Boolean) {
-        prefs.edit().putBoolean("recents_show_on_empty", enabled).apply()
-    }
-
-    fun getRecentsAlias(): String {
-        return prefs.getString("recents_alias", "") ?: ""
-    }
-
-    fun setRecentsAlias(alias: String) {
-        prefs.edit().putString("recents_alias", alias).apply()
-    }
-
     // --- Home Screen Text ---
     fun getHomeScreenText(): String {
         return prefs.getString("home_screen_text", "") ?: ""
@@ -363,9 +347,7 @@ class SettingsRepository(context: Context) {
             materialYouEnabled = getMaterialYouEnabled(),
             calculatorEnabled = getCalculatorEnabled(),
             calculatorAlias = getCalculatorAlias(),
-            historyEnabled = getHistoryEnabled(),
-            recentsShowOnEmpty = getRecentsShowOnEmpty(),
-            recentsAlias = getRecentsAlias()
+            historyEnabled = getHistoryEnabled()
         )
         return gson.toJson(data)
     }
@@ -409,8 +391,6 @@ class SettingsRepository(context: Context) {
             setCalculatorEnabled(data.calculatorEnabled ?: true)
             setCalculatorAlias(data.calculatorAlias ?: "")
             setHistoryEnabled(data.historyEnabled ?: true)
-            setRecentsShowOnEmpty(data.recentsShowOnEmpty ?: true)
-            setRecentsAlias(data.recentsAlias ?: "")
         } catch (e: Exception) {
             e.printStackTrace()
         }

@@ -6,11 +6,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -24,6 +25,7 @@ import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.plugins.Plugin
 import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 import kotlinx.coroutines.flow.StateFlow
+import kotlin.math.roundToInt
 
 class RecentsPlugin(
     private val settingsRepository: SettingsRepository,
@@ -35,19 +37,8 @@ class RecentsPlugin(
     override val icon = Icons.Default.History
 
     override fun search(query: String, context: Context): List<SearchResult> {
-        val showOnEmpty = settingsRepository.getRecentsShowOnEmpty()
-        val alias = settingsRepository.getRecentsAlias()
-
-        if (query.isNotBlank()) {
-            if (alias.isEmpty() || query != alias) {
-                return emptyList()
-            }
-        } else {
-            // query is blank
-            if (!showOnEmpty) {
-                return emptyList()
-            }
-        }
+        // Only show if query is empty
+        if (query.isNotBlank()) return emptyList()
 
         val history = settingsRepository.getHistory()
         val maxRecent = settingsRepository.getMaxRecentItems()
@@ -131,8 +122,7 @@ class RecentsPlugin(
     @Composable
     override fun SettingsScreen(viewModel: SettingsViewModel) {
         var recordHistory by remember { mutableStateOf(settingsRepository.getHistoryEnabled()) }
-        var showOnEmpty by remember { mutableStateOf(settingsRepository.getRecentsShowOnEmpty()) }
-        var alias by remember { mutableStateOf(settingsRepository.getRecentsAlias()) }
+        var maxRecentItems by remember { mutableFloatStateOf(settingsRepository.getMaxRecentItems().toFloat()) }
 
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Text("Recent Settings", style = MaterialTheme.typography.titleLarge)
@@ -152,38 +142,21 @@ class RecentsPlugin(
                 }
             )
 
-            ListItem(
-                headlineContent = { Text("Show on Empty Input") },
-                supportingContent = { Text("Show recents when search bar is empty.") },
-                trailingContent = {
-                    Switch(
-                        checked = showOnEmpty,
-                        onCheckedChange = {
-                            showOnEmpty = it
-                            settingsRepository.setRecentsShowOnEmpty(it)
-                        }
-                    )
-                }
-            )
-
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = alias,
-                onValueChange = {
-                    alias = it
-                    settingsRepository.setRecentsAlias(it)
-                },
-                label = { Text("Alias (Optional)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Text(
-                text = "Type this alias to show recents even if search bar is not empty.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp)
+            ListItem(
+                headlineContent = { Text("Number of Recent Items: ${maxRecentItems.roundToInt()}") },
+                supportingContent = {
+                    Slider(
+                        value = maxRecentItems,
+                        onValueChange = {
+                            maxRecentItems = it
+                            settingsRepository.setMaxRecentItems(it.roundToInt())
+                        },
+                        valueRange = 1f..20f,
+                        steps = 19
+                    )
+                }
             )
         }
     }
