@@ -29,6 +29,7 @@ class SharePlugin(private val settingsRepository: SettingsRepository) : Plugin {
     override val icon = Icons.Default.Share
 
     override fun search(query: String, context: Context): List<SearchResult> {
+        if (!settingsRepository.getIsAdvanced()) return emptyList()
         if (!settingsRepository.getShareEnabled()) return emptyList()
 
         if (query.isBlank()) return emptyList()
@@ -58,9 +59,19 @@ class SharePlugin(private val settingsRepository: SettingsRepository) : Plugin {
 
     @Composable
     override fun SettingsScreen(viewModel: SettingsViewModel) {
+        val isAdvanced by viewModel.isAdvanced.collectAsState()
         var enabled by remember { mutableStateOf(settingsRepository.getShareEnabled()) }
 
         Column(modifier = Modifier.padding(16.dp)) {
+            if (!isAdvanced) {
+                Text(
+                    text = "This feature is available in Powerline Advanced.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+
             ListItem(
                 headlineContent = { Text("Enable Share Action") },
                 trailingContent = {
@@ -69,7 +80,8 @@ class SharePlugin(private val settingsRepository: SettingsRepository) : Plugin {
                         onCheckedChange = {
                             enabled = it
                             settingsRepository.setShareEnabled(it)
-                        }
+                        },
+                        enabled = isAdvanced
                     )
                 }
             )

@@ -18,6 +18,7 @@ fun AppearanceSettingsScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit
 ) {
+    val isAdvanced by viewModel.isAdvanced.collectAsState()
     val materialYouEnabled by viewModel.materialYouEnabled.collectAsState()
     val homeScreenText by viewModel.homeScreenText.collectAsState()
 
@@ -55,8 +56,9 @@ fun AppearanceSettingsScreen(
                     leadingContent = { Icon(Icons.Default.Palette, contentDescription = null) },
                     trailingContent = {
                         Switch(
-                            checked = materialYouEnabled,
-                            onCheckedChange = { viewModel.setMaterialYouEnabled(it) }
+                            checked = if (isAdvanced) materialYouEnabled else false,
+                            onCheckedChange = { viewModel.setMaterialYouEnabled(it) },
+                            enabled = isAdvanced
                         )
                     }
                 )
@@ -107,7 +109,7 @@ fun AppearanceSettingsScreen(
                 ListItem(
                     headlineContent = { Text("Custom Header: ${homeScreenText.ifEmpty { "(Not set)" }}") },
                     leadingContent = { Icon(Icons.Default.Title, contentDescription = null) },
-                    modifier = Modifier.clickable {
+                    modifier = Modifier.clickable(enabled = isAdvanced) {
                         showHomeTextDialog = true
                     }
                 )
