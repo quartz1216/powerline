@@ -234,14 +234,6 @@ class SettingsRepository(context: Context) {
         prefs.edit().putBoolean("calculator_enabled", enabled).apply()
     }
 
-    fun getCalculatorAlias(): String {
-        return prefs.getString("calculator_alias", "") ?: ""
-    }
-
-    fun setCalculatorAlias(alias: String) {
-        prefs.edit().putString("calculator_alias", alias).apply()
-    }
-
     // --- Recents Plugin ---
     fun getHistoryEnabled(): Boolean {
         return prefs.getBoolean("history_enabled", true)
@@ -346,7 +338,6 @@ class SettingsRepository(context: Context) {
             customSearchEngines = getCustomSearchEngines(),
             materialYouEnabled = getMaterialYouEnabled(),
             calculatorEnabled = getCalculatorEnabled(),
-            calculatorAlias = getCalculatorAlias(),
             historyEnabled = getHistoryEnabled()
         )
         return gson.toJson(data)
@@ -389,7 +380,6 @@ class SettingsRepository(context: Context) {
             setCustomSearchEngines(data.customSearchEngines ?: emptyList())
             setMaterialYouEnabled(data.materialYouEnabled ?: true)
             setCalculatorEnabled(data.calculatorEnabled ?: true)
-            setCalculatorAlias(data.calculatorAlias ?: "")
             setHistoryEnabled(data.historyEnabled ?: true)
         } catch (e: Exception) {
             e.printStackTrace()

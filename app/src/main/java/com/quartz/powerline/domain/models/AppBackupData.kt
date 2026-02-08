@@ -30,6 +30,5 @@ data class AppBackupData(
 
     // Plugin Settings
     val calculatorEnabled: Boolean? = true,
-    val calculatorAlias: String? = null,
     val historyEnabled: Boolean? = true
 )
