@@ -77,9 +77,6 @@ class CalculatorPlugin(private val settingsRepository: SettingsRepository) : Plu
         var alias by remember { mutableStateOf(settingsRepository.getCalculatorAlias()) }
 
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Text("Calculator Settings", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-
             ListItem(
                 headlineContent = { Text("Enable Calculator") },
                 trailingContent = {
