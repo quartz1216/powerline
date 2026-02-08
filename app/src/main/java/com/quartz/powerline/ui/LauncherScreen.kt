@@ -76,7 +76,8 @@ fun LauncherScreen(
     ) {
         CommandLauncherTheme(
             darkTheme = isSystemInDarkTheme(),
-            dynamicColor = materialYouEnabled
+            dynamicColor = materialYouEnabled,
+            setSystemBars = false
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth()
