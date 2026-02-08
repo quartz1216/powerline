@@ -36,14 +36,7 @@ class CalculatorPlugin(private val settingsRepository: SettingsRepository) : Plu
     override fun search(query: String, context: Context): List<SearchResult> {
         if (!settingsRepository.getCalculatorEnabled()) return emptyList()
 
-        val alias = settingsRepository.getCalculatorAlias()
-        var expression = query.trim()
-
-        if (alias.isNotEmpty()) {
-            if (!expression.startsWith("$alias ")) return emptyList()
-            expression = expression.substring(alias.length).trim()
-        }
-
+        val expression = query.trim()
         if (expression.isBlank()) return emptyList()
 
         val calcResult = Calculator.evaluate(expression)
@@ -74,7 +67,6 @@ class CalculatorPlugin(private val settingsRepository: SettingsRepository) : Plu
     @Composable
     override fun SettingsScreen(viewModel: SettingsViewModel) {
         var enabled by remember { mutableStateOf(settingsRepository.getCalculatorEnabled()) }
-        var alias by remember { mutableStateOf(settingsRepository.getCalculatorAlias()) }
 
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             ListItem(
@@ -88,26 +80,6 @@ class CalculatorPlugin(private val settingsRepository: SettingsRepository) : Plu
                         }
                     )
                 }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = alias,
-                onValueChange = {
-                    alias = it
-                    settingsRepository.setCalculatorAlias(it)
-                },
-                label = { Text("Alias (Optional)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Text(
-                text = "If set, calculator will only trigger when query starts with this alias.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp)
             )
         }
     }
