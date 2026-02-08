@@ -29,12 +29,18 @@ private val LightColorScheme = lightColorScheme(
 
 private val BrandDarkColorScheme = darkColorScheme(
     primary = BrandColor,
+    onPrimary = Color.Black,
+    primaryContainer = BrandDarkPrimaryContainer,
+    onPrimaryContainer = BrandDarkOnPrimaryContainer,
     secondary = PurpleGrey80,
     tertiary = Pink80
 )
 
 private val BrandLightColorScheme = lightColorScheme(
     primary = BrandColor,
+    onPrimary = Color.White,
+    primaryContainer = BrandLightPrimaryContainer,
+    onPrimaryContainer = BrandLightOnPrimaryContainer,
     secondary = PurpleGrey40,
     tertiary = Pink40
 )
