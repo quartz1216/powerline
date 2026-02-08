@@ -28,6 +28,8 @@ class WebSearchPluginFaviconTest {
     @Before
     fun setup() {
         MockitoAnnotations.openMocks(this)
+        // Default to Advanced mode for these tests to allow custom engines
+        `when`(settingsRepository.getIsAdvanced()).thenReturn(true)
         plugin = WebSearchPlugin(settingsRepository)
     }
 
