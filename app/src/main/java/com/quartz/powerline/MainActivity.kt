@@ -12,6 +12,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModelProvider
+import com.quartz.powerline.domain.models.AppTheme
 import com.quartz.powerline.ui.LauncherScreen
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
 import com.quartz.powerline.ui.theme.rememberIsWallpaperLight
