@@ -22,7 +22,7 @@ fun AdMobBanner(modifier: Modifier = Modifier) {
         factory = { context ->
             AdView(context).apply {
                 setAdSize(AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, screenWidth))
-                adUnitId = "ca-app-pub-3940256099942544/9257395921"
+                adUnitId = "ca-app-pub-3940256099942544/9214589741"
                 adListener = object : AdListener() {
                     override fun onAdLoaded() {
                         Log.d("AdMobBanner", "Ad loaded successfully")
