@@ -31,9 +31,11 @@ class SettingsActivity : ComponentActivity() {
 
         // Initialize AdMob
         try {
-            MobileAds.initialize(this) {}
+            MobileAds.initialize(this) { status ->
+                android.util.Log.d("SettingsActivity", "MobileAds initialized: $status")
+            }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("SettingsActivity", "MobileAds init failed", e)
         }
 
         val viewModel = ViewModelProvider(this)[SettingsViewModel::class.java]
