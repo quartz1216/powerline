@@ -17,11 +17,7 @@ fun AdBanner(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxWidth(),
         factory = { context ->
             AdView(context).apply {
-                // Adaptive Banner
-                val displayMetrics = context.resources.displayMetrics
-                val width = displayMetrics.widthPixels / displayMetrics.density
-                setAdSize(AdSize.getCurrentOrientationAnchoredAdaptiveBannerAd(context, width.toInt()))
-
+                setAdSize(AdSize.BANNER)
                 adUnitId = "ca-app-pub-3940256099942544/9257395921"
                 adListener = object : AdListener() {
                     override fun onAdFailedToLoad(error: LoadAdError) {
