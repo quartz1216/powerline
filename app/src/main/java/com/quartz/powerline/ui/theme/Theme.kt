@@ -10,6 +10,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -27,6 +28,24 @@ private val LightColorScheme = lightColorScheme(
     tertiary = Pink40
 )
 
+private val BrandDarkColorScheme = darkColorScheme(
+    primary = BrandColor,
+    onPrimary = Color.Black,
+    primaryContainer = BrandDarkPrimaryContainer,
+    onPrimaryContainer = BrandDarkOnPrimaryContainer,
+    secondary = PurpleGrey80,
+    tertiary = Pink80
+)
+
+private val BrandLightColorScheme = lightColorScheme(
+    primary = BrandColor,
+    onPrimary = Color.White,
+    primaryContainer = BrandLightPrimaryContainer,
+    onPrimaryContainer = BrandLightOnPrimaryContainer,
+    secondary = PurpleGrey40,
+    tertiary = Pink40
+)
+
 @Composable
 fun CommandLauncherTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -39,8 +58,8 @@ fun CommandLauncherTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> BrandDarkColorScheme
+        else -> BrandLightColorScheme
     }
     val view = LocalView.current
     if (!view.isInEditMode) {

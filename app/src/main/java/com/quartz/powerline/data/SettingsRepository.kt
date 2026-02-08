@@ -95,6 +95,15 @@ class SettingsRepository(context: Context) {
         prefs.edit().putBoolean("hide_triggers_on_keyboard", enabled).apply()
     }
 
+    // --- Appearance ---
+    fun getMaterialYouEnabled(): Boolean {
+        return prefs.getBoolean("material_you_enabled", true)
+    }
+
+    fun setMaterialYouEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("material_you_enabled", enabled).apply()
+    }
+
     // --- Overlay Behavior ---
     fun getOverlayCloseOnBackgroundTap(): Boolean {
         return prefs.getBoolean("overlay_close_on_background_tap", true)
@@ -307,7 +316,8 @@ class SettingsRepository(context: Context) {
             enableWeightSearch = getEnableWeightSearch(),
             enablePackageSearch = getEnablePackageSearch(),
             homeScreenText = getHomeScreenText(),
-            customSearchEngines = getCustomSearchEngines()
+            customSearchEngines = getCustomSearchEngines(),
+            materialYouEnabled = getMaterialYouEnabled()
         )
         return gson.toJson(data)
     }
@@ -347,6 +357,7 @@ class SettingsRepository(context: Context) {
             setEnablePackageSearch(data.enablePackageSearch ?: true)
             setHomeScreenText(data.homeScreenText ?: "")
             setCustomSearchEngines(data.customSearchEngines ?: emptyList())
+            setMaterialYouEnabled(data.materialYouEnabled ?: true)
         } catch (e: Exception) {
             e.printStackTrace()
         }

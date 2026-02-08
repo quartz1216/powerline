@@ -65,3 +65,4 @@ The backup file is a standard JSON file.
   "overlayCloseOnBackgroundTap": true
 }
 ```
+ 

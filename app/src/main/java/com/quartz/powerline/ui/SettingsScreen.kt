@@ -71,6 +71,14 @@ fun SettingsScreen(
                 )
 
                 ListItem(
+                    headlineContent = { Text("Appearance") },
+                    leadingContent = { Icon(Icons.Default.Palette, contentDescription = null) },
+                    modifier = Modifier.clickable {
+                        viewModel.openAppearanceSettings()
+                    }
+                )
+
+                ListItem(
                     headlineContent = { Text("Overlay Settings") },
                     leadingContent = { Icon(Icons.Default.Layers, contentDescription = null) },
                     modifier = Modifier.clickable {
