@@ -7,11 +7,19 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.domain.Calculator
 import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
@@ -19,16 +27,26 @@ import com.quartz.powerline.plugins.Plugin
 import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 import java.util.UUID
 
-class CalculatorPlugin : Plugin {
+class CalculatorPlugin(private val settingsRepository: SettingsRepository) : Plugin {
     override val id = "calculator"
     override val name = "Calculator"
     override val description = "Perform quick calculations"
     override val icon = Icons.Default.Calculate
 
     override fun search(query: String, context: Context): List<SearchResult> {
-        if (query.isBlank()) return emptyList()
+        if (!settingsRepository.getCalculatorEnabled()) return emptyList()
 
-        val calcResult = Calculator.evaluate(query.trim())
+        val alias = settingsRepository.getCalculatorAlias()
+        var expression = query.trim()
+
+        if (alias.isNotEmpty()) {
+            if (!expression.startsWith("$alias ")) return emptyList()
+            expression = expression.substring(alias.length).trim()
+        }
+
+        if (expression.isBlank()) return emptyList()
+
+        val calcResult = Calculator.evaluate(expression)
         return if (calcResult != null) {
             listOf(
                 SearchResult(
@@ -55,10 +73,45 @@ class CalculatorPlugin : Plugin {
 
     @Composable
     override fun SettingsScreen(viewModel: SettingsViewModel) {
+        var enabled by remember { mutableStateOf(settingsRepository.getCalculatorEnabled()) }
+        var alias by remember { mutableStateOf(settingsRepository.getCalculatorAlias()) }
+
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Text("Calculator Settings", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("No settings available for this plugin.")
+
+            ListItem(
+                headlineContent = { Text("Enable Calculator") },
+                trailingContent = {
+                    Switch(
+                        checked = enabled,
+                        onCheckedChange = {
+                            enabled = it
+                            settingsRepository.setCalculatorEnabled(it)
+                        }
+                    )
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = alias,
+                onValueChange = {
+                    alias = it
+                    settingsRepository.setCalculatorAlias(it)
+                },
+                label = { Text("Alias (Optional)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Text(
+                text = "If set, calculator will only trigger when query starts with this alias.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
+            )
         }
     }
 }
