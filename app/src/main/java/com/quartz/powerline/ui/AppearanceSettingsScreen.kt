@@ -1,10 +1,10 @@
 package com.quartz.powerline.ui
 
-import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -17,8 +17,7 @@ fun AppearanceSettingsScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit
 ) {
-    var overlayDimAmount by remember { mutableStateOf(viewModel.settingsRepository.getOverlayDimAmount()) }
-    var overlayBlurRadius by remember { mutableStateOf(viewModel.settingsRepository.getOverlayBlurRadius()) }
+    val materialYouEnabled by viewModel.materialYouEnabled.collectAsState()
 
     Scaffold(
         topBar = {
@@ -39,63 +38,25 @@ fun AppearanceSettingsScreen(
                 .padding(16.dp)
         ) {
             item {
-                Text(
-                    text = "Overlay Settings",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
+                Text("Theme", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ListItem(
+                    headlineContent = { Text("Use Material You Colors") },
+                    leadingContent = { Icon(Icons.Default.Palette, contentDescription = null) },
+                    trailingContent = {
+                        Switch(
+                            checked = materialYouEnabled,
+                            onCheckedChange = { viewModel.setMaterialYouEnabled(it) }
+                        )
+                    }
                 )
                 Text(
-                    text = "Adjust the background appearance of the overlay activity.",
+                    text = "When disabled, the app uses the brand color as the accent.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
                 )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Dim Amount Slider
-                Text("Dim Amount: ${(overlayDimAmount * 100).toInt()}%")
-                Slider(
-                    value = overlayDimAmount,
-                    onValueChange = { overlayDimAmount = it },
-                    onValueChangeFinished = { viewModel.settingsRepository.setOverlayDimAmount(overlayDimAmount) },
-                    valueRange = 0f..1f,
-                    steps = 19 // 5% increments
-                )
-                Text(
-                    text = "Controls the darkness of the background behind the search interface.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Blur Radius Slider (Android 12+)
-                if (Build.VERSION.SDK_INT >= 31) {
-                    Text("Background Blur: $overlayBlurRadius px")
-                    Slider(
-                        value = overlayBlurRadius.toFloat(),
-                        onValueChange = { overlayBlurRadius = it.toInt() },
-                        onValueChangeFinished = { viewModel.settingsRepository.setOverlayBlurRadius(overlayBlurRadius) },
-                        valueRange = 0f..50f,
-                        steps = 49 // 1px increments
-                    )
-                    Text(
-                        text = "Blurs the content behind the overlay. Higher values may impact performance.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    Text(
-                        text = "Background Blur",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
-                    Text(
-                        text = "Not available on this Android version (requires Android 12+).",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
             }
         }
     }

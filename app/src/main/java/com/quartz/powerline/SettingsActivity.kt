@@ -26,7 +26,8 @@ class SettingsActivity : ComponentActivity() {
         val viewModel = ViewModelProvider(this)[SettingsViewModel::class.java]
 
         setContent {
-            CommandLauncherTheme(dynamicColor = true) {
+            val materialYouEnabled by viewModel.materialYouEnabled.collectAsState()
+            CommandLauncherTheme(dynamicColor = materialYouEnabled) {
                 val currentNav by viewModel.currentNav.collectAsState()
 
                 // Handle system back button to navigate within settings or finish activity

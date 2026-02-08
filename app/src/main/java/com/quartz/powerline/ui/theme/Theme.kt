@@ -27,6 +27,18 @@ private val LightColorScheme = lightColorScheme(
     tertiary = Pink40
 )
 
+private val BrandDarkColorScheme = darkColorScheme(
+    primary = BrandColor,
+    secondary = PurpleGrey80,
+    tertiary = Pink80
+)
+
+private val BrandLightColorScheme = lightColorScheme(
+    primary = BrandColor,
+    secondary = PurpleGrey40,
+    tertiary = Pink40
+)
+
 @Composable
 fun CommandLauncherTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -39,8 +51,8 @@ fun CommandLauncherTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> BrandDarkColorScheme
+        else -> BrandLightColorScheme
     }
     val view = LocalView.current
     if (!view.isInEditMode) {

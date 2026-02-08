@@ -9,6 +9,8 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModelProvider
 import com.quartz.powerline.ui.LauncherScreen
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
@@ -40,10 +42,11 @@ class MainActivity : ComponentActivity() {
                 false -> true // Wallpaper is dark -> Use Dark Theme (light text)
                 else -> systemDark // Fallback to system theme if undetermined
             }
+            val materialYouEnabled by viewModel.materialYouEnabled.collectAsState()
 
             CommandLauncherTheme(
                 darkTheme = useDarkTheme,
-                dynamicColor = true
+                dynamicColor = materialYouEnabled
             ) {
                 // Main Activity only shows Launcher. Settings and Memo are separate Activities.
                 LauncherScreen(
@@ -67,5 +70,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        val viewModel = ViewModelProvider(
+            this,
+            ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        )[MainViewModel::class.java]
+        viewModel.refreshSettings()
     }
 }

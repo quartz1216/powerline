@@ -39,8 +39,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _homeScreenText = MutableStateFlow(settingsRepository.getHomeScreenText())
     val homeScreenText: StateFlow<String> = _homeScreenText.asStateFlow()
 
+    private val _materialYouEnabled = MutableStateFlow(settingsRepository.getMaterialYouEnabled())
+    val materialYouEnabled: StateFlow<Boolean> = _materialYouEnabled.asStateFlow()
+
     init {
         reloadApps()
+    }
+
+    fun setMaterialYouEnabled(enabled: Boolean) {
+        settingsRepository.setMaterialYouEnabled(enabled)
+        _materialYouEnabled.value = enabled
     }
 
     fun reloadApps() {
