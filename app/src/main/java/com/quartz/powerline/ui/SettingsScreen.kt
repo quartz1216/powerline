@@ -31,6 +31,7 @@ import com.quartz.powerline.WelcomeActivity
 import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.services.StatusBarAccessibilityService
 import com.quartz.powerline.ui.viewmodel.SettingsViewModel
+import com.quartz.powerline.utils.GoogleMobileAdsConsentManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -297,6 +298,8 @@ fun AdditionalSettingsSubpage(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val activity = LocalContext.current as? androidx.activity.ComponentActivity
+    val consentManager = GoogleMobileAdsConsentManager.getInstance(context)
 
     // Helper to reload settings after import/reset
     fun reloadState() {
@@ -370,6 +373,27 @@ fun AdditionalSettingsSubpage(
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
+
+                if (consentManager.isPrivacyOptionsRequired) {
+                    Text("Privacy", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    ListItem(
+                        headlineContent = { Text("Privacy Settings") },
+                        leadingContent = { Icon(Icons.Default.Security, contentDescription = null) },
+                        modifier = Modifier.clickable {
+                            if (activity != null) {
+                                consentManager.showPrivacyOptionsForm(activity) { error ->
+                                    if (error != null) {
+                                        Toast.makeText(context, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
                 Text("System", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
 
