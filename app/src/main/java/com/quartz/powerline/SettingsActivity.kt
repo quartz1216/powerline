@@ -27,13 +27,17 @@ import com.quartz.powerline.ui.components.AdMobBanner
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
 import com.quartz.powerline.ui.viewmodel.SettingsNav
 import com.quartz.powerline.ui.viewmodel.SettingsViewModel
+import com.quartz.powerline.utils.GoogleMobileAdsConsentManager
 
 class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        MobileAds.initialize(this)
+        val consentManager = GoogleMobileAdsConsentManager.getInstance(this)
+        if (consentManager.canRequestAds) {
+            MobileAds.initialize(this)
+        }
 
         val viewModel = ViewModelProvider(this)[SettingsViewModel::class.java]
 

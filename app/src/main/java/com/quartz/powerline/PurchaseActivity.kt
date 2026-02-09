@@ -29,10 +29,9 @@ class PurchaseActivity : ComponentActivity() {
                             title = { Text("Powerline Advanced") },
                             actions = {
                                 IconButton(onClick = {
-                                    settingsRepository.setOnboardingCompleted(true)
-
                                     val fromOnboarding = intent.getBooleanExtra("from_onboarding", false)
                                     if (fromOnboarding) {
+                                        settingsRepository.setOnboardingCompleted(true)
                                         val mainIntent = Intent(this@PurchaseActivity, MainActivity::class.java)
                                         mainIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                         startActivity(mainIntent)
