@@ -35,7 +35,7 @@ class AppLauncherPlugin(
     override val description = "Search and launch installed applications"
     override val icon = Icons.Default.Apps
 
-    override fun search(query: String, context: Context): List<SearchResult> {
+    override suspend fun search(query: String, context: Context): List<SearchResult> {
         val apps = installedAppsFlow.value
         val hiddenApps = settingsRepository.getHiddenApps()
         val visibleApps = apps.filter { !hiddenApps.contains(it.packageName) }

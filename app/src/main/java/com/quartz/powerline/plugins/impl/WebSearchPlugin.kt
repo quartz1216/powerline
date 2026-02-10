@@ -36,7 +36,7 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
         "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}(/.*)?$"
     )
 
-    override fun search(query: String, context: Context): List<SearchResult> {
+    override suspend fun search(query: String, context: Context): List<SearchResult> {
         if (query.isBlank()) return emptyList()
 
         val trimmedQuery = query.trim()

@@ -3,6 +3,7 @@ package com.quartz.powerline.plugins.impl
 import android.content.Context
 import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.domain.models.SearchResult
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -34,14 +35,14 @@ class CalculatorPluginTest {
     }
 
     @Test
-    fun testDisabled() {
+    fun testDisabled() = runTest {
         `when`(settingsRepository.getCalculatorEnabled()).thenReturn(false)
         val results = plugin.search("1+1", context)
         assertTrue(results.isEmpty())
     }
 
     @Test
-    fun testCalculation() {
+    fun testCalculation() = runTest {
         val results = plugin.search("1+1", context)
         assertEquals(1, results.size)
         assertEquals("2", results[0].title)

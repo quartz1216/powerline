@@ -36,7 +36,7 @@ class RecentsPlugin(
     override val description = "Shows recently used apps and searches"
     override val icon = Icons.Default.History
 
-    override fun search(query: String, context: Context): List<SearchResult> {
+    override suspend fun search(query: String, context: Context): List<SearchResult> {
         // Only show if query is empty
         if (query.isNotBlank()) return emptyList()
 

@@ -33,7 +33,7 @@ class CalculatorPlugin(private val settingsRepository: SettingsRepository) : Plu
     override val description = "Perform quick calculations"
     override val icon = Icons.Default.Calculate
 
-    override fun search(query: String, context: Context): List<SearchResult> {
+    override suspend fun search(query: String, context: Context): List<SearchResult> {
         if (!settingsRepository.getCalculatorEnabled()) return emptyList()
 
         val expression = query.trim()

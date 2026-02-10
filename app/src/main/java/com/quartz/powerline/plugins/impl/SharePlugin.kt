@@ -28,7 +28,7 @@ class SharePlugin(private val settingsRepository: SettingsRepository) : Plugin {
     override val description = "Share text via system share sheet"
     override val icon = Icons.Default.Share
 
-    override fun search(query: String, context: Context): List<SearchResult> {
+    override suspend fun search(query: String, context: Context): List<SearchResult> {
         if (!settingsRepository.getShareEnabled()) return emptyList()
 
         if (query.isBlank()) return emptyList()

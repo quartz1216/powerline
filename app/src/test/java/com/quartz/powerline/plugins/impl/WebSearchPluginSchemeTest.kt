@@ -3,6 +3,7 @@ package com.quartz.powerline.plugins.impl
 import android.content.Context
 import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.domain.models.CustomSearchEngine
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -33,7 +34,7 @@ class WebSearchPluginSchemeTest {
     }
 
     @Test
-    fun testEngineWithoutSchemeGeneratesCorrectFaviconAndPayload() {
+    fun testEngineWithoutSchemeGeneratesCorrectFaviconAndPayload() = runTest {
         // User enters "duckduckgo.com/?q=%s" without https
         val engine = CustomSearchEngine(
             id = "ddg",
@@ -58,7 +59,7 @@ class WebSearchPluginSchemeTest {
     }
 
     @Test
-    fun testEngineWithHttpScheme() {
+    fun testEngineWithHttpScheme() = runTest {
         val engine = CustomSearchEngine(
             id = "http_test",
             name = "Http Site",

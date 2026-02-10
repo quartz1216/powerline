@@ -3,6 +3,7 @@ package com.quartz.powerline.plugins.impl
 import android.content.Context
 import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.domain.models.CustomSearchEngine
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -32,7 +33,7 @@ class WebSearchPluginFaviconTest {
     }
 
     @Test
-    fun testFaviconUrlGeneration() {
+    fun testFaviconUrlGeneration() = runTest {
         // Mock default engines
         val engine = CustomSearchEngine(
             id = "1",
@@ -51,7 +52,7 @@ class WebSearchPluginFaviconTest {
     }
 
     @Test
-    fun testFaviconUrlGenerationWithAlias() {
+    fun testFaviconUrlGenerationWithAlias() = runTest {
         val engine = CustomSearchEngine(
             id = "2",
             name = "GitHub",

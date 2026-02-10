@@ -22,7 +22,7 @@ class SystemPlugin : Plugin {
     override val description = "System commands and settings"
     override val icon = Icons.Default.Settings
 
-    override fun search(query: String, context: Context): List<SearchResult> {
+    override suspend fun search(query: String, context: Context): List<SearchResult> {
         if (query.trim().lowercase() == "settings") {
             return listOf(
                 SearchResult(
