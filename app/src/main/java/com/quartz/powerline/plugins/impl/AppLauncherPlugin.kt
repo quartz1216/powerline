@@ -43,6 +43,7 @@ class AppLauncherPlugin(
         if (query.isBlank()) return emptyList()
 
         val trimmedQuery = query.trim()
+        val lowerQuery = trimmedQuery.lowercase()
 
         val aliases = settingsRepository.getAliases()
         val favorites = settingsRepository.getFavoriteApps()
@@ -63,7 +64,7 @@ class AppLauncherPlugin(
                 finalScore = 500_000
                 matched = true
             } else {
-                val nameScore = fuzzyMatch(trimmedQuery, app.label)
+                val nameScore = fuzzyMatch(lowerQuery, app.label)
 
                 var pkgScore = 0
                 if (enablePackageSearch) {
@@ -72,7 +73,7 @@ class AppLauncherPlugin(
                     } else {
                         app.packageName
                     }
-                    pkgScore = fuzzyMatch(trimmedQuery, searchPkg)
+                    pkgScore = fuzzyMatch(lowerQuery, searchPkg)
                 }
 
                 val matchScore = max(nameScore, pkgScore)
@@ -123,24 +124,23 @@ class AppLauncherPlugin(
         }
     }
 
-    private fun fuzzyMatch(query: String, target: String): Int {
-        if (query.isEmpty()) return 0
-        val q = query.lowercase()
+    private fun fuzzyMatch(lowerQuery: String, target: String): Int {
+        if (lowerQuery.isEmpty()) return 0
         val t = target.lowercase()
 
         // Exact, Prefix, Substring
-        if (t.contains(q)) return 100
+        if (t.contains(lowerQuery)) return 100
 
         // Discontinuous (Subsequence)
         var qIdx = 0
         var tIdx = 0
-        while (qIdx < q.length && tIdx < t.length) {
-            if (q[qIdx] == t[tIdx]) {
+        while (qIdx < lowerQuery.length && tIdx < t.length) {
+            if (lowerQuery[qIdx] == t[tIdx]) {
                 qIdx++
             }
             tIdx++
         }
-        if (qIdx == q.length) return 50
+        if (qIdx == lowerQuery.length) return 50
 
         return 0
     }
