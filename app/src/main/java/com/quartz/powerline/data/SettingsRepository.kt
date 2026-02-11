@@ -7,6 +7,8 @@ import com.google.gson.reflect.TypeToken
 import com.quartz.powerline.domain.models.AppBackupData
 import com.quartz.powerline.domain.models.CustomSearchEngine
 import com.quartz.powerline.domain.models.ResultType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class SettingsRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
@@ -31,9 +33,11 @@ class SettingsRepository(context: Context) {
         return gson.fromJson(json, type)
     }
 
-    fun setAliases(aliases: Map<String, String>) {
-        val json = gson.toJson(aliases)
-        prefs.edit().putString("aliases", json).apply()
+    suspend fun setAliases(aliases: Map<String, String>) {
+        withContext(Dispatchers.IO) {
+            val json = gson.toJson(aliases)
+            prefs.edit().putString("aliases", json).apply()
+        }
     }
 
     // --- Max Recent Items ---
@@ -343,46 +347,48 @@ class SettingsRepository(context: Context) {
         return gson.toJson(data)
     }
 
-    fun importSettings(json: String) {
-        try {
-            val jsonObject = com.google.gson.JsonParser.parseString(json).asJsonObject
-            if (jsonObject.has("history")) {
-                val historyArray = jsonObject.getAsJsonArray("history")
-                val newHistoryArray = com.google.gson.JsonArray()
-                historyArray.forEach { element ->
-                    val item = element.asJsonObject
-                    if (item.has("type") && item.get("type").asString != "MEMO") {
-                        newHistoryArray.add(item)
+    suspend fun importSettings(json: String) {
+        withContext(Dispatchers.IO) {
+            try {
+                val jsonObject = com.google.gson.JsonParser.parseString(json).asJsonObject
+                if (jsonObject.has("history")) {
+                    val historyArray = jsonObject.getAsJsonArray("history")
+                    val newHistoryArray = com.google.gson.JsonArray()
+                    historyArray.forEach { element ->
+                        val item = element.asJsonObject
+                        if (item.has("type") && item.get("type").asString != "MEMO") {
+                            newHistoryArray.add(item)
+                        }
                     }
+                    jsonObject.add("history", newHistoryArray)
                 }
-                jsonObject.add("history", newHistoryArray)
-            }
 
-            val data = gson.fromJson(jsonObject, AppBackupData::class.java)
-            setHiddenApps(data.hiddenApps)
-            setAliases(data.aliases)
-            setMaxRecentItems(data.maxRecentItems)
-            saveHistory(data.history)
-            setStatusBarTapEnabled(data.statusBarTapEnabled)
-            setStatusBarTriggerWidthPercent(data.statusBarTriggerWidthPercent)
-            setBottomTriggerEnabled(data.bottomTriggerEnabled)
-            setBottomTriggerCenterGapPercent(data.bottomTriggerCenterGapPercent)
-            setBottomTriggerHeightDp(data.bottomTriggerHeightDp)
-            setHideTriggersOnKeyboard(data.hideTriggersOnKeyboard ?: false)
-            setOverlayCloseOnBackgroundTap(data.overlayCloseOnBackgroundTap ?: true)
-            setOverlayDimAmount(data.overlayDimAmount ?: 0.5f)
-            setOverlayBlurRadius(data.overlayBlurRadius ?: 0)
-            setFavoriteApps(data.favoriteApps)
-            setAppWeights(data.appWeights)
-            setEnableWeightSearch(data.enableWeightSearch ?: true)
-            setEnablePackageSearch(data.enablePackageSearch ?: true)
-            setHomeScreenText(data.homeScreenText ?: "")
-            setCustomSearchEngines(data.customSearchEngines ?: emptyList())
-            setMaterialYouEnabled(data.materialYouEnabled ?: true)
-            setCalculatorEnabled(data.calculatorEnabled ?: true)
-            setHistoryEnabled(data.historyEnabled ?: true)
-        } catch (e: Exception) {
-            e.printStackTrace()
+                val data = gson.fromJson(jsonObject, AppBackupData::class.java)
+                setHiddenApps(data.hiddenApps)
+                setAliases(data.aliases)
+                setMaxRecentItems(data.maxRecentItems)
+                saveHistory(data.history)
+                setStatusBarTapEnabled(data.statusBarTapEnabled)
+                setStatusBarTriggerWidthPercent(data.statusBarTriggerWidthPercent)
+                setBottomTriggerEnabled(data.bottomTriggerEnabled)
+                setBottomTriggerCenterGapPercent(data.bottomTriggerCenterGapPercent)
+                setBottomTriggerHeightDp(data.bottomTriggerHeightDp)
+                setHideTriggersOnKeyboard(data.hideTriggersOnKeyboard ?: false)
+                setOverlayCloseOnBackgroundTap(data.overlayCloseOnBackgroundTap ?: true)
+                setOverlayDimAmount(data.overlayDimAmount ?: 0.5f)
+                setOverlayBlurRadius(data.overlayBlurRadius ?: 0)
+                setFavoriteApps(data.favoriteApps)
+                setAppWeights(data.appWeights)
+                setEnableWeightSearch(data.enableWeightSearch ?: true)
+                setEnablePackageSearch(data.enablePackageSearch ?: true)
+                setHomeScreenText(data.homeScreenText ?: "")
+                setCustomSearchEngines(data.customSearchEngines ?: emptyList())
+                setMaterialYouEnabled(data.materialYouEnabled ?: true)
+                setCalculatorEnabled(data.calculatorEnabled ?: true)
+                setHistoryEnabled(data.historyEnabled ?: true)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

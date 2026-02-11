@@ -24,6 +24,7 @@ import com.quartz.powerline.ui.AddAliasDialog
 import com.quartz.powerline.ui.HiddenAppsDialog
 import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlin.math.max
 
 class AppLauncherPlugin(
@@ -195,6 +196,7 @@ class AppLauncherPlugin(
         var enableWeightSearch by remember { mutableStateOf(settingsRepository.getEnableWeightSearch()) }
         var enablePackageSearch by remember { mutableStateOf(settingsRepository.getEnablePackageSearch()) }
         val allApps by installedAppsFlow.collectAsState()
+        val scope = rememberCoroutineScope()
 
         var showHiddenAppsDialog by remember { mutableStateOf(false) }
         var showAddAliasDialog by remember { mutableStateOf(false) }
@@ -300,7 +302,9 @@ class AppLauncherPlugin(
                             val newAliases = aliases.toMutableMap()
                             newAliases.remove(alias)
                             aliases = newAliases
-                            settingsRepository.setAliases(newAliases)
+                            scope.launch {
+                                settingsRepository.setAliases(newAliases)
+                            }
                         }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete")
                         }
@@ -332,7 +336,9 @@ class AppLauncherPlugin(
                     val newAliases = aliases.toMutableMap()
                     newAliases[alias] = pkg
                     aliases = newAliases
-                    settingsRepository.setAliases(newAliases)
+                    scope.launch {
+                        settingsRepository.setAliases(newAliases)
+                    }
                     showAddAliasDialog = false
                 }
             )
