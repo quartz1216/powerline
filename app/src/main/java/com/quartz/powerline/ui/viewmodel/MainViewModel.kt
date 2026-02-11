@@ -8,7 +8,10 @@ import com.quartz.powerline.domain.AppRepository
 import com.quartz.powerline.domain.SearchEngine
 import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.domain.models.SearchResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -52,6 +55,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _materialYouEnabled = MutableStateFlow(settingsRepository.getMaterialYouEnabled())
     val materialYouEnabled: StateFlow<Boolean> = _materialYouEnabled.asStateFlow()
+
+    private var searchJob: Job? = null
 
     init {
         loadApps()
@@ -136,8 +141,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun performSearch(query: String) {
-        _results.value = searchEngine.search(query)
-        _selectedIndex.value = 0
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch(Dispatchers.Default) {
+            val results = searchEngine.search(query)
+            if (isActive) {
+                _results.value = results
+                _selectedIndex.value = 0
+            }
+        }
     }
 
     fun toggleFavorite(packageName: String) {
