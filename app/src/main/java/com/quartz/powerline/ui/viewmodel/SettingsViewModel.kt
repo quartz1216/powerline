@@ -28,7 +28,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _installedApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val installedApps: StateFlow<List<AppInfo>> = _installedApps.asStateFlow()
 
-    val pluginManager = PluginManager(settingsRepository, _installedApps)
+    val pluginManager = PluginManager(settingsRepository, _installedApps, _installedApps)
 
     private val _currentNav = MutableStateFlow(SettingsNav.MAIN)
     val currentNav: StateFlow<SettingsNav> = _currentNav.asStateFlow()
