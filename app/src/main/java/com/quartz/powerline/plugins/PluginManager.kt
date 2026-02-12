@@ -7,12 +7,13 @@ import kotlinx.coroutines.flow.StateFlow
 
 class PluginManager(
     settingsRepository: SettingsRepository,
-    installedAppsFlow: StateFlow<List<AppInfo>>
+    installedAppsFlow: StateFlow<List<AppInfo>>,
+    visibleAppsFlow: StateFlow<List<AppInfo>>
 ) {
     val plugins: List<Plugin> = listOf(
-        RecentsPlugin(settingsRepository, installedAppsFlow),
+        RecentsPlugin(settingsRepository, visibleAppsFlow),
         SystemPlugin(),
-        AppLauncherPlugin(settingsRepository, installedAppsFlow),
+        AppLauncherPlugin(settingsRepository, installedAppsFlow, visibleAppsFlow),
         CalculatorPlugin(settingsRepository),
         WebSearchPlugin(settingsRepository),
         SharePlugin(settingsRepository)

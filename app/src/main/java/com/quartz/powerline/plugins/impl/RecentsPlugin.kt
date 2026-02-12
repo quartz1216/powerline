@@ -29,7 +29,7 @@ import kotlin.math.roundToInt
 
 class RecentsPlugin(
     private val settingsRepository: SettingsRepository,
-    private val installedAppsFlow: StateFlow<List<AppInfo>>
+    private val visibleAppsFlow: StateFlow<List<AppInfo>>
 ) : Plugin {
     override val id = "recents"
     override val name = "Recent"
@@ -42,9 +42,7 @@ class RecentsPlugin(
 
         val history = settingsRepository.getHistory()
         val maxRecent = settingsRepository.getMaxRecentItems()
-        val visibleApps = installedAppsFlow.value
-        val hiddenApps = settingsRepository.getHiddenApps()
-        val filteredApps = visibleApps.filter { !hiddenApps.contains(it.packageName) }
+        val filteredApps = visibleAppsFlow.value
 
         // Deduplicate by ID to show unique recent items
         val distinctHistory = history.distinctBy { it.id }.take(maxRecent)

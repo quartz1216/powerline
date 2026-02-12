@@ -28,7 +28,8 @@ class AppLauncherPluginTest {
         settingsRepository = mock(SettingsRepository::class.java)
         context = mock(Context::class.java)
         installedAppsFlow = MutableStateFlow(emptyList())
-        plugin = AppLauncherPlugin(settingsRepository, installedAppsFlow)
+        // Since we mock hiddenApps to be empty, visibleApps == installedApps
+        plugin = AppLauncherPlugin(settingsRepository, installedAppsFlow, installedAppsFlow)
 
         // Default mock behaviors
         `when`(settingsRepository.getHiddenApps()).thenReturn(emptySet())

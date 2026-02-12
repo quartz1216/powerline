@@ -29,7 +29,8 @@ import kotlin.math.max
 
 class AppLauncherPlugin(
     private val settingsRepository: SettingsRepository,
-    private val installedAppsFlow: StateFlow<List<AppInfo>>
+    private val installedAppsFlow: StateFlow<List<AppInfo>>,
+    private val visibleAppsFlow: StateFlow<List<AppInfo>>
 ) : Plugin {
     override val id = "app_launcher"
     override val name = "Apps"
@@ -37,9 +38,7 @@ class AppLauncherPlugin(
     override val icon = Icons.Default.Apps
 
     override fun search(query: String, context: Context): List<SearchResult> {
-        val apps = installedAppsFlow.value
-        val hiddenApps = settingsRepository.getHiddenApps()
-        val visibleApps = apps.filter { !hiddenApps.contains(it.packageName) }
+        val visibleApps = visibleAppsFlow.value
 
         if (query.isBlank()) return emptyList()
 

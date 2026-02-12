@@ -32,7 +32,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _installedApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val installedApps: StateFlow<List<AppInfo>> = _installedApps.asStateFlow()
 
-    val pluginManager = com.quartz.powerline.plugins.PluginManager(settingsRepository, _installedApps)
+    private val _visibleApps = MutableStateFlow<List<AppInfo>>(emptyList())
+    val visibleApps: StateFlow<List<AppInfo>> = _visibleApps.asStateFlow()
+
+    val pluginManager = com.quartz.powerline.plugins.PluginManager(settingsRepository, _installedApps, _visibleApps)
     private val searchEngine = SearchEngine(application, pluginManager, settingsRepository)
 
     private val _query = MutableStateFlow("")
@@ -77,6 +80,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val apps = appRepository.getInstalledApps()
             _installedApps.value = apps
+            val hiddenApps = settingsRepository.getHiddenApps()
+            _visibleApps.value = apps.filter { !hiddenApps.contains(it.packageName) }
             // Initial search (empty)
             performSearch(_query.value)
         }
