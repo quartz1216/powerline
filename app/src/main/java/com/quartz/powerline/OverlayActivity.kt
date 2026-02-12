@@ -29,6 +29,13 @@ class OverlayActivity : ComponentActivity() {
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[MainViewModel::class.java]
 
+        // Onboarding Check
+        if (!viewModel.settingsRepository.getOnboardingCompleted()) {
+            startActivity(Intent(this, WelcomeActivity::class.java))
+            finish()
+            return
+        }
+
         applyWindowAttributes(viewModel)
 
         setContent {
@@ -53,9 +60,8 @@ class OverlayActivity : ComponentActivity() {
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {
-                        if (viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()) {
-                            finish()
-                        }
+                            // Background tap clears the search query but keeps the overlay active (Home behavior)
+                            viewModel.onQueryChange("")
                         }
                 ) {
                     // Prevent clicks on the actual UI from closing the activity
@@ -65,15 +71,14 @@ class OverlayActivity : ComponentActivity() {
                             onResultClick = { result ->
                                 if (result.payload == "settings_action") {
                                     startActivity(Intent(this@OverlayActivity, SettingsActivity::class.java))
-                                    finish()
+                                    viewModel.onQueryChange("")
                                 } else {
                                     ActionExecutor.execute(this@OverlayActivity, result, viewModel.settingsRepository, viewModel.pluginManager)
-                                    finish()
+                                    viewModel.onQueryChange("")
                                 }
                             },
                             onSettingsClick = {
                                 startActivity(Intent(this@OverlayActivity, SettingsActivity::class.java))
-                                finish()
                             }
                         )
                     }
@@ -89,6 +94,15 @@ class OverlayActivity : ComponentActivity() {
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[MainViewModel::class.java]
         applyWindowAttributes(viewModel)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val viewModel = ViewModelProvider(
+            this,
+            ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        )[MainViewModel::class.java]
+        viewModel.refreshSettings()
     }
 
     private fun applyWindowAttributes(viewModel: MainViewModel) {

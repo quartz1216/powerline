@@ -26,6 +26,15 @@
             android:launchMode="singleTask"
             android:stateNotNeeded="true"
             android:theme="@style/Theme.CommandLauncher.Home"
+            android:windowSoftInputMode="adjustResize|stateAlwaysVisible" />
+
+        <!-- Overlay Activity (Transparent) -->
+        <activity
+            android:name=".OverlayActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.CommandLauncher.Overlay"
             android:windowSoftInputMode="adjustResize|stateAlwaysVisible">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -34,15 +43,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!-- Overlay Activity (Transparent) -->
-        <activity
-            android:name=".OverlayActivity"
-            android:exported="true"
-            android:excludeFromRecents="true"
-            android:launchMode="singleInstance"
-            android:theme="@style/Theme.CommandLauncher.Overlay"
-            android:windowSoftInputMode="adjustResize|stateAlwaysVisible" />
 
 
         <activity

@@ -52,7 +52,7 @@ class WelcomeActivity : ComponentActivity() {
                     consentManager = consentManager,
                     onFinish = {
                         settingsRepository.setOnboardingCompleted(true)
-                        val intent = Intent(this, MainActivity::class.java)
+                        val intent = Intent(this, OverlayActivity::class.java)
                         startActivity(intent)
                         finish()
                     }
