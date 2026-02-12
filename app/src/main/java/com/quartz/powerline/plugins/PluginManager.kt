@@ -13,7 +13,7 @@ class PluginManager(
         RecentsPlugin(settingsRepository, installedAppsFlow),
         SystemPlugin(),
         AppLauncherPlugin(settingsRepository, installedAppsFlow),
-        CalculatorPlugin(),
+        CalculatorPlugin(settingsRepository),
         WebSearchPlugin(settingsRepository),
         SharePlugin(settingsRepository)
     )

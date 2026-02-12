@@ -31,6 +31,10 @@ import com.quartz.powerline.WelcomeActivity
 import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.services.StatusBarAccessibilityService
 import com.quartz.powerline.ui.viewmodel.SettingsViewModel
+import com.quartz.powerline.utils.GoogleMobileAdsConsentManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,18 +75,18 @@ fun SettingsScreen(
                 )
 
                 ListItem(
-                    headlineContent = { Text("Appearance") },
-                    leadingContent = { Icon(Icons.Default.Palette, contentDescription = null) },
-                    modifier = Modifier.clickable {
-                        viewModel.openAppearanceSettings()
-                    }
-                )
-
-                ListItem(
                     headlineContent = { Text("Overlay Settings") },
                     leadingContent = { Icon(Icons.Default.Layers, contentDescription = null) },
                     modifier = Modifier.clickable {
                         viewModel.openOverlaySettings()
+                    }
+                )
+
+                ListItem(
+                    headlineContent = { Text("Appearance Settings") },
+                    leadingContent = { Icon(Icons.Default.Palette, contentDescription = null) },
+                    modifier = Modifier.clickable {
+                        viewModel.openAppearanceSettings()
                     }
                 )
 
@@ -100,7 +104,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            items(viewModel.pluginManager.plugins) { plugin ->
+            items(viewModel.pluginManager.plugins.filter { it.name != "System" }) { plugin ->
                 ListItem(
                     headlineContent = { Text(plugin.name) },
                     leadingContent = { Icon(plugin.icon, contentDescription = null) },
@@ -125,8 +129,6 @@ fun OverlaySettingsSubpage(
 ) {
     val context = LocalContext.current
     var bottomTriggerEnabled by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerEnabled()) }
-    var dimAmount by remember { mutableStateOf(viewModel.settingsRepository.getOverlayDimAmount()) }
-    var blurRadius by remember { mutableStateOf(viewModel.settingsRepository.getOverlayBlurRadius()) }
     var centerGap by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerCenterGapPercent()) }
     var triggerHeight by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerHeightDp()) }
     var closeOnBgTap by remember { mutableStateOf(viewModel.settingsRepository.getOverlayCloseOnBackgroundTap()) }
@@ -224,37 +226,6 @@ fun OverlaySettingsSubpage(
 
                 if (bottomTriggerEnabled) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Appearance", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    ListItem(
-                        headlineContent = { Text("Background Dim Amount: ${(dimAmount * 100).toInt()}%") },
-                        supportingContent = {
-                            Slider(
-                                value = dimAmount,
-                                onValueChange = { dimAmount = it },
-                                onValueChangeFinished = { viewModel.settingsRepository.setOverlayDimAmount(dimAmount) },
-                                valueRange = 0f..1f
-                            )
-                        },
-                        leadingContent = { Icon(Icons.Default.Opacity, contentDescription = null) }
-                    )
-
-                    ListItem(
-                        headlineContent = { Text("Background Blur Amount: $blurRadius px") },
-                        supportingContent = {
-                            Slider(
-                                value = blurRadius.toFloat(),
-                                onValueChange = { blurRadius = it.toInt() },
-                                onValueChangeFinished = { viewModel.settingsRepository.setOverlayBlurRadius(blurRadius) },
-                                valueRange = 0f..50f,
-                                steps = 49
-                            )
-                        },
-                        leadingContent = { Icon(Icons.Default.BlurOn, contentDescription = null) }
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
                     Text("Trigger", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -330,8 +301,9 @@ fun AdditionalSettingsSubpage(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val homeScreenText by viewModel.homeScreenText.collectAsState()
-    var showHomeTextDialog by remember { mutableStateOf(false) }
+    val activity = LocalContext.current as? androidx.activity.ComponentActivity
+    val consentManager = GoogleMobileAdsConsentManager.getInstance(context)
+    val scope = rememberCoroutineScope()
 
     // Helper to reload settings after import/reset
     fun reloadState() {
@@ -342,14 +314,18 @@ fun AdditionalSettingsSubpage(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         uri?.let {
-            try {
-                val json = viewModel.settingsRepository.exportSettings()
-                context.contentResolver.openOutputStream(it)?.use { os ->
-                    os.write(json.toByteArray())
+            scope.launch {
+                try {
+                    withContext(Dispatchers.IO) {
+                        val json = viewModel.settingsRepository.exportSettings()
+                        context.contentResolver.openOutputStream(it)?.use { os ->
+                            os.write(json.toByteArray())
+                        }
+                    }
+                    Toast.makeText(context, "Settings exported successfully", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(context, "Settings exported successfully", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -358,15 +334,21 @@ fun AdditionalSettingsSubpage(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
-            try {
-                context.contentResolver.openInputStream(it)?.use { `is` ->
-                    val json = `is`.bufferedReader().use { reader -> reader.readText() }
-                    viewModel.settingsRepository.importSettings(json)
-                    reloadState()
-                    Toast.makeText(context, "Settings imported successfully", Toast.LENGTH_SHORT).show()
+            scope.launch {
+                try {
+                    val json = withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(it)?.use { `is` ->
+                            `is`.bufferedReader().use { reader -> reader.readText() }
+                        }
+                    }
+                    if (json != null) {
+                        viewModel.settingsRepository.importSettings(json)
+                        reloadState()
+                        Toast.makeText(context, "Settings imported successfully", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
-            } catch (e: Exception) {
-                Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -390,18 +372,6 @@ fun AdditionalSettingsSubpage(
                 .padding(16.dp)
         ) {
             item {
-                Text("Launcher", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                ListItem(
-                    headlineContent = { Text("Custom Header: ${homeScreenText.ifEmpty { "(Not set)" }}") },
-                    leadingContent = { Icon(Icons.Default.Title, contentDescription = null) },
-                    modifier = Modifier.clickable {
-                        showHomeTextDialog = true
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
                 Text("Backup", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -417,6 +387,27 @@ fun AdditionalSettingsSubpage(
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
+
+                if (consentManager.isPrivacyOptionsRequired) {
+                    Text("Privacy", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    ListItem(
+                        headlineContent = { Text("Privacy Settings") },
+                        leadingContent = { Icon(Icons.Default.Security, contentDescription = null) },
+                        modifier = Modifier.clickable {
+                            if (activity != null) {
+                                consentManager.showPrivacyOptionsForm(activity) { error ->
+                                    if (error != null) {
+                                        Toast.makeText(context, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
                 Text("System", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -461,66 +452,16 @@ fun AdditionalSettingsSubpage(
                         Toast.makeText(context, "Settings reset.", Toast.LENGTH_SHORT).show()
                     }
                 )
-            }
-        }
 
-        if (showHomeTextDialog) {
-            EditHomeScreenTextDialog(
-                initialText = homeScreenText,
-                onDismiss = { showHomeTextDialog = false },
-                onSave = {
-                    viewModel.updateHomeScreenText(it)
-                    showHomeTextDialog = false
-                }
-            )
-        }
-    }
-}
-
-// Reuse existing dialogs
-@Composable
-fun EditHomeScreenTextDialog(
-    initialText: String,
-    onDismiss: () -> Unit,
-    onSave: (String) -> Unit
-) {
-    var text by remember { mutableStateOf(initialText) }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Edit Home Screen Text", style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    label = { Text("Text") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Text("If Overlay doesn't start...", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Leave empty to hide.",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "(On OSs with strict task management such as Xiaomi HyperOS, even accessibility services may be automatically killed. You may need to uncheck 'Pause app activity if unused' in App Info or set battery restrictions to 'No restrictions'.)",
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
-                    Button(
-                        onClick = { onSave(text) }
-                    ) { Text("Save") }
-                }
             }
         }
     }

@@ -56,4 +56,10 @@ class RecentsPluginTest {
         val result = results[0]
         assertEquals("https://favicon.com/icon.png", result.faviconUrl)
     }
+
+    @Test
+    fun testSearchNotEmpty() {
+        val results = plugin.search("something", context)
+        assertEquals(0, results.size)
+    }
 }

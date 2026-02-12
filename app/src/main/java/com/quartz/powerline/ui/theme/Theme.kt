@@ -51,6 +51,7 @@ fun CommandLauncherTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
+    setSystemBars: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -62,7 +63,7 @@ fun CommandLauncherTheme(
         else -> BrandLightColorScheme
     }
     val view = LocalView.current
-    if (!view.isInEditMode) {
+    if (!view.isInEditMode && setSystemBars) {
         SideEffect {
             val window = (view.context as Activity).window
             val insetsController = WindowCompat.getInsetsController(window, view)

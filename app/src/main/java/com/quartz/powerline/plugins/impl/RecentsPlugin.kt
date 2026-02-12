@@ -4,9 +4,17 @@ import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -17,17 +25,19 @@ import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.plugins.Plugin
 import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 import kotlinx.coroutines.flow.StateFlow
+import kotlin.math.roundToInt
 
 class RecentsPlugin(
     private val settingsRepository: SettingsRepository,
     private val installedAppsFlow: StateFlow<List<AppInfo>>
 ) : Plugin {
     override val id = "recents"
-    override val name = "Recent Activity"
+    override val name = "Recent"
     override val description = "Shows recently used apps and searches"
     override val icon = Icons.Default.History
 
     override fun search(query: String, context: Context): List<SearchResult> {
+        // Only show if query is empty
         if (query.isNotBlank()) return emptyList()
 
         val history = settingsRepository.getHistory()
@@ -111,10 +121,40 @@ class RecentsPlugin(
 
     @Composable
     override fun SettingsScreen(viewModel: SettingsViewModel) {
+        var recordHistory by remember { mutableStateOf(settingsRepository.getHistoryEnabled()) }
+        var maxRecentItems by remember { mutableFloatStateOf(settingsRepository.getMaxRecentItems().toFloat()) }
+
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Text("Recent Activity Settings", style = MaterialTheme.typography.titleLarge)
+            ListItem(
+                headlineContent = { Text("Record History") },
+                supportingContent = { Text("Enable saving new items to history.") },
+                trailingContent = {
+                    Switch(
+                        checked = recordHistory,
+                        onCheckedChange = {
+                            recordHistory = it
+                            settingsRepository.setHistoryEnabled(it)
+                        }
+                    )
+                }
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
-            Text("This plugin displays your recent history.")
+
+            ListItem(
+                headlineContent = { Text("Number of Recent Items: ${maxRecentItems.roundToInt()}") },
+                supportingContent = {
+                    Slider(
+                        value = maxRecentItems,
+                        onValueChange = {
+                            maxRecentItems = it
+                            settingsRepository.setMaxRecentItems(it.roundToInt())
+                        },
+                        valueRange = 1f..20f,
+                        steps = 19
+                    )
+                }
+            )
         }
     }
 }

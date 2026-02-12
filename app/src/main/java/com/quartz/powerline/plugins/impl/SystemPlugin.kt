@@ -49,9 +49,7 @@ class SystemPlugin : Plugin {
     @Composable
     override fun SettingsScreen(viewModel: SettingsViewModel) {
          Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Text("System Settings", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("This plugin handles core system commands.")
+            Text("This plugin handles core system commands.", style = MaterialTheme.typography.bodyLarge)
         }
     }
 }
