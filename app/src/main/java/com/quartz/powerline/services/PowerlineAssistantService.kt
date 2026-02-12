@@ -1,9 +1,22 @@
 package com.quartz.powerline.services
 
+import android.content.Intent
+import android.os.IBinder
 import android.service.voice.VoiceInteractionService
+import android.util.Log
 
 class PowerlineAssistantService : VoiceInteractionService() {
-    // This class is the entry point for the system to recognize the app as a Voice Interaction Service.
-    // It doesn't need to implement anything specific if we just want to launch an activity on trigger.
-    // The actual logic is handled in the Session (PowerlineAssistantSession).
+    companion object {
+        private const val TAG = "PowerlineAssistantSvc"
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        Log.d(TAG, "PowerlineAssistantService created")
+    }
+
+    override fun onBind(intent: Intent): IBinder? {
+        Log.d(TAG, "PowerlineAssistantService bound with intent: $intent")
+        return super.onBind(intent)
+    }
 }
