@@ -32,6 +32,9 @@ import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.services.StatusBarAccessibilityService
 import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 import com.quartz.powerline.utils.GoogleMobileAdsConsentManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -300,6 +303,7 @@ fun AdditionalSettingsSubpage(
     val context = LocalContext.current
     val activity = LocalContext.current as? androidx.activity.ComponentActivity
     val consentManager = GoogleMobileAdsConsentManager.getInstance(context)
+    val scope = rememberCoroutineScope()
 
     // Helper to reload settings after import/reset
     fun reloadState() {
@@ -310,14 +314,18 @@ fun AdditionalSettingsSubpage(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         uri?.let {
-            try {
-                val json = viewModel.settingsRepository.exportSettings()
-                context.contentResolver.openOutputStream(it)?.use { os ->
-                    os.write(json.toByteArray())
+            scope.launch {
+                try {
+                    withContext(Dispatchers.IO) {
+                        val json = viewModel.settingsRepository.exportSettings()
+                        context.contentResolver.openOutputStream(it)?.use { os ->
+                            os.write(json.toByteArray())
+                        }
+                    }
+                    Toast.makeText(context, "Settings exported successfully", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(context, "Settings exported successfully", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -326,15 +334,21 @@ fun AdditionalSettingsSubpage(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
-            try {
-                context.contentResolver.openInputStream(it)?.use { `is` ->
-                    val json = `is`.bufferedReader().use { reader -> reader.readText() }
-                    viewModel.settingsRepository.importSettings(json)
-                    reloadState()
-                    Toast.makeText(context, "Settings imported successfully", Toast.LENGTH_SHORT).show()
+            scope.launch {
+                try {
+                    val json = withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(it)?.use { `is` ->
+                            `is`.bufferedReader().use { reader -> reader.readText() }
+                        }
+                    }
+                    if (json != null) {
+                        viewModel.settingsRepository.importSettings(json)
+                        reloadState()
+                        Toast.makeText(context, "Settings imported successfully", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
-            } catch (e: Exception) {
-                Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }

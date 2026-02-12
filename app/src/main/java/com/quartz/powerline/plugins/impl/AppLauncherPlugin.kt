@@ -24,11 +24,13 @@ import com.quartz.powerline.ui.AddAliasDialog
 import com.quartz.powerline.ui.HiddenAppsDialog
 import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlin.math.max
 
 class AppLauncherPlugin(
     private val settingsRepository: SettingsRepository,
-    private val installedAppsFlow: StateFlow<List<AppInfo>>
+    private val installedAppsFlow: StateFlow<List<AppInfo>>,
+    private val visibleAppsFlow: StateFlow<List<AppInfo>>
 ) : Plugin {
     override val id = "app_launcher"
     override val name = "Apps"
@@ -36,13 +38,12 @@ class AppLauncherPlugin(
     override val icon = Icons.Default.Apps
 
     override fun search(query: String, context: Context): List<SearchResult> {
-        val apps = installedAppsFlow.value
-        val hiddenApps = settingsRepository.getHiddenApps()
-        val visibleApps = apps.filter { !hiddenApps.contains(it.packageName) }
+        val visibleApps = visibleAppsFlow.value
 
         if (query.isBlank()) return emptyList()
 
         val trimmedQuery = query.trim()
+        val lowerQuery = trimmedQuery.lowercase()
 
         val aliases = settingsRepository.getAliases()
         val favorites = settingsRepository.getFavoriteApps()
@@ -63,7 +64,7 @@ class AppLauncherPlugin(
                 finalScore = 500_000
                 matched = true
             } else {
-                val nameScore = fuzzyMatch(trimmedQuery, app.label)
+                val nameScore = fuzzyMatch(lowerQuery, app.label)
 
                 var pkgScore = 0
                 if (enablePackageSearch) {
@@ -72,7 +73,7 @@ class AppLauncherPlugin(
                     } else {
                         app.packageName
                     }
-                    pkgScore = fuzzyMatch(trimmedQuery, searchPkg)
+                    pkgScore = fuzzyMatch(lowerQuery, searchPkg)
                 }
 
                 val matchScore = max(nameScore, pkgScore)
@@ -123,24 +124,23 @@ class AppLauncherPlugin(
         }
     }
 
-    private fun fuzzyMatch(query: String, target: String): Int {
-        if (query.isEmpty()) return 0
-        val q = query.lowercase()
+    private fun fuzzyMatch(lowerQuery: String, target: String): Int {
+        if (lowerQuery.isEmpty()) return 0
         val t = target.lowercase()
 
         // Exact, Prefix, Substring
-        if (t.contains(q)) return 100
+        if (t.contains(lowerQuery)) return 100
 
         // Discontinuous (Subsequence)
         var qIdx = 0
         var tIdx = 0
-        while (qIdx < q.length && tIdx < t.length) {
-            if (q[qIdx] == t[tIdx]) {
+        while (qIdx < lowerQuery.length && tIdx < t.length) {
+            if (lowerQuery[qIdx] == t[tIdx]) {
                 qIdx++
             }
             tIdx++
         }
-        if (qIdx == q.length) return 50
+        if (qIdx == lowerQuery.length) return 50
 
         return 0
     }
@@ -195,6 +195,7 @@ class AppLauncherPlugin(
         var enableWeightSearch by remember { mutableStateOf(settingsRepository.getEnableWeightSearch()) }
         var enablePackageSearch by remember { mutableStateOf(settingsRepository.getEnablePackageSearch()) }
         val allApps by installedAppsFlow.collectAsState()
+        val scope = rememberCoroutineScope()
 
         var showHiddenAppsDialog by remember { mutableStateOf(false) }
         var showAddAliasDialog by remember { mutableStateOf(false) }
@@ -300,7 +301,9 @@ class AppLauncherPlugin(
                             val newAliases = aliases.toMutableMap()
                             newAliases.remove(alias)
                             aliases = newAliases
-                            settingsRepository.setAliases(newAliases)
+                            scope.launch {
+                                settingsRepository.setAliases(newAliases)
+                            }
                         }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete")
                         }
@@ -332,7 +335,9 @@ class AppLauncherPlugin(
                     val newAliases = aliases.toMutableMap()
                     newAliases[alias] = pkg
                     aliases = newAliases
-                    settingsRepository.setAliases(newAliases)
+                    scope.launch {
+                        settingsRepository.setAliases(newAliases)
+                    }
                     showAddAliasDialog = false
                 }
             )
