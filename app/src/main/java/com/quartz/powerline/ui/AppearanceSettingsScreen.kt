@@ -60,12 +60,6 @@ fun AppearanceSettingsScreen(
                         )
                     }
                 )
-                Text(
-                    text = "Material Youは端末に合わせてライトモードとダークモードに動的に変化します。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                )
 
                 if (bottomTriggerEnabled) {
                     Spacer(modifier = Modifier.height(16.dp))
