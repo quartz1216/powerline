@@ -42,7 +42,12 @@
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
             android:theme="@style/Theme.CommandLauncher.Overlay"
-            android:windowSoftInputMode="adjustResize|stateAlwaysVisible" />
+            android:windowSoftInputMode="adjustResize|stateAlwaysVisible">
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
 
         <activity
@@ -84,6 +89,25 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
+
+        <!-- Voice Interaction Service (Digital Assistant) -->
+        <service
+            android:name=".services.PowerlineAssistantService"
+            android:label="Powerline"
+            android:permission="android.permission.BIND_VOICE_INTERACTION"
+            android:exported="true">
+            <meta-data
+                android:name="android.voice_interaction"
+                android:resource="@xml/assistant_service" />
+            <intent-filter>
+                <action android:name="android.service.voice.VoiceInteractionService" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".services.PowerlineAssistantSessionService"
+            android:permission="android.permission.BIND_VOICE_INTERACTION"
+            android:exported="true" />
 
     </application>
 
