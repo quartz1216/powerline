@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -20,8 +22,9 @@ import com.quartz.powerline.utils.GoogleMobileAdsConsentManager
 fun AdMobBanner(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val consentManager = GoogleMobileAdsConsentManager.getInstance(context)
+    val canRequestAds by consentManager.canRequestAdsState.collectAsState()
 
-    if (consentManager.canRequestAds) {
+    if (canRequestAds) {
         val configuration = LocalConfiguration.current
         val screenWidth = configuration.screenWidthDp
         val adSize = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, screenWidth)

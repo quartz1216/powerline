@@ -24,7 +24,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val consentManager = GoogleMobileAdsConsentManager.getInstance(this)
-        consentManager.initializeMobileAdsSdk(this)
+        consentManager.gatherConsent(this) { error ->
+            if (error != null) {
+                android.util.Log.e("MainActivity", "Consent gathering failed: ${error.message}")
+            }
+        }
 
         val viewModel = ViewModelProvider(
             this,

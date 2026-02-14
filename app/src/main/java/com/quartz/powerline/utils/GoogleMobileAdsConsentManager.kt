@@ -8,11 +8,17 @@ import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.FormError
 import com.google.android.ump.UserMessagingPlatform
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.atomic.AtomicBoolean
 
 class GoogleMobileAdsConsentManager private constructor(context: Context) {
     private val consentInformation: ConsentInformation = UserMessagingPlatform.getConsentInformation(context)
     private val isMobileAdsSdkInitialized = AtomicBoolean(false)
+
+    private val _canRequestAdsState = MutableStateFlow(consentInformation.canRequestAds())
+    val canRequestAdsState: StateFlow<Boolean> = _canRequestAdsState.asStateFlow()
 
     fun interface OnConsentGatheringCompleteListener {
         fun consentGatheringComplete(error: FormError?)
@@ -40,6 +46,7 @@ class GoogleMobileAdsConsentManager private constructor(context: Context) {
             {
                 UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { formError ->
                     // Consent gathering process complete.
+                    _canRequestAdsState.value = canRequestAds
                     if (canRequestAds) {
                         initializeMobileAdsSdk(activity)
                     }
@@ -48,6 +55,7 @@ class GoogleMobileAdsConsentManager private constructor(context: Context) {
             },
             { requestConsentError ->
                 // Consent gathering failed.
+                _canRequestAdsState.value = canRequestAds
                 onConsentGatheringCompleteListener.consentGatheringComplete(requestConsentError)
             }
         )
@@ -58,6 +66,7 @@ class GoogleMobileAdsConsentManager private constructor(context: Context) {
             return
         }
 
+        _canRequestAdsState.value = canRequestAds
         if (canRequestAds) {
             MobileAds.initialize(context)
         } else {
