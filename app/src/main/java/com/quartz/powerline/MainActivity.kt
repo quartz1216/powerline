@@ -17,10 +17,18 @@ import com.quartz.powerline.ui.theme.CommandLauncherTheme
 import com.quartz.powerline.ui.theme.rememberIsWallpaperLight
 import com.quartz.powerline.ui.viewmodel.MainViewModel
 import com.quartz.powerline.utils.ActionExecutor
+import com.quartz.powerline.utils.GoogleMobileAdsConsentManager
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val consentManager = GoogleMobileAdsConsentManager.getInstance(this)
+        consentManager.gatherConsent(this) { error ->
+            if (error != null) {
+                android.util.Log.e("MainActivity", "Consent gathering failed: ${error.message}")
+            }
+        }
 
         val viewModel = ViewModelProvider(
             this,

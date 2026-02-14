@@ -16,7 +16,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
-import com.google.android.gms.ads.MobileAds
 import com.quartz.powerline.ui.AppearanceSettingsScreen
 import com.quartz.powerline.ui.PermissionsScreen
 import com.quartz.powerline.ui.PluginSettingsScreen
@@ -35,8 +34,10 @@ class SettingsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val consentManager = GoogleMobileAdsConsentManager.getInstance(this)
-        if (consentManager.canRequestAds) {
-            MobileAds.initialize(this)
+        consentManager.gatherConsent(this) { error ->
+            if (error != null) {
+                android.util.Log.e("SettingsActivity", "Consent gathering failed: ${error.message}")
+            }
         }
 
         val viewModel = ViewModelProvider(this)[SettingsViewModel::class.java]
