@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.Rect
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
@@ -109,6 +111,15 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
         return getNavigationBarHeight()
     }
 
+    private fun updateExclusionRects(view: View?) {
+        if (view == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+
+        view.post {
+            val rects = listOf(Rect(0, 0, view.width, view.height))
+            view.systemGestureExclusionRects = rects
+        }
+    }
+
     private fun updateOverlayLayout() {
         if (!isOverlaysAdded || windowManager == null) return
 
@@ -132,7 +143,10 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
             params.height = height
             params.x = edgeMargin
             params.gravity = Gravity.BOTTOM or Gravity.START
-            try { windowManager?.updateViewLayout(leftOverlayView, params) } catch (e: Exception) { e.printStackTrace() }
+            try {
+                windowManager?.updateViewLayout(leftOverlayView, params)
+                updateExclusionRects(leftOverlayView)
+            } catch (e: Exception) { e.printStackTrace() }
         }
 
         // Update Right
@@ -142,7 +156,10 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
             params.height = height
             params.x = edgeMargin
             params.gravity = Gravity.BOTTOM or Gravity.END
-            try { windowManager?.updateViewLayout(rightOverlayView, params) } catch (e: Exception) { e.printStackTrace() }
+            try {
+                windowManager?.updateViewLayout(rightOverlayView, params)
+                updateExclusionRects(rightOverlayView)
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
@@ -192,9 +209,11 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
         try {
             windowManager?.addView(leftView, leftParams)
             leftOverlayView = leftView
+            updateExclusionRects(leftView)
 
             windowManager?.addView(rightView, rightParams)
             rightOverlayView = rightView
+            updateExclusionRects(rightView)
 
             isOverlaysAdded = true
         } catch (e: Exception) {
