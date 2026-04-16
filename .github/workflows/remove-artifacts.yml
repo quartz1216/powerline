@@ -1,0 +1,15 @@
+name: Remove all artifacts
+
+on:
+  workflow_dispatch:
+
+jobs:
+  remove-all-artifacts:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Remove all artifacts
+        uses: c-hive/gha-remove-artifacts@v1
+        with:
+          age: '1 second'
