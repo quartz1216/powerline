@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.quartz.powerline"
+    namespace = "dev.quxomiya.powerline"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.quartz.powerline"
+        applicationId = "dev.quxomiya.powerline"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

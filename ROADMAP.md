@@ -320,7 +320,7 @@ MainActivity
 
 **タスク**
 
-- [ ] 新パッケージ `com.quartz.powerline.search` を作成。
+- [ ] 新パッケージ `dev.quxomiya.powerline.search` を作成。
   - [ ] `SearchProvider.kt` / `SearchRequest.kt` / `SearchMode.kt`
   - [ ] `SearchItem.kt` / `ResultSection.kt` / `SearchAction.kt`
   - [ ] `QueryParser.kt`（正規化・エイリアス判定）
@@ -554,7 +554,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 
 | # | 決定事項 | 推奨 | 期限 |
 |---|---|---|---|
-| 1 | パッケージ名を維持するか | **維持**（`com.quartz.powerline`） | Phase 7 前 |
+| 1 | パッケージ名を維持するか | **決定済み**：`dev.quxomiya.powerline` に変更 | — |
 | 2 | minSdk を 26 のままにするか | **維持** | Phase 7 前 |
 | 3 | コマンド prefix を導入するか | **V2 では組み込み alias のみ**。`?` / `=` / `>` は V2.1 | Phase 4 |
 | 4 | UI 言語 | **V2 は英語**。日本語は V2.1 | Phase 6 |
