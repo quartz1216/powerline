@@ -1,9 +1,10 @@
 # Powerline V2 Roadmap
 
-> **Status:** Draft  
+> **Status:** 進行中（Phase 1–3 と検索オーバーレイの刷新が完了。Phase 4 から未着手）  
 > **Baseline:** `main` @ `1c739ae`  
+> **作業ブランチ:** `v2/phase1-alt-space-trigger` → `v2/phase2-remove-monetization-settings` → `v2/phase3-status-screen`（積み上げ。`main` へは未マージ）  
 > **Target:** V2.0（内部ベータ → 公開）  
-> **Last updated:** 2026-10-21
+> **Last updated:** 2026-10-22
 
 ---
 
@@ -14,31 +15,32 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 ```
 アプリ使用中
    │
-   ├─ Alt+Space ──▶ Overlay（検索・計算・Web・共有）
+   ├─ Alt+Space ──▶ 検索オーバーレイ（SearchOverlay ウィンドウ）
+   │                    │   待機状態: 検索エンジンチップ / 最近のアプリ / 全アプリ
+   │                    │   入力後:   アプリ・計算・Web・共有・システム
    │                    │
-   │                    └─ 実行 ──▶ 元のアプリへ戻る
+   │                    └─ 実行 ──▶ 元のアプリの上で目的のアプリ / ブラウザが開く
    │
    └─ アプリアイコン ──▶ MainActivity（状態 / 権限 / About）
 ```
 
 ### Before / After
 
-| 項目 | V1（現在） | V2 |
+| 項目 | V1 | V2 |
 |---|---|---|
-| 主役の画面 | ホーム画面（MainActivity） | オーバーレイ検索（OverlayActivity） |
-| トリガー | 画面下の透明オーバーレイ、ステータスバー、QS、アシスタント、Alt+Space | **Alt+Space のみ**（QS・ASSIST・画面下トリガーは削除） |
+| 主役の画面 | ホーム画面（MainActivity） | **検索オーバーレイ**（アクセシビリティサービスが描く `TYPE_ACCESSIBILITY_OVERLAY` ウィンドウ） |
+| トリガー | 画面下の透明オーバーレイ、ステータスバー、QS、アシスタント、Alt+Space | **Alt+Space のみ** |
 | MainActivity | HOME + LAUNCHER。検索画面を表示 | **状態 / 権限 / About の案内画面**。LAUNCHER のみ |
-| SettingsActivity | 設定専用 Activity | **廃止**（MainActivity は状態 / 権限 / About のみ） |
-| 設定 UI | General / Overlay / Appearance / Additional / Powerline Functions | **設定を持たない**。既存項目は全削除 |
-| 設定の保存 | SharedPreferences に多数の設定を保存 | **保持しない**。固定デフォルトで動作 |
-| テーマ | Theme Selection / Material You トグル | **Material You 固定**（設定なし） |
-| 課金 | Powerline Advanced（`isAdvanced`） | **完全撤去** |
-| 広告 | AdMob / UMP 同意 | **撤去（確定）** |
-| バックアップ | JSON export / import | **削除**。JSON は出力も入力もしない |
-| ユーザーへの質問 | 移行・バックアップ・広告同意の確認 | **システム権限ダイアログ以外は質問しない** |
-| テスト | 自動テストを追加 | **人間が手動で実施** |
-| 検索 | プラグインを並列実行して連結 | **正規化・ランキング・重複排除・キャンセル**を行うパイプライン |
-| 機能 | プラグインごとに実装が分散 | **全削除して SearchProvider + Action で再構築** |
+| SettingsActivity / OverlayActivity | 設定専用 Activity / 透明 Activity の検索画面 | **どちらも廃止** |
+| 設定 UI・設定の保存 | 多数の設定を SharedPreferences に保存 | **設定を持たない**。固定デフォルトで動作 |
+| テーマ | Theme Selection / Material You トグル | **Material You 固定**（Android 12+ は壁紙色、11 以下はブランドカラー） |
+| 課金・広告 | Powerline Advanced / AdMob / UMP | **完全撤去** |
+| バックアップ | JSON export / import | **削除** |
+| ユーザーへの質問 | 移行・バックアップ・広告同意の確認 | **システム権限画面以外は質問しない** |
+| 空クエリ時 | 検索欄のみ / Recents のリスト | **Spotlight 風の待機状態**（エンジンチップ・最近のアプリ・全アプリのタイル） |
+| 検索 | プラグインを並列実行して連結 | **正規化・ランキング・重複排除・タイムアウト**を行うパイプライン（Phase 4） |
+| 機能 | プラグインごとに実装が分散 | **SearchProvider + SearchAction で再構築**（Apps / Calculator / Web / Share の 4 つ。Recents / System は廃止）（Phase 5） |
+| テスト | 自動テストを追加 | **受け入れ判定は人間の手動テスト** |
 
 ---
 
@@ -46,14 +48,16 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 
 ### ゴール
 
-1. **G1: トリガーの統一** — 常時トリガーを Alt+Space に一本化し、画面下・ステータスバー・QS・アシスタント経由の起動を撤去する。
-2. **G2: 画面の役割反転** — `MainActivity` を状態 / 権限 / About の案内画面にし、`OverlayActivity` を唯一の検索サーフェスにする。設定画面は持たない。
-3. **G3: マネタイズ層の撤去** — `isAdvanced`、`PurchaseActivity`、デバッグ用の Advanced トグル、AdMob/UMP を削除する。
-4. **G4: 検索コアの再構築** — クエリ解析、並列実行、タイムアウト、ランキング、重複排除、インクリメンタル表示を実装する。
-5. **G5: 機能の再構築** — Apps / Recents / Calculator / Web / Share / System を新しい Provider 契約で作り直す。
-6. **G6: 設定・バックアップを持たない** — 設定は永続化せず、固定デフォルトで動作する。JSON バックアップ / 復元 / 移行を削除する。
-7. **G7: 品質とプライバシー** — キーボード操作、IME、アクセシビリティ、OEM 対策、アクセシビリティサービスとしての説明責任を整える。テストは人間が実施する。
-8. **G8: Don't Ask User** — システム権限ダイアログ以外に、ユーザーへ設定・移行・バックアップ・同意を質問しない。
+| # | ゴール | 状態 |
+|---|---|---|
+| G1 | **トリガーの統一** — Alt+Space に一本化し、画面下・ステータスバー・QS・アシスタント経由の起動を撤去 | ✅ 完了 |
+| G2 | **画面の役割反転** — `MainActivity` を状態 / 権限 / About にし、検索オーバーレイを唯一の検索サーフェスにする | ✅ 完了 |
+| G3 | **マネタイズ層の撤去** — `isAdvanced`、課金、AdMob / UMP を削除 | ✅ 完了 |
+| G4 | **検索コアの再構築** — クエリ解析、並列実行、タイムアウト、ランキング、重複排除 | ⬜ Phase 4 |
+| G5 | **機能の再構築** — Apps / Calculator / Web / Share を Provider で作り直す（Recents / System は Provider にしない） | ⬜ Phase 5 |
+| G6 | **設定・バックアップを持たない** — 設定の永続化と JSON を削除 | 🟡 ほぼ完了（旧キーの起動時削除が残り） |
+| G7 | **品質とプライバシー** — キーボード操作、IME、アクセシビリティ、OEM 対策、説明責任 | 🟡 一部 |
+| G8 | **Don't Ask User** — システム権限画面以外で、設定・移行・バックアップ・同意を質問しない | 🟡 ほぼ完了（Welcome の簡素化が残り） |
 
 ### 非ゴール（V2 ではやらない）
 
@@ -70,44 +74,36 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 
 ---
 
-## 3. 現状（As-Is）
+## 3. 現状（`v2/phase3-status-screen` @ `4dd288c`）
 
-### 3.1 主要コンポーネント
+### 3.1 コンポーネント
 
-| ファイル | 現在の役割 | V2 での扱い |
+| ファイル | 現在の役割 | 残作業 |
 |---|---|---|
-| `MainActivity.kt` | HOME + LAUNCHER。`LauncherScreen` を表示 | **状態 / 権限 / About に変更**。HOME を外す |
-| `SettingsActivity.kt` | 設定画面のホスト | **削除**（MainActivity は状態 / 権限 / About のみ） |
-| `OverlayActivity.kt` | 透明オーバーレイ。ASSIST / 各種トリガーから起動 | **唯一の検索画面**。Alt+Space からのみ起動 |
-| `PurchaseActivity.kt` | Advanced のプレースホルダー | **削除** |
-| `WelcomeActivity.kt` | 6 ページのオンボーディング（ホーム設定・下部トリガー調整・広告） | **権限が無効なときだけ表示する最小構成に刷新** |
-| `StatusBarAccessibilityService.kt` | 下部トリガーの透明 View、キーボード監視、Alt+Space | **キーイベントのみ**に縮小 |
-| `QuickSettingsService.kt` | QS タイルから Overlay 起動 | **削除** |
-| `PowerlineAssistantService.kt` / `PowerlineAssistantSessionService.kt` | 音声アシスタントのスタブ | **削除** |
-| `MainViewModel.kt` | 検索状態 + 設定ナビゲーション + 画面状態 | **`SearchViewModel` に整理** |
-| `LauncherScreen.kt` | 検索 UI（Main / Overlay 共用） | **`SearchScreen` に改名**。Overlay 専用 |
-| `SettingsScreen.kt` | 設定本体 + 下部トリガー設定 + Debug | **全項目を削除し、状態 / 権限 / About 画面に置き換え** |
-| `AppearanceSettingsScreen.kt` | テーマ・アクセント・オーバーレイ設定 | **削除**（Material You 固定） |
-| `SettingsRepository.kt` | SharedPreferences の巨大な集約 | **削除**（設定を保持しない） |
-| `Plugin.kt` / `PluginManager.kt` | 検索・実行・Compose 設定を 1 インターフェースに混在 | **全削除し `SearchProvider` + `Action` で再構築** |
-| `plugins/impl/*` | 各機能プラグイン | **全削除し Provider として新規実装** |
-| `ActionExecutor.kt` | `pluginId` から実行先を逆引き | **`SearchAction` を直接実行** |
-| `AndroidManifest.xml` | HOME / ASSIST / 広告 / アシスタント / QS | 役割を整理して最小化 |
-| `app/build.gradle.kts` | AdMob / UMP 依存を含む | 広告依存を削除 |
+| `MainActivity.kt` | LAUNCHER のみ。`StatusScreen` を表示。`onboarding_completed` が false なら `WelcomeActivity` へ | Welcome 振り分けを権限状態ベースに（Phase 6） |
+| `ui/StatusScreen.kt` | 2 ペイン（縦は縦積み、横は左右）。ロゴ + 状態 / Permissions チップ（Accessibility・Power option）/ Alt+Space が効かない場合の案内 / About | PRIVACY.md へのリンク（Phase 7） |
+| `WelcomeActivity.kt` | 3 ページ（Welcome / アプリの役割 / Alt+Space と権限） | 権限が有効ならスキップ、ページ削減（Phase 6） |
+| `services/StatusBarAccessibilityService.kt` | Alt+Space の検出（デバウンス付き）と `SearchOverlay` の表示切り替え。前面アプリが変わったら閉じる（IME は除外） | — |
+| `overlay/SearchOverlay.kt` | `TYPE_ACCESSIBILITY_OVERLAY` ウィンドウに `SearchScreen` を載せる。独自の Lifecycle / ViewModelStore / SavedState。Esc・Back・背景タップで閉じ、閉じるときは 150ms フェード | — |
+| `ui/SearchScreen.kt` / `ui/StandbyContent.kt` / `ui/StandbyGrid.kt` | 検索パネル。空クエリ時は待機状態（エンジンチップ、最近のアプリ最大 8、全アプリ）、入力時は結果リスト | Tab でのセクション移動（Phase 7） |
+| `ui/components/CommandBar.kt` | 検索欄。↑↓←→ / Enter を処理 | — |
+| `ui/viewmodel/SearchViewModel.kt` | クエリ・結果・選択位置・待機状態の最近のアプリ。新しい入力で前の検索ジョブをキャンセル | パイプラインへの置き換え（Phase 4） |
+| `domain/SearchEngine.kt` | エイリアス一致なら Web のみ、それ以外は全プラグインを並列実行して `flatten()` | `SearchPipeline` に置き換え（Phase 4） |
+| `plugins/Plugin.kt` / `PluginManager.kt` / `plugins/impl/*` | V1 のプラグイン（AppLauncher / Calculator / Recents / Share / System / WebSearch）。設定画面と Advanced ゲートは削除済み | 全削除。Apps / Calculator / Web / Share のみ Provider で再実装し、Recents / System は廃止（Phase 5） |
+| `utils/ActionExecutor.kt` | `pluginId` から実行先を逆引き | `SearchAction` ベースに（Phase 4） |
+| `data/UserDataRepository.kt` | `history` / `favorite_apps` / `app_weights` / `onboarding_completed` のみ保持 | `onboarding_completed` の廃止（Phase 6） |
+| `data/PowerlineDefaults.kt` | 固定値（背景タップで閉じる、Recents 5 件、待機状態の最近のアプリ 8 件、検索エンジン 7 種） | Recents 廃止に合わせて `MAX_RECENT_ITEMS` を削除（Phase 5） |
+| `ui/theme/Theme.kt` / `Color.kt` | Android 12+ は `dynamicLight/DarkColorScheme`、11 以下は #4CDC8F から生成したブランド配色 | — |
 
 ### 3.2 現状の課題
 
-- **トリガーが多重**: 下部透明 View、ステータスバー、QS、ASSIST、Alt+Space が併存し、設定・オンボーディング・バックアップにまでトリガー設定が漏れている。
-- **画面の責務が逆**: 検索の主役がホーム画面で、設定が別 Activity。V2 の「Alt+Space で呼ぶ」体験と一致していない。
-- **機能ゲートが default OFF**: `isAdvanced` は既定 `false` のため、Share、隠しアプリ管理、検索エンジン編集などが初期状態で使えない。課金実装もない。
-- **検索結果が単純連結**: `SearchEngine` はプラグインを並列実行するが、プラグイン順に `flatten()` するだけで、横断ランキング・重複排除・部分表示がない。
-- **プラグイン契約が重い**: `Plugin` が検索・実行・Compose 設定・アイコンを同時に持つため、検索コアだけをテストしづらい。
-- **履歴が結果型依存**: `ResultType` と `pluginId` の逆引きに依存し、Recents が他プラグインの代行をする構造になっている。
-- **設定項目が過剰**: General に Advanced / Overlay / Appearance / Additional、その下に Powerline Functions が並び、V2 の Alt+Space 体験に対して設定が多すぎる。V2 では設定自体を持たない。
-- **設定が永続化される**: SharedPreferences にテーマ・トリガー・Overlay・Launcher・Provider 設定が保存され、移行とバックアップ JSON まで必要になっている。V2 では設定を保持しない。
-- **ユーザーへの質問が多い**: オンボーディング、ホーム設定、下部トリガー調整、広告同意、バックアップ確認など、ユーザーに判断を求める画面が多い。
-- **オンボーディングが旧仕様**: ホーム設定、下部トリガー調整、広告同意が前提。Alt+Space の説明がない。
-- **バックアップが旧設定を含む**: `statusBar*`、`bottomTrigger*`、`hideTriggersOnKeyboard` など、V2 で消えるキーを輸出している。V2 では JSON を削除する。
+- **検索結果が単純連結**: プラグイン順に `flatten()` するだけで、横断ランキング・表記ゆれの正規化・タイムアウトがない。1 プラグインが遅いと全体が待たされる。
+- **プラグイン契約が重い**: `Plugin` が検索・実行・アイコンを同時に持ち、実行は `pluginId` の逆引きに依存している。
+- **履歴が結果型依存**: `ResultType` と `pluginId` に依存し、Recents が他プラグインの代わりに結果を組み立てている。
+- **favicon をネットワークから取得**: Web 結果とエンジンチップの favicon を `google.com/s2/favicons` から読み込んでいる。「検索時はネットワークアクセスしない」方針と食い違うため、Phase 5 で扱いを決める（第 8 章）。
+- **旧設定キーがディスクに残る**: V1 の SharedPreferences キーを削除していない（Phase 6）。
+- **Welcome が `onboarding_completed` 依存**: 権限が有効でも初回は案内を挟む（Phase 6）。
+- **リリース準備が未着手**: `README.md` / `PRIVACY.md` がない。`versionCode = 1` / `versionName = "1.0"`、`isMinifyEnabled = false`（Phase 7）。
 
 ---
 
@@ -115,43 +111,50 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 
 ### 4.1 エントリーポイント
 
-| 入口 | V2 の扱い |
-|---|---|
-| **Alt+Space** | 唯一のトリガー。Overlay を開く / 閉じる |
-| アプリアイコン | `MainActivity`（状態 / 権限 / About）を開く |
-| QS タイル | **削除** |
-| ASSIST / 音声アシスタント | 削除 |
-| 画面下トリガー / ステータスバー | 削除 |
-| 通知 | 使用しない |
-
-### 4.2 Activity / Service 構成
-
-| コンポーネント | V2 の役割 | Manifest |
+| 入口 | V2 の扱い | 状態 |
 |---|---|---|
-| `MainActivity` | 状態 / 権限 / About。設定は持たない | `LAUNCHER` のみ。`exported=true`、`singleTask` |
-| `OverlayActivity` | 検索サーフェス。`SearchViewModel` を使用 | `exported=false`、`singleInstance`、`excludeFromRecents` |
-| `WelcomeActivity` | 権限が無効なときだけ表示する権限案内 | `exported=false` |
-| `SettingsActivity` | 廃止 | エントリ削除 |
-| `PurchaseActivity` | 廃止 | エントリ削除 |
-| `StatusBarAccessibilityService` | Alt+Space のキーフィルタのみ | 継続。`canRetrieveWindowContent=false` |
-| `QuickSettingsService` | 廃止 | エントリ削除 |
-| `PowerlineAssistantService` / `PowerlineAssistantSessionService` | 廃止 | エントリ削除 |
+| **Alt+Space** | 唯一のトリガー。検索オーバーレイを開く / 閉じる | ✅ |
+| アプリアイコン | `MainActivity`（状態 / 権限 / About） | ✅ |
+| QS タイル / ASSIST / 画面下 / ステータスバー | 削除 | ✅ |
+| 通知 | 使用しない | ✅ |
 
-### 4.3 検索アーキテクチャ
+### 4.2 Activity / Service / ウィンドウ構成
+
+| コンポーネント | V2 の役割 | Manifest | 状態 |
+|---|---|---|---|
+| `MainActivity` | 状態 / 権限 / About。設定は持たない | `LAUNCHER` のみ。`exported=true`、`singleTask` | ✅ |
+| `WelcomeActivity` | 権限が無効なときだけ表示する権限案内 | `exported=false` | 🟡 |
+| `StatusBarAccessibilityService` | Alt+Space のキーフィルタと検索オーバーレイのホスト | `canRetrieveWindowContent=false`、`flagRequestFilterKeyEvents` のみ | ✅ |
+| `SearchOverlay` | 検索サーフェス（Activity ではなくウィンドウ） | なし（サービスが `WindowManager` で追加） | ✅ |
+| `OverlayActivity` / `SettingsActivity` / `PurchaseActivity` | 廃止 | エントリ削除 | ✅ |
+| `QuickSettingsService` / 音声アシスタント | 廃止 | エントリ削除 | ✅ |
+
+> **検索をウィンドウにした理由**: HyperOS のデスクトップモードで `OverlayActivity` がフリーフォームのアプリウィンドウとして開いてしまい、Android 16 では全画面化の手段が非公開 API で塞がれているため。オーバーレイから起動する Activity には `FLAG_ACTIVITY_NEW_TASK` を付ける。
+
+### 4.3 検索オーバーレイの仕様
+
+- パネルは画面中央、最大高さを制限した Material 3 サーフェス（角丸 32dp、内側 12dp、タイル角丸 20dp）。背景の dim / blur はなし。
+- 開くときはアニメーションなし（即時表示）、閉じるときは 150ms フェードアウト。
+- 閉じる操作: Alt+Space、Esc、Back、背景タップ、別アプリが前面に来たとき（IME は除く）。
+- **待機状態（空クエリ）**: 検索エンジンのエイリアスチップ → 最近起動したアプリ（最大 8）→ 全アプリ（名前順）。セクション見出しは置かず、区切り線で分ける。矢印キーで移動、Enter で起動。
+  - 最近のアプリと全アプリに**同じアプリが両方出るのは仕様**（Spotlight と同じ）。重複排除の対象外。
+- **入力状態**: 結果リストは待機状態のタイルと同じ見た目（角丸、選択は `secondaryContainer`、1 行表示）。
+
+### 4.4 検索アーキテクチャ（Phase 4–5 の目標）
 
 ```
-OverlayActivity
-  └─ SearchViewModel
-       └─ SearchPipeline
-            ├─ QueryParser        … alias / prefix / blank query
-            ├─ ProviderRegistry   … 有効な Provider の選択
-            ├─ 並列実行           … 各 Provider に timeout、collectLatest でキャンセル
-            ├─ SearchRanker       … 一致度 + frecency + favorite + provider priority
-            ├─ Deduplicator       … app package / URL / action target で重複排除
-            └─ SearchUiState      … sections, selectedIndex, isLoading
-                 └─ SearchScreen
+SearchOverlay
+  └─ SearchScreen
+       └─ SearchViewModel
+            └─ SearchPipeline
+                 ├─ QueryParser        … alias / prefix / 正規化
+                 ├─ ProviderRegistry   … すべての Provider を常時有効
+                 ├─ 並列実行           … Provider ごとに timeout、新しい入力でキャンセル
+                 ├─ SearchRanker       … 一致度 + frecency + favorite + provider priority
+                 ├─ Deduplicator       … app package / URL / action target で重複排除
+                 └─ SearchUiState      … sections, selectedIndex, isLoading
                       └─ ActionExecutor
-                           └─ SearchAction（LaunchApp / OpenUrl / Copy / Share / OpenSettings …）
+                           └─ SearchAction（LaunchApp / OpenUrl / CopyText / ShareText）
 ```
 
 #### 新しい契約（案）
@@ -163,15 +166,14 @@ interface SearchProvider {
     val priority: Int
     val icon: ImageVector
 
-    fun isEnabled(settings: SettingsSnapshot): Boolean
     suspend fun search(request: SearchRequest, context: Context): List<SearchItem>
-    suspend fun execute(item: SearchItem, context: Context): ActionResult
 }
 
 data class SearchRequest(
     val rawQuery: String,
+    val normalizedQuery: String,
     val tokens: List<String>,
-    val mode: SearchMode, // BLANK, TEXT, COMMAND
+    val mode: SearchMode, // TEXT, ALIAS
 )
 
 data class SearchItem(
@@ -190,350 +192,166 @@ sealed interface SearchAction {
     data class OpenUrl(val url: String) : SearchAction
     data class CopyText(val text: String) : SearchAction
     data class ShareText(val text: String) : SearchAction
-    data object OpenSettings : SearchAction
-    data class SystemAction(val id: String) : SearchAction
 }
 ```
 
-> 移行期間中は既存の `Plugin` / `SearchResult` をアダプタで包み、Phase 5 で各 Provider を順次移行してから旧モデルを削除する。
+> 設定を持たないため、V1 案にあった `isEnabled(settings)` は外した。実行は Provider ではなく `ActionExecutor` が `SearchAction` を見て行う。待機状態は `SearchViewModel` が履歴とアプリ一覧から直接組み立てるため、パイプラインは空クエリを扱わない。
 
 #### パイプライン仕様
 
-- 入力は 30–50ms デバウンス。新しい入力が来たら前の検索を `collectLatest` でキャンセル。
+- 入力は 30–50ms デバウンス。新しい入力が来たら前の検索をキャンセルする（キャンセル自体は実装済み）。
 - Provider ごとに 150ms、全体で 300ms のタイムアウト。遅い Provider は結果から外す。
-- 空クエリ時は Recents のみ。テキスト入力時は Apps / Calculator / Web / Share / System。
-- セクション順: **Apps → Calculator → Web → Share → System**。空クエリ時は **Recents**。
+- 対象の Provider: **Apps / Calculator / Web / Share** の 4 つ。
+  - **Recents は Provider にしない。** 最近使ったものは待機状態の「最近のアプリ」で見せる。入力時は Apps のランキングに frecency として効かせる。
+  - **System（Settings）は Provider にしない。** Android の設定は Apps の検索で「設定」アプリとして出る。Powerline の状態画面は情報アイコンとアプリアイコンから開ける。アクセシビリティ / バッテリー最適化の設定は状態画面の Permissions チップから開ける。
+- セクション順: **Apps → Calculator → Web → Share**。
 - 1 Provider あたり最大 5 件、全体で最大 20 件。
-- ランキング: 完全一致 > 前方一致 > 部分一致 > 曖昧一致。favorite / frecency / alias にボーナス。
-- 重複排除: 同じ `packageName`、同じ URL、同じ `SearchAction` は 1 件にまとめる。
-- 実行後は履歴に記録し、Overlay を閉じて元のアプリへ戻る。
+- ランキング: 完全一致 > 前方一致 > 単語境界・頭文字一致 > 部分一致 > 曖昧一致。favorite / frecency / alias にボーナス。
+- 正規化: 大文字小文字、全角半角、前後と連続の空白。
+- 重複排除: **入力時の結果リストの中だけ**で行う。同じ `packageName`、同じ URL、同じ `SearchAction` は 1 件にまとめる。待機状態は対象外（第 4.3 節）。
+- 実行後は履歴に記録し、オーバーレイを閉じる。
 
-### 4.4 設定とユーザーへの質問（MainActivity）
-
-**方針: V2 は設定を永続化しない。ユーザーに設定を質問しない。**
-
-#### 削除確定（V1 の項目）
-
-| セクション | 削除する項目 |
-|---|---|
-| General | Powerline Advanced (Active) |
-| General > Overlay Settings | Enable Overlay & Trigger |
-| General > Overlay Settings | Trigger |
-| General > Overlay Settings | Feature |
-| General > Appearance | Theme Selection（デフォルト = Material You） |
-| General > Appearance | Use Material You Colors |
-| General > Appearance | Overlay |
-| General > Appearance | Launcher |
-| General | Additional Settings |
-| Powerline Functions | すべて（機能ごと作り直すため） |
-
-- `Overlay Settings` / `Appearance Settings` は中身が空になるため、**サブページ自体を削除**する。
-- `Powerline Functions` の一覧・各プラグイン設定画面も**すべて削除**する。
-- テーマは **Material You 固定**。テーマ選択・アクセントカラー・Material You トグルは持たない。
-- オーバーレイの dim / blur / 背景タップで閉じる / ヘッダーテキストは**設定項目にしない**（固定値または内部定数）。
-- `Additional Settings`（バックアップ / システム / Debug / リセット）は削除する。
-- Powerline Advanced、Debug、広告、プライバシー同意（UMP）は表示しない。
-- SharedPreferences / DataStore に設定を保存しない。設定変更を前提とした UI も作らない。
-
-#### MainActivity の表示内容
+### 4.5 MainActivity（状態 / 権限 / About）
 
 ```
-MainActivity（状態 / 権限 / About）
-├─ Alt+Space の状態（アクセシビリティ権限）
-├─ 権限設定を開く
-├─ 使い方（Alt+Space）
-└─ About（version / privacy）
+MainActivity
+├─ ロゴペイン: タイトル / アプリアイコン / 状態（Accessibility と Power option の両方が許可なら Active）
+└─ 設定ペイン
+   ├─ Permissions: Accessibility / Power option（バッテリー最適化の除外）
+   ├─ Alt+Space が効かない場合の案内（HyperOS などの OEM 対策）
+   └─ About: version / プライバシー方針
 ```
 
 - Provider の ON/OFF、履歴設定、バックアップ、テーマ、Overlay、Launcher の設定は持たない。
-- システムの権限ダイアログ以外に、ユーザーへ設定・移行・バックアップ・同意を質問しない。
 - 旧 General / Overlay Settings / Appearance / Additional Settings / Powerline Functions は**復活させない**。
+- 「Powerline はホームアプリではなくなった」案内は Phase 3 で置いたが、状態画面の刷新（`3dae973`）で外した。案内は Welcome と README に置く。
 
-### 4.5 設定・データ・バックアップ
+### 4.6 設定・データ・バックアップ
 
-- **設定は保持しない。** `SettingsRepository` の設定保存、SharedPreferences / DataStore の設定キーを削除する。
-- **旧設定は読み込まない。** V1 から設定を移行しない。移行確認も出さない。
-- **JSON は削除する。** バックアップ / 復元 / import / export、`AppBackupData`、`BackupMigrator`、`BACKUP_SPEC.md` を削除する。
-- **検索履歴 / favorite は設定ではないため保持する。** ただし設定 UI は持たず、JSON バックアップには含めない。alias / hidden apps / カスタム検索エンジンは設定として扱い、保持しない。
+- **設定は保持しない。** 固定値は `PowerlineDefaults` に集約する。
+- **データは保持する。** `history` / `favorite_apps` / `app_weights` は設定ではないため保持する（設定 UI なし、JSON バックアップなし）。alias / hidden apps / カスタム検索エンジンは扱わない。
+- **JSON は扱わない。** export / import / 復元 / 移行は削除済み。
 - 固定デフォルト:
-  - テーマ: **Material You**（Android 12+ は dynamic color、非対応端末はブランドカラー）
-  - Overlay: dim `0.5`、blur `16`、背景タップで閉じる `true`、ヘッダーテキストなし
-  - 検索: すべての Provider を有効、履歴 ON、最大 5 件
-  - 検索エンジン: 固定のデフォルトのみ（ユーザー編集なし）
-- V1 の設定キー（`is_advanced`, `debug_mode`, `status_bar*`, `bottom_trigger*`, `hide_triggers_on_keyboard`, `material_you_enabled`, `app_theme`, `custom_accent_color`, `overlay_*`, `home_screen_text`, `onboarding_completed`）は**起動時に削除**する。移行はしない。
-- バックアップが必要という理由で設定画面を復活させない。
+  - テーマ: Material You（Android 12+ は dynamic color、11 以下はブランドカラー #4CDC8F）
+  - オーバーレイ: dim / blur なし、背景タップで閉じる、ヘッダーテキストなし
+  - 待機状態: 最近のアプリ最大 8 件
+  - 検索: すべての Provider を有効、履歴 ON
+  - 検索エンジン: Google（既定）/ YouTube Music `ytm` / Maps `maps` / X `x` / YouTube `yt` / Wikipedia `wiki` / Play Store `play`
+- V1 の設定キー（`is_advanced`, `debug_mode`, `status_bar*`, `bottom_trigger*`, `hide_triggers_on_keyboard`, `material_you_enabled`, `app_theme`, `custom_accent_color`, `overlay_*`, `home_screen_text`, `max_recent_items`, `history_enabled`, `calculator_enabled`, `share_enabled`, `share_alias`, `enable_weight_search`, `enable_package_search`, `aliases`, `hidden_apps`, `custom_search_engines`）は**起動時に削除**する（Phase 6）。移行はしない。
 
 ---
 
 ## 5. フェーズ計画
 
-### Phase 0 — ベースラインと安全網
+### 進捗サマリー
 
-**目的:** V2 の変更を安全に進めるため、現状を固定して検証手順を用意する。
-
-**タスク**
-
-- [ ] `main` @ `1c739ae` から作業ブランチ `v2` を作成する。
-- [ ] `v1-final` タグまたは `backup/v1-2026-10-21` ブランチを作成する。
-- [ ] `./gradlew :app:assembleDebug` が通ることを確認する（テストは人間が実施）。
-- [ ] 現在の APK サイズ、起動時間、検索レイテンシを記録する。
-- [ ] `rg -n "isAdvanced|PurchaseActivity|AdMob|MobileAds|bottom_trigger|status_bar|SettingsActivity|QuickSettingsService|ASSIST|AppBackupData|BACKUP_SPEC"` で撤去対象を一覧化する。
-- [ ] 未決事項（第 9 章）を決定し、この文書に追記する。
-
-**完了条件**
-
-- `v2` ブランチが作成され、ベースラインのビルドが成功している。
-- 自動テストの追加・移行は行わない。受け入れテストは人間が手動で実施する。
-
-**目安:** 0.5 日
+| Phase | 内容 | 状態 | コミット |
+|---|---|---|---|
+| 0 | ベースラインと安全網 | 🟡 一部 | — |
+| 1 | トリガーを Alt+Space に統一 | ✅ | `a7710b3` |
+| 2 | Advanced / 課金 / 広告 / 設定保存の撤去 | ✅ | `c54b28b` |
+| 3 | MainActivity = 状態 / 権限、Overlay = 検索 | ✅ | `01221ee`, `3dae973` |
+| 3.5 | 検索オーバーレイの刷新（ウィンドウ化・待機状態・Material You） | ✅ | `c097417` … `4dd288c` |
+| 4 | 検索コアの再構築 | ⬜ | — |
+| 5 | 機能（Provider）の再構築 | ⬜ | — |
+| 6 | 初回起動と旧データの掃除 | 🟡 一部 | — |
+| 7 | 品質・プライバシー・リリース | 🟡 一部 | — |
 
 ---
 
-### Phase 1 — トリガーを Alt+Space に統一
+### Phase 0 — ベースラインと安全網（一部）
 
-**目的:** 常時トリガーを Alt+Space のみにし、下部トリガー用の透明オーバーレイ、QS、関連設定を撤去する。
-
-**タスク**
-
-- [x] `StatusBarAccessibilityService.kt`
-  - [x] `leftOverlayView` / `rightOverlayView` / `isOverlaysAdded` / `isKeyboardVisible` を削除。
-  - [x] `createOverlays()` / `removeOverlays()` / `updateOverlayLayout()` / `updateOverlayState()` / `setupTouchListener()` / `getTriggerHeight()` / `getNavigationBarHeight()` / `updateExclusionRects()` を削除。
-  - [x] `onSharedPreferenceChangeListener` と `onAccessibilityEvent` のキーボード監視を削除。
-  - [x] `onKeyEvent()` の Alt+Space 処理を残し、`ACTION_DOWN` の連打をデバウンスする。
-  - [x] `Intent` に明示的な `ACTION_TOGGLE_SEARCH` を付与する（文字列定数を `OverlayActivity` と共有）。
-  - [x] 不要になった import（`Color`, `PixelFormat`, `Rect`, `Gravity`, `MotionEvent`, `View`, `ViewConfiguration`, `WindowManager`, `FrameLayout`, `Handler`, `Looper`, `Toast` など）を削除。
-- [x] `OverlayActivity.kt`
-  - [x] `ACTION_TOGGLE_SEARCH` を `onCreate` / `onNewIntent` で処理する。
-  - [x] 表示中なら `finish()`、非表示なら開いてフォーカスを要求する。
-  - [x] 開いたときにクエリをクリアする（固定動作。設定項目は作らない）。
-  - [x] `onNewIntent` で `setIntent(intent)` を忘れない。
-- [x] `accessibility_service_config.xml`
-  - [x] `accessibilityEventTypes` を最小化（`typeWindowStateChanged` のみ、またはイベント不要なら最小構成）。
-  - [x] `accessibilityFlags` から `flagRetrieveInteractiveWindows` を外し、`flagRequestFilterKeyEvents` のみ残す。
-  - [x] `canRetrieveWindowContent="false"` に変更。
-- [x] `strings.xml`
-  - [x] `accessibility_service_description` を「Alt+Space を検出して Powerline を開く。画面内容は読み取らない」に更新。
-- [x] `SettingsScreen.kt`
-  - [x] `OverlaySettingsSubpage` を削除する（中身ごと削除）。
-  - [x] General の「Overlay Settings」エントリを削除する。
-  - [x] 下部トリガーの ON/OFF、Center Gap、Trigger Height、Keyboard Hide、dim / blur、背景タップ設定の UI を削除する。
-  - [x] Debug Mode の自動 ON/OFF（`DisposableEffect`）を削除する。
-- [x] `QuickSettingsService.kt` を削除する。
-  - [x] `AndroidManifest.xml` の QS `<service>` を削除する。
-  - [x] QS タイルからの `OverlayActivity` 起動コードを削除する。
-- [x] `WelcomeActivity.kt`
-  - [x] 「Set as Home」「Adjust Triggers」「corner triggers」を削除。
-  - [x] Alt+Space の説明とアクセシビリティ有効化に置き換える（詳細は Phase 6）。
-- [x] `SettingsRepository.kt`
-  - [x] 下部トリガー / ステータスバー / `debug_mode` の getter/setter を削除。
-  - [x] 設定保存そのものを廃止する準備として、残りの設定キーの利用箇所を一覧化する。
-
-> **Phase 1 時点で残る SharedPreferences キー**（Phase 2 で整理）  
-> 設定（削除対象）: `is_advanced`, `material_you_enabled`, `app_theme`, `custom_accent_color`, `overlay_close_on_background_tap`, `overlay_dim_amount`, `overlay_blur_radius`, `home_screen_text`, `onboarding_completed`, `max_recent_items`, `history_enabled`, `calculator_enabled`, `share_enabled`, `share_alias`, `enable_weight_search`, `enable_package_search`, `aliases`, `hidden_apps`, `custom_search_engines`  
-> データ（保持対象）: `history`, `favorite_apps`, `app_weights`  
-> 備考: Overlay の dim / blur UI は `AppearanceSettingsScreen` に暫定で残っている（画面ごと Phase 2 で削除）。
-
-**完了条件**
-
-- サービス起動時に画面下の透明 View が追加されない（`dumpsys window` で確認）。
-- Alt+Space で Overlay が開き、もう一度押すと閉じる。
-- QS タイル / ステータスバー / 画面下トリガーから Overlay を開けない。
-- 設定・オンボーディング・バックアップに下部トリガー / ステータスバー / QS の項目がない。
-- `./gradlew :app:assembleDebug` が成功する（テストは人間が実施）。
-
-**目安:** 1–2 日
+- [x] V1 の退避ブランチ `backup/pre-consolidation-2026-10-21` を作成。
+- [x] Phase ごとの作業ブランチ（`v2/phase1-…` → `v2/phase2-…` → `v2/phase3-…`）を積み上げで作成。単一の `v2` ブランチは作らない。
+- [x] `./gradlew :app:assembleDebug` が通ることを確認。
+- [x] 撤去対象を一覧化（Phase 1–2 で消化済み）。
+- [ ] `main` @ `1c739ae` に `v1-final` タグを打つ。
+- [ ] V1 の APK サイズ、起動時間、検索レイテンシを記録する（Phase 7 の比較用。未計測のまま進んでいる）。
+- [ ] 未決事項（第 8 章）を決定する。
 
 ---
 
-### Phase 2 — Powerline Advanced / 課金 / 広告 / 設定保存の撤去
+### Phase 1 — トリガーを Alt+Space に統一 ✅
 
-**目的:** 機能ゲートとマネタイズ層を削除し、テーマを Material You 固定にする。設定の永続化と外観設定 UI も削除する。
-
-**タスク**
-
-- [x] `SettingsRepository.kt`
-  - [x] 設定保存を全廃する。参照を固定定数に置き換えてからクラスを削除する。
-  - [x] `getIsAdvanced()` / `setIsAdvanced()` を削除。
-  - [x] `getDebugMode()` / `setDebugMode()` を削除。
-  - [x] `getMaterialYouEnabled()` / `setMaterialYouEnabled()` を削除。
-  - [x] `getAppTheme()` / `setAppTheme()` を削除（Material You 固定）。
-  - [x] `getCustomAccentColor()` / `setCustomAccentColor()` を削除。
-  - [x] `getOverlayCloseOnBackgroundTap()` / `getOverlayDimAmount()` / `getOverlayBlurRadius()` を削除（固定値）。
-  - [x] `getHomeScreenText()` / `setHomeScreenText()` を削除（Launcher 設定の削除）。
-  - [x] その他の設定キーの getter/setter を削除し、固定値に置き換える。
-- [x] `SettingsViewModel.kt`
-  - [x] 設定状態（`_isAdvanced` / `_materialYouEnabled` / `_appTheme` / `_customAccentColor` / Provider / 履歴）を全削除。
-  - [x] 状態画面に必要な権限状態だけを残すか、ViewModel 自体を削除する。
-  - [x] `setDebugMode()` と `navigateBack()` 内の debug 処理を削除。
-- [x] `SettingsScreen.kt`
-  - [x] 「Powerline Advanced」リスト項目を削除。
-  - [x] 「Appearance Settings」リスト項目を削除。
-  - [x] 「Additional Settings」リスト項目を削除。
-  - [x] 「Powerline Functions」セクションとプラグイン一覧を削除。
-  - [x] 「Debug → Toggle Advanced Mode」を削除。
-  - [x] 「Support Powerline」「広告」関連の文言を削除。
-  - [x] 設定項目を全削除し、Phase 3 で状態 / 権限 / About 画面に置き換える。
-- [x] `AppLauncherPlugin.kt`
-  - [x] `isAdvanced` による Hidden Apps / Alias 追加の制限を削除（機能自体は Phase 5 で削除）。
-- [x] `WebSearchPlugin.kt`
-  - [x] `!isAdvanced` 時の Google 限定フィルタを削除。
-  - [x] 旧プラグイン設定画面の `displayEngines` / `canEdit` / FAB の Advanced 条件を削除（画面自体は Phase 5 で削除）。
-- [x] `SharePlugin.kt`
-  - [x] `if (!settingsRepository.getIsAdvanced()) return emptyList()` を削除。
-  - [x] 旧プラグイン設定画面の「Powerline Advanced で利用可能」表示と `enabled = isAdvanced` を削除（画面自体は Phase 5 で削除）。
-- [x] `AppearanceSettingsScreen.kt` を削除する（テーマ選択・アクセント・Overlay・Launcher 設定ごと削除）。
-- [x] `Theme.kt` を Material You 固定に簡素化する。
-  - [x] `appTheme` / `customAccentColor` / `dynamicColor` 引数を削除。
-  - [x] Android 12+ は dynamic color、非対応端末はブランドカラーにフォールバック。
-  - [x] `setSystemBars` など必要な引数だけ残す。
-- [x] `MainActivity.kt` / `SettingsActivity.kt` / `OverlayActivity.kt` / `SearchScreen.kt`
-  - [x] `CommandLauncherTheme` の `appTheme` / `customAccentColor` / `dynamicColor` 引数を削除。
-  - [x] `appTheme` / `customAccentColor` / `materialYouEnabled` の `collectAsState` を削除。
-- [x] `PurchaseActivity.kt` を削除。
-- [x] `AdMobBanner.kt` / `GoogleMobileAdsConsentManager.kt` を削除。
-- [x] `MainActivity.kt` / `SettingsActivity.kt` / `WelcomeActivity.kt`
-  - [x] `GoogleMobileAdsConsentManager` の初期化・同意取得を削除。
-- [x] `app/build.gradle.kts`
-  - [x] `play-services-ads` と `user-messaging-platform` を削除。
-- [x] `AndroidManifest.xml`
-  - [x] AdMob の `APPLICATION_ID` meta-data を削除。
-  - [x] `PurchaseActivity` の `<activity>` を削除。
-- [x] `WelcomeActivity.kt`
-  - [x] `SupportPage`（アップグレード / 広告同意）を削除する。
-- [x] `AppBackupData.kt` / `BackupMigrator` / `BACKUP_SPEC.md`
-  - [x] バックアップ JSON のモデル・移行・仕様書を削除。
-  - [x] `SettingsRepository` のバックアップ連携を削除。
-  - [x] 旧キーを読み込むマイグレーションは作らない。
-
-> **Phase 2 の実装メモ**  
-> - `SettingsRepository` は `UserDataRepository` に改名・縮小し、`history` / `favorite_apps` / `app_weights` / `onboarding_completed` だけを扱う。固定値は `PowerlineDefaults` に集約。  
-> - `onboarding_completed` は Phase 6（Welcome 刷新）までの暫定。  
-> - プラグイン設定画面（`Plugin.SettingsScreen` / `PluginSettingsScreen`）は Phase 5 を待たずに前倒しで削除。hidden apps / ユーザー alias / 検索エンジン編集は廃止。  
-> - 削除 API を参照していた既存ユニットテスト 8 件を削除（テストは移行しない方針）。  
-> - 旧 SharedPreferences キーはディスクに残る（起動時削除は Phase 6）。`SettingsActivity` は Permissions のみの暫定画面（Phase 3 で削除）。
-
-**完了条件**
-
-- `rg -n "isAdvanced|PurchaseActivity|AdMob|MobileAds|consent|materialYouEnabled|appTheme|customAccentColor|debug_mode|AppBackupData|BackupMigrator|BACKUP_SPEC" app/src` が空。
-- 課金・広告・Advanced の UI が一切ない。
-- 旧設定項目（General / Overlay Settings / Appearance / Additional Settings / Powerline Functions）が存在しない。
-- 設定用の SharedPreferences / DataStore キーを保存していない。
-- JSON バックアップのコード・ファイル・UI が存在しない。
-- テーマは Material You 固定で、テーマ選択 UI がない。
-- Share / アプリ検索 / 電卓 / Web 検索が Advanced なしで使える。
-- `./gradlew :app:assembleDebug` が成功する（テストは人間が実施）。
-
-**目安:** 1–2 日
+- アクセシビリティサービスから画面下の透明 View・キーボード監視を削除し、Alt+Space のみ処理（`ACTION_DOWN` の連打はデバウンス）。
+- `accessibility_service_config.xml` を `typeWindowStateChanged` / `flagRequestFilterKeyEvents` / `canRetrieveWindowContent="false"` に最小化。
+- QS タイル（`QuickSettingsService`）、Overlay Settings、下部トリガー関連の設定・オンボーディング項目を削除。
+- アクセシビリティ説明文を「Alt+Space を検出して Powerline を開く。画面内容は読み取らない」に更新。
 
 ---
 
-### Phase 3 — MainActivity = 状態 / 権限、Overlay = 検索
+### Phase 2 — Advanced / 課金 / 広告 / 設定保存の撤去 ✅
 
-**目的:** 画面の役割を反転し、アプリアイコンからは状態 / 権限 / About、Alt+Space からは検索を開く。設定画面は持たない。
+- `isAdvanced`、`PurchaseActivity`、Debug トグル、AdMob / UMP（依存・Manifest・同意取得・Banner）を削除。
+- `SettingsRepository` を `UserDataRepository` に縮小（`history` / `favorite_apps` / `app_weights` / `onboarding_completed`）。固定値は `PowerlineDefaults` に集約。
+- `AppearanceSettingsScreen`、プラグイン設定画面、JSON バックアップ（`AppBackupData` / `BackupMigrator` / `BACKUP_SPEC.md`）を削除。hidden apps / ユーザー alias / 検索エンジン編集は廃止。
+- `Theme.kt` から `appTheme` / `customAccentColor` / `dynamicColor` 引数を削除。
+- 削除 API を参照していたユニットテスト 8 件を削除。
 
-**タスク**
+---
 
-- [x] `MainActivity.kt` を**状態 / 権限 / About 画面**に置き換える。
-  - [x] Alt+Space の状態（アクセシビリティ権限の有効/無効）を表示。
-  - [x] 権限設定を開くボタン。
-  - [x] 使い方（Alt+Space）。
-  - [x] About（version / privacy）。
-  - [x] `SettingsViewModel` / `SettingsScreen` / `SettingsNav` への依存を削除。
-  - [x] `LauncherScreen` / `MainViewModel` / `ActionExecutor` / `rememberIsWallpaperLight` への依存を削除。
-  - [x] 設定を保存する UI は置かない。旧 General / Overlay / Appearance / Additional / Powerline Functions は復活させない。
-- [x] `SettingsActivity.kt` / `SettingsViewModel.kt` / `SettingsScreen.kt` を削除する。
-  - [x] `OverlayActivity.kt` の設定遷移を削除。
-  - [x] `AndroidManifest.xml` の `<activity>` を削除。
-- [x] `MainViewModel.kt` を `SearchViewModel.kt` に改名。
-  - [x] `Screen` enum、`openSettings()` / `closeSettings()` / `openAppearanceSettings()` / `openPluginSettings()` / `openPermissions()` / `closePermissions()` など、設定ナビゲーション用の不要 API を削除。
-  - [x] `currentScreen` / `selectedPluginId` を削除。
-  - [x] `OverlayActivity` / `SearchScreen` の参照を更新。
-- [x] `LauncherScreen.kt` を `SearchScreen.kt` に改名。
-  - [x] 内側の `CommandLauncherTheme` を削除し、`OverlayActivity` のテーマをそのまま使う（現在は `isSystemInDarkTheme()` で上書きしている）。
-  - [x] 情報アイコンは `MainActivity`（状態 / 権限 / About）を開く。
-- [x] `AndroidManifest.xml`
-  - [x] `MainActivity`: `HOME` / `DEFAULT` カテゴリと `Theme.CommandLauncher.Home` を削除。`LAUNCHER` のみ残す。
-  - [x] `MainActivity`: `stateNotNeeded` を削除。`launchMode="singleTask"` は維持。
-  - [x] `OverlayActivity`: `ASSIST` intent-filter を削除。`exported="false"` に変更。
-  - [x] `SettingsActivity` / `PurchaseActivity` の `<activity>` を削除。
-  - [x] `PowerlineAssistantService` / `PowerlineAssistantSessionService` の `<service>` を削除。
-- [x] `themes.xml`
-  - [x] `Theme.CommandLauncher.Home` を削除。
-  - [x] `Theme.CommandLauncher.Overlay` は維持。
-- [x] `WelcomeActivity.kt`
-  - [x] 完了後の遷移先を `MainActivity`（状態 / 権限）にする。
-  - [x] 既存ユーザー向けに「Powerline はホームアプリではなくなりました」という案内を状態画面に表示する（保存はしない）。
-- [x] 設定の永続化を削除する。
-  - [x] `SettingsRepository` / SharedPreferences / DataStore の設定保存を削除。
-  - [x] 設定変更の `StateFlow` 連携を削除。
-  - [x] JSON バックアップ / 復元 / 移行を削除。
+### Phase 3 — MainActivity = 状態 / 権限、Overlay = 検索 ✅
 
-> **Phase 3 の実装メモ**  
-> - 状態画面は `ui/StatusScreen.kt`（旧 `PermissionsScreen.kt`）。Alt+Space の状態 / アクセシビリティ設定 / 使い方 / ホームアプリ廃止の案内 / OEM 注意書き / About（version とプライバシー方針の本文）を表示。通知権限とデフォルトホームのチェックは削除。PRIVACY.md へのリンクは Phase 7 で追加する。  
-> - 設定の永続化・JSON の削除は Phase 2 で完了済み。`onboarding_completed` による Welcome 振り分けは Phase 6 まで残す。  
-> - 使われなくなった `WallpaperTheme.kt` / `NotificationHelper.kt` / 音声アシスタント関連（3 ファイル + `assistant_service.xml`）も削除。  
-> - 検索候補「settings」は「Powerline Status」として状態画面を開く。
+- `MainActivity` を状態 / 権限 / About 画面（`StatusScreen`）に置き換え、HOME カテゴリと `stateNotNeeded` を削除。
+- `SettingsActivity` / `SettingsScreen` / `SettingsViewModel`、音声アシスタント関連、`WallpaperTheme.kt`、`NotificationHelper.kt` を削除。
+- `MainViewModel` → `SearchViewModel`、`LauncherScreen` → `SearchScreen` に改名し、設定ナビゲーションを削除。
+- 検索候補「settings」は「Powerline Status」として状態画面を開く（Phase 5 で System ごと廃止）。
+- `3dae973` で状態画面を 2 ペインに刷新。Permissions チップに Power option（バッテリー最適化の除外）を追加し、ホームアプリ廃止の案内を外した。
 
-**完了条件**
+---
 
-- ホームボタン / ホームアプリ選択に Powerline が出ない。
-- アプリアイコンから状態 / 権限 / About が開く。
-- Alt+Space からのみ Overlay が開く（QS は削除済み）。
-- `SettingsActivity` / `SettingsViewModel` / `SettingsScreen` / `SettingsRepository` / `QuickSettingsService` への参照が 0。
-- 設定を保存するコード（設定用の SharedPreferences / DataStore / `SettingsRepository`）が存在しない。
-- JSON バックアップ / 復元 / 移行のコードが存在しない。
-- `./gradlew :app:assembleDebug` が成功する（テストは人間が実施）。
+### Phase 3.5 — 検索オーバーレイの刷新 ✅（計画外で追加）
 
-**目安:** 2–3 日
+- [x] `OverlayActivity` を廃止し、アクセシビリティサービスの `TYPE_ACCESSIBILITY_OVERLAY` ウィンドウ（`SearchOverlay`）で検索を描く（`c097417`）。
+- [x] Esc / Back / 背景タップ / 別アプリの前面化で閉じる。
+- [x] Spotlight 風の待機状態（エンジンチップ / 最近のアプリ / 全アプリ）と、矢印キー + Enter での操作（`60a0fda`）。
+- [x] dim / blur を廃止し、パネルを中央に配置して高さを制限。
+- [x] セクション見出しを外し、全アプリが 3 行入る高さに調整（`e13a392`）。
+- [x] 閉じるときの 150ms フェードアウト（`7b6b5c7`）。
+- [x] ハードウェアアクセラレーションの有効化と、favicon をハードウェアビットマップ以外で読み込む対策（回転時・ソフトウェア描画時のクラッシュ回避）。
+- [x] 結果リストを待機状態のタイルと同じ見た目に統一（`5c6e2e8`）。
+- [x] テーマを Material You に戻す（`3dae973` で一度ブランドカラー固定にしたものを `4dd288c` で壁紙連動に変更。11 以下はブランドカラー）。
 
 ---
 
 ### Phase 4 — 検索コアの再構築
 
-**目的:** 検索を「プラグインの連結」から、ランキングとキャンセルを備えたパイプラインに置き換える。
+**目的:** 検索を「プラグインの連結」から、ランキングとタイムアウトを備えたパイプラインに置き換える。
 
 **タスク**
 
 - [ ] 新パッケージ `com.quartz.powerline.search` を作成。
-  - [ ] `SearchProvider.kt`
-  - [ ] `SearchRequest.kt` / `SearchMode.kt`
-  - [ ] `SearchItem.kt` / `ResultSection.kt`
-  - [ ] `SearchAction.kt` / `ActionResult.kt`
-  - [ ] `SearchPipeline.kt`
-  - [ ] `SearchRanker.kt`
-  - [ ] `SearchDeduplicator.kt`
-  - [ ] `SearchUiState.kt`
-  - [ ] `ProviderRegistry.kt`
+  - [ ] `SearchProvider.kt` / `SearchRequest.kt` / `SearchMode.kt`
+  - [ ] `SearchItem.kt` / `ResultSection.kt` / `SearchAction.kt`
+  - [ ] `QueryParser.kt`（正規化・エイリアス判定）
+  - [ ] `SearchPipeline.kt` / `SearchRanker.kt` / `SearchDeduplicator.kt`
+  - [ ] `SearchUiState.kt` / `ProviderRegistry.kt`
 - [ ] `SearchViewModel`
-  - [ ] `MutableStateFlow<String>` のクエリと `StateFlow<SearchUiState>` を公開。
-  - [ ] `collectLatest` + `debounce(30–50ms)` で検索をキャンセル可能にする。
-  - [ ] `selectedIndex` の上下移動、Enter、Esc、Tab のハンドリングを追加。
-  - [ ] 空クエリ時は Recents を返す。
+  - [x] 新しい入力で前の検索をキャンセル（`searchJob?.cancel()`）。
+  - [x] ↑↓ / Enter による選択と実行。
+  - [ ] クエリを `StateFlow` にし、`debounce(30–50ms)` + `collectLatest` に置き換える。
+  - [ ] `SearchUiState`（セクション・選択位置・読み込み中）を公開する。
 - [ ] `SearchPipeline`
-  - [ ] クエリを解析し、alias / prefix / blank を判定。
   - [ ] すべての Provider を並列実行（`async(Dispatchers.Default)`）。
   - [ ] Provider ごとの `withTimeout(150)` と全体 `withTimeout(300)`。
-  - [ ] 結果を `SearchRanker` で採点し、`SearchDeduplicator` で重複排除。
+  - [ ] `SearchRanker` で採点し、`SearchDeduplicator` で重複排除。
   - [ ] セクションごとに最大 5 件、全体 20 件に制限。
 - [ ] `SearchRanker`
-  - [ ] 完全一致 / 前方一致 / 部分一致 / 曖昧一致のスコアリング。
-  - [ ] favorite / frecency / alias / provider priority の加算。
+  - [ ] 完全一致 / 前方一致 / 単語境界・頭文字 / 部分一致 / 曖昧一致のスコアリング。
+  - [ ] favorite / frecency（`app_weights` と履歴）/ alias / provider priority の加算。
   - [ ] 大文字小文字・全角半角・空白の正規化。
 - [ ] `ActionExecutor`
-  - [ ] `SearchAction` の `when` で実行する形に変更。
-  - [ ] `pluginId` の逆引きを廃止。
-  - [ ] 実行後に `HistoryItem` を記録。
-- [ ] 旧 `Plugin` / `SearchResult` のアダプタ
-  - [ ] 移行期間中は `PluginSearchProviderAdapter` を用意し、既存プラグインを包む。
-  - [ ] Phase 5 の完了後に旧モデルとアダプタを削除。
-- [ ] テストは人間が手動で実施する。自動テストの追加・移行は行わない。
+  - [ ] `SearchAction` の `when` で実行する形に変更し、`pluginId` の逆引きを廃止。
+  - [ ] 実行後に履歴を記録。
+- [ ] 移行用アダプタ
+  - [ ] `PluginSearchProviderAdapter` で既存プラグインを包み、Phase 5 で順次置き換える。
 
 **完了条件**
 
 - 1–2 文字のアプリ検索で、最初の結果が 100ms 以内（ミドルレンジ端末）。
 - 入力中に前の検索がキャンセルされ、古い結果が一瞬表示されない。
-- Recents と Apps に同じアプリが二重表示されない。
-- すべての Provider が設定なしで有効になっている。
+- 入力時の結果リストで同じアプリ・URL・アクションが二重に出ない（待機状態の重複は対象外）。
+- 遅い Provider があっても他の結果が 300ms 以内に表示される。
 - 人間による手動テストで主要フローが動作する。
 
 **目安:** 4–5 日
@@ -542,361 +360,281 @@ MainActivity（状態 / 権限 / About）
 
 ### Phase 5 — 機能（Provider）の再構築
 
-**目的:** 既存のプラグイン実装と設定画面を**全削除**し、新しい Provider 契約でゼロから作り直して V2 の検索体験を完成させる。
-
-**タスク**
+**目的:** 既存プラグインを**全削除**し、Provider 契約でゼロから作り直す。
 
 #### Apps
 
-- [ ] `AppIndex` を導入し、起動時にアプリ一覧・ラベル・パッケージ・クラス名をキャッシュ。
+- [ ] `AppIndex` を導入し、アプリ一覧・ラベル・パッケージ・クラス名をキャッシュ（待機状態の全アプリ表示と共有）。
 - [ ] ラベル / パッケージ / 組み込みエイリアスの検索。
-- [ ] favorite / frecency は設定 UI なしで保持する（履歴データとして）。
-- [ ] あいまい一致を改善（単語境界、頭文字、大文字小文字）。
-- [ ] 長押しメニュー: favorite、アプリ情報、共有。
+- [ ] あいまい一致の改善（単語境界、頭文字、大文字小文字）。
+- [ ] favorite / frecency は設定 UI なしで保持（`favorite_apps` / `app_weights`）。
+- [ ] 長押しメニュー（`AppActionMenu`）: favorite、アプリ情報、共有。
 
-#### Recents
+#### 履歴（Provider ではない）
 
-- [ ] `HistoryItem` を `SearchAction` ベースに移行。
-- [ ] アプリ / Web / Calc / Share を統一して重複排除。
-- [ ] 時間減衰（例: 7 日でスコア半減）を導入。
-- [ ] 最大 5 件、履歴 ON を固定値として実装（設定 UI なし）。履歴は V2 のデータストアに保持する。
-- [ ] 空クエリ時に表示。
+Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「最近のアプリ」と Apps の frecency のためのデータとして扱う。
+
+- [ ] `HistoryItem` を `SearchAction` ベースに移行し、`ResultType` / `pluginId` への依存をなくす。
+- [ ] 履歴の記録はアプリ起動のみにする（Web / Calc / Share の履歴は表示先がなくなるため記録しない）。
+- [ ] 時間減衰（例: 7 日でスコア半減）を導入し、frecency に使う。
+- [ ] 待機状態の「最近のアプリ」は `SearchViewModel` が履歴から直接組み立てる（現状どおり）。
 
 #### Calculator
 
-- [ ] 四則演算、括弧、パーセント、負数、小数点をサポート。
-- [ ] 計算結果のコピー、履歴への記録。
+- [ ] 四則演算、括弧、パーセント、負数、小数点。
+- [ ] 計算結果のコピー。
 - [ ] エラー時の表示を整理。
 - [ ] 単位変換は V2 では扱わない。
 
 #### Web
 
-- [ ] 固定のデフォルト検索エンジンのみ（ユーザー編集なし）。
-- [ ] 組み込みエイリアス prefix（例: `yt laneige`）と固定のデフォルトエンジン。
+- [ ] 固定の検索エンジン（第 4.6 節）。ユーザー編集なし。
+- [ ] エイリアス prefix（例: `yt laneige`）。待機状態のエンジンチップからも選べる。
 - [ ] URL 直接入力、`https://` 補完。
-- [ ] favicon のキャッシュ（失敗時はアイコンにフォールバック）。
-- [ ] 検索時はネットワークアクセスせず、実行時のみブラウザを開く。
+- [ ] favicon の扱いを決める（第 8 章 #6）。同梱アイコンにするか、取得結果をキャッシュして失敗時はアイコンにフォールバックする。
+- [ ] 検索時に検索クエリを外部へ送らない。実行時のみブラウザを開く。
 
 #### Share
 
-- [ ] クエリ文字列の共有。
-- [ ] 共有シート起動、履歴記録。
-- [ ] Advanced ゲートなし。共有設定は持たない。
+- [ ] クエリ文字列の共有。共有シート起動。
 
-#### System
+#### 廃止する Provider
 
-- [ ] 「settings」で Android の設定を開く。
-- [ ] アプリ情報、アクセシビリティ設定、バッテリー最適化設定へのショートカット。
-- [ ] 危険なシステム操作は V2 では実装しない。
+- [ ] `RecentsPlugin` を削除し、作り直さない（代わりは待機状態と frecency）。
+- [ ] `SystemPlugin` を削除し、作り直さない（「settings → Powerline Status」の候補もなくなる）。
+- [ ] `PowerlineDefaults.MAX_RECENT_ITEMS` を削除。
 
 #### 共通
 
-- [ ] `plugins/impl/*` の既存実装を**全削除**する（コピーせず、Provider として新規実装）。
-- [ ] 旧 `Plugin` / `PluginManager` / プラグイン設定画面を**全削除**する。
+- [ ] `plugins/impl/*`、`Plugin`、`PluginManager`、`SearchEngine` を**全削除**する（コピーせず新規実装）。
 - [ ] `ResultType` / `SearchResult` を削除する。
-- [ ] `ProviderRegistry` を実装する。すべての Provider を常時有効にし、ON/OFF 設定は持たない。
-- [ ] Provider ごとの設定画面は作らない。固定デフォルトで動作する。
+- [ ] Provider ごとの設定・ON/OFF は持たない。
 
 **完了条件**
 
-- すべての機能が Advanced なしで動作する。
+- 旧 `Plugin` / `PluginManager` / `plugins/impl/*` / `SearchResult` / `SearchEngine` への参照が 0。
 - 検索結果のセクション表示とキーボード操作が破綻しない。
-- 旧 `Plugin` / `PluginManager` / `plugins/impl/*` / `SearchResult` への参照が 0。
-- 旧「Powerline Functions」のプラグイン一覧・設定画面が存在しない。
-- Provider の ON/OFF 設定、カスタム検索エンジン設定、履歴設定が存在しない。
 - 人間による手動テストで主要フローが動作する。
 
 **目安:** 4–5 日
 
 ---
 
-### Phase 6 — 状態画面・権限・初回起動
+### Phase 6 — 初回起動と旧データの掃除（一部）
 
-**目的:** MainActivity を状態 / 権限 / About として完成させ、設定・バックアップ・移行を持たない状態にする。
+**目的:** 初回起動で余計な案内を挟まず、V1 の残骸をディスクからも消す。状態画面は Phase 3 で完成済み。
 
-**タスク**
-
-- [ ] `MainActivity.kt` / 新しい状態画面
-  - [ ] Alt+Space の状態（アクセシビリティ権限の有効/無効）を表示。
-  - [ ] 権限設定を開くボタン。
-  - [ ] 使い方（Alt+Space）。
-  - [ ] About（version / privacy）。
-  - [ ] 設定項目、テーマ、Overlay、Launcher、Provider、履歴、バックアップの UI を作らない。
-- [ ] `WelcomeActivity.kt` を最小化。
-  - [ ] アクセシビリティ権限が有効なら権限案内をスキップして MainActivity へ。
-  - [ ] 権限が無効な場合のみ、1. コンセプト、2. 権限有効化 + プライバシー説明を表示。
-  - [ ] テーマ選択、ホーム設定、下部トリガー調整、広告同意、バックアップ確認を削除。
-- [ ] 設定・バックアップ・移行の残骸を削除。
-  - [ ] `SettingsNav` / `SettingsScreen` / `SettingsViewModel` / `SettingsRepository` の残りを削除。
-  - [ ] JSON バックアップ / 復元 / 移行 / `BACKUP_SPEC.md` を削除。
-  - [ ] 旧設定キーを起動時に削除する。移行しない。ユーザーに確認しない。
-  - [ ] アプリ管理下の旧 JSON ファイルを起動時に削除する（ユーザーには通知しない）。
-- [ ] 広告 / UMP の残骸を削除。
-  - [ ] AdMob / UMP の依存、初期化、同意取得、Banner を削除。
+- [x] 状態画面（Alt+Space の状態、権限、使い方、About）— Phase 3 で完了。
+- [x] Welcome からテーマ選択・ホーム設定・下部トリガー調整・広告同意・バックアップ確認を削除 — Phase 1–2 で完了。
+- [x] AdMob / UMP の残骸を削除 — Phase 2 で完了。
+- [ ] `WelcomeActivity` の振り分けを `onboarding_completed` から**アクセシビリティ権限の状態**に変える。権限が有効なら Welcome を挟まない。
+- [ ] Welcome を「コンセプト」「権限有効化 + プライバシー説明」の 2 ページに絞る（「ホームアプリではなくなった」案内はここに含める）。
+- [ ] `onboarding_completed` キーと `UserDataRepository` の該当 API を削除。
+- [ ] 第 4.6 節の V1 設定キーを起動時に削除する（ユーザーに確認しない）。
+- [ ] アプリ管理下の旧 JSON ファイルを起動時に削除する。
 
 **完了条件**
 
-- MainActivity は状態 / 権限 / About のみで、設定画面を持たない。
-- 設定を保存するコード（設定用の SharedPreferences / DataStore / `SettingsRepository`）が存在しない。
-- JSON バックアップ / 復元 / 移行のコード・ファイル・UI が存在しない。
-- システム権限ダイアログ以外に、ユーザーへ質問する画面がない。
-- 広告 / UMP のコードと UI が存在しない。
-- アクセシビリティ権限が有効なら、初回起動でも権限案内を挟まない。
-- 人間による手動テストで主要フローが動作する。
+- アクセシビリティ権限が有効なら、初回起動でも Welcome を挟まない。
+- `powerline_settings` に `history` / `favorite_apps` / `app_weights` 以外のキーが残らない。
+- システム権限画面以外に、ユーザーへ質問する画面がない。
 
-**目安:** 2–3 日
+**目安:** 1 日
 
 ---
 
-### Phase 7 — 品質・プライバシー・リリース
+### Phase 7 — 品質・プライバシー・リリース（一部）
 
-**目的:** V2 を安定して配布できる状態にする。
+**キーボード UX**
 
-**タスク**
+- [x] ↑↓←→ で選択、Enter で実行、Esc / Back で閉じる。
+- [x] 閉じるときのフェードアウト。dim / blur は廃止。
+- [x] 画面回転でクラッシュしない（ハードウェアビットマップ対策）。
+- [ ] Tab / Shift+Tab でセクション移動（待機状態: チップ → 最近のアプリ → 全アプリ、入力時: 結果セクション）。
+- [ ] 開いたときに IME / フォーカスを確実に取る（`FocusRequester` + `SoftwareKeyboardController`）。
+- [ ] マルチウィンドウ・タブレット幅・HyperOS デスクトップモードでのレイアウト確認。
 
-- [ ] キーボード UX
-  - [ ] 上下キーで選択、Enter で実行、Esc で閉じる、Tab でセクション移動。
-  - [ ] 入力開始時に IME を確実に表示（`FocusRequester` + `SoftwareKeyboardController`）。
-  - [ ] Overlay 表示アニメーション（フェード / スケール）と dim / blur の調整。
-  - [ ] 画面回転・マルチウィンドウ・タブレット幅でのレイアウト確認。
-- [ ] アクセシビリティ
-  - [ ] すべての Icon に `contentDescription`。
-  - [ ] TalkBack で状態画面と検索結果が読めることを確認。
-  - [ ] タッチターゲット 48dp 以上。
-- [ ] パフォーマンス
-  - [ ] コールドスタートから Overlay 表示まで 200ms 以内。
-  - [ ] アプリ一覧のロードを初回のみにし、2 回目以降はキャッシュ。
-  - [ ] 入力 1 文字あたりの UI 更新を 16ms 以内に保つ。
-  - [ ] リリース APK サイズを測定（広告 SDK 削除後の削減量を記録）。
-- [ ] 手動テストマトリクス（人間が実施）
-  - [ ] Pixel / stock Android（Android 14）
-  - [ ] Samsung One UI
-  - [ ] Xiaomi HyperOS（バッテリー制限・サービス kill）
-  - [ ] Android 8（minSdk 26）
-  - [ ] 物理キーボード（US / JIS）
-  - [ ] Gboard / Google 日本語入力 / Samsung キーボード
-  - [ ] ライト / ダーク / Material You
-  - [ ] マルチウィンドウ / 画面回転
-  - [ ] 再起動後に設定・JSON が保持されないこと（履歴 / favorite は保持される）
-  - [ ] 設定画面 / バックアップ / 移行 / 広告同意の質問が出ないこと
-- [ ] ドキュメント
-  - [ ] `README.md` に V2 のセットアップ（アクセシビリティ有効化、Alt+Space）を記載。
-  - [ ] `PRIVACY.md` に「画面内容を読まない」「キーログを取らない」を明記。
-  - [ ] `README.md` / `PRIVACY.md` に「設定・JSON バックアップは保持しない」と明記。
-  - [ ] `ROADMAP.md` の完了項目を更新。
-- [ ] リリース
-  - [ ] `versionCode = 2` / `versionName = "2.0.0"`。
-  - [ ] リリースビルド（署名、`isMinifyEnabled` の検討）。
-  - [ ] 内部テスト → ベータ → 公開の順で配布。
-  - [ ] ストア掲載文を「ホームアプリ」から「Alt+Space 検索レイヤー」に変更。
+**アクセシビリティ**
+
+- [ ] `contentDescription = null` の 12 か所を見直す（装飾なら null のまま、操作対象には説明を付ける）。
+- [ ] TalkBack で状態画面と検索結果が読めることを確認。
+- [ ] タッチターゲット 48dp 以上。
+
+**パフォーマンス**
+
+- [ ] Alt+Space から表示まで 200ms 以内。
+- [ ] アプリ一覧のロードを初回のみにし、2 回目以降はキャッシュ。
+- [ ] 入力 1 文字あたりの UI 更新を 16ms 以内に保つ。
+- [ ] リリース APK サイズを測定（広告 SDK 削除後の削減量を記録）。
+
+**手動テストマトリクス（人間が実施）**
+
+- [ ] Pixel / stock Android
+- [ ] Samsung One UI
+- [ ] Xiaomi HyperOS（バッテリー制限・サービス kill・デスクトップモード）
+- [ ] Android 8（minSdk 26）と Android 11（ブランドカラーのフォールバック）
+- [ ] 物理キーボード（US / JIS）
+- [ ] Gboard / Google 日本語入力 / Samsung キーボード
+- [ ] ライト / ダーク / Material You（壁紙を変えたときに配色が追従するか）
+- [ ] マルチウィンドウ / 画面回転
+- [ ] 再起動後に設定・JSON が保持されないこと（履歴 / favorite は保持される）
+
+**ドキュメント**
+
+- [ ] `README.md`: V2 のセットアップ（アクセシビリティ有効化、Power option、Alt+Space）、ホームアプリではなくなったこと、設定・JSON を保持しないこと。
+- [ ] `PRIVACY.md`: 画面内容を読まない、キーログを取らない、favicon 取得時の通信先（残す場合）。
+- [ ] 状態画面の About から `PRIVACY.md` へリンク。
+
+**リリース**
+
+- [ ] `versionCode = 2` / `versionName = "2.0.0"`。
+- [ ] 署名付きリリースビルド、`isMinifyEnabled` の検討。
+- [ ] `v2/phase3-status-screen` までを `main` へマージ（PR）。
+- [ ] 内部テスト → ベータ → 公開の順で配布。
 
 **完了条件**
 
-- 人間による手動テストマトリクスでクラッシュ / ANR がない。
+- 手動テストマトリクスでクラッシュ / ANR がない。
 - Alt+Space が主要端末・主要 IME で動作する。
-- 設定・バックアップ・移行・広告同意の質問が一切出ない。
-- プライバシー説明とアクセシビリティ説明がストア / アプリ内で一致している。
+- プライバシー説明とアクセシビリティ説明がストア / アプリ内 / README で一致している。
 - 署名済み APK が生成できる。
-- `assembleDebug` / リリースビルドが成功する（テストは人間が実施）。
 
 **目安:** 3–5 日
 
 ---
 
-## 6. 設定・バックアップの扱い
+## 6. テスト方針
 
-### 6.1 設定
+- **受け入れ判定は人間の手動テスト**で行う。開発中は `./gradlew :app:assembleDebug` と実機で確認する。
+- リポジトリには `CalculatorTest` / `StandbyGridTest` / `SearchViewModelTest` / `PerformanceTest` の 4 ファイルが残っている（`StandbyGridTest` は Phase 3.5 で追加）。扱いは第 8 章 #7 で決める。
 
-- **V2 は設定を保持しない。** SharedPreferences / DataStore の設定キーを削除し、固定デフォルトで動作する。
-- **旧設定は削除する。** V1 の設定（`is_advanced`, `debug_mode`, `status_bar*`, `bottom_trigger*`, `hide_triggers_on_keyboard`, `material_you_enabled`, `app_theme`, `custom_accent_color`, `overlay_*`, `home_screen_text`, `onboarding_completed`）は起動時に削除する。
-- マイグレーション処理は作らない。ユーザーに移行確認も出さない。
-- 設定変更を前提とした画面（テーマ、Overlay、Launcher、Provider、履歴、検索エンジン）を作らない。
+### 手動テストの主な項目
 
-### 6.2 バックアップ JSON
+- Alt+Space で開く / 閉じる（連打、長押し、キーリピート、IME 表示中）。
+- 物理キーボードで入力 → 矢印 → Enter → アプリ起動。待機状態のタイルでも同様。
+- Esc / Back / 背景タップ / 別アプリへの切り替えで閉じる。
+- アクセシビリティ権限・Power option を OFF にしたときの状態画面の表示。
+- 回転 / マルチウィンドウ / タブレット / HyperOS デスクトップモード。
 
-- JSON の export / import / 復元 / 移行を**削除**する。
-- `AppBackupData` / `BackupMigrator` / `BACKUP_SPEC.md` を削除する。
-- 旧 JSON は読み込まない。新しい JSON も出力しない。アプリが作成した旧 JSON ファイルは起動時に削除する。
-- バックアップを理由に設定画面やユーザーへの確認を復活させない。
-
-### 6.3 既存ユーザー
-
-- V1 の設定は削除する。V1 の履歴・favorite・alias・hidden apps・検索エンジンは引き継がない。V2 以降の履歴 / favorite は V2 のデータストアに保持する。
-- Powerline をホームアプリとして使っているユーザーは、更新後にホームアプリを選び直す必要がある。
-- 案内は README と状態画面に記載する。移行確認ダイアログは出さない。
-- 再起動で設定・JSON が復元されないことを仕様とする。履歴 / favorite は保持する。
-
----
-
-## 7. テスト計画
-
-### 7.1 テスト方針
-
-- **テストは人間が実施する。** V2 では新しい自動テストを追加しない。
-- 既存テストの移行・拡張は行わない。受け入れ判定には使わない。
-- 開発中の確認は `./gradlew :app:assembleDebug` と実機・エミュレータでの手動操作で行う。
-- 検索パイプライン、ランキング、重複排除、Provider の動作は、下記の手動テストで確認する。
-
-### 7.2 UI / 手動テスト
-
-- Alt+Space で開く / 閉じる（連打、長押し、キーリピート）。
-- 物理キーボードで入力 → 矢印 → Enter → アプリ起動。
-- Esc / 背景タップ / Back で閉じる。
-- IME 表示中に Alt+Space が効くか（Gboard / 日本語入力）。
-- 設定画面が存在せず、設定・JSON が再起動後に保持されないこと（履歴 / favorite は保持される）。
-- 移行・バックアップ・広告同意の質問が出ないこと。
-- 回転 / マルチウィンドウ / タブレット。
-- アクセシビリティ権限を OFF にしたときの案内。
-- 広告 / UMP の UI が存在しないこと。
-
-### 7.3 パフォーマンス目標
+### パフォーマンス目標
 
 | 項目 | 目標 |
 |---|---|
-| Overlay 表示 | 200ms 以内 |
+| オーバーレイ表示 | 200ms 以内 |
 | 最初の検索結果 | 100ms 以内（アプリ名 1–2 文字） |
 | 入力中の UI 更新 | 16ms / frame |
 | アプリ一覧ロード | 初回 500ms 以内、2 回目以降はキャッシュ |
 | リリース APK | 15MB 以下（目安） |
 
-### 7.4 ストア / ポリシー
+### ストア / ポリシー
 
-- アクセシビリティサービスは「Alt+Space の検出」にのみ使用し、画面内容の取得・キーログを行わない。
-- `canRetrieveWindowContent="false"`、`flagRetrieveInteractiveWindows` を外す。
-- プライバシーポリシーと権限案内で明示する。
-- 広告 / UMP を使用しないため、広告同意の取得は行わない。
-- Google Play のアクセシビリティポリシー上、キー検出目的の利用は審査リスクがある。配布方法（Play / GitHub Releases / F-Droid）は第 9 章で決定する。
+- アクセシビリティサービスは「Alt+Space の検出」と「検索オーバーレイの表示」にのみ使用し、画面内容の取得・キーログを行わない。
+- `TYPE_ACCESSIBILITY_OVERLAY` の利用目的もプライバシーポリシーと権限案内で説明する。
+- Google Play のアクセシビリティポリシー上、キー検出目的の利用は審査リスクがある。配布方法は第 8 章で決める。
 
 ---
 
-## 8. リスクと対策
+## 7. リスクと対策
 
 | リスク | 影響 | 対策 |
 |---|---|---|
-| アクセシビリティサービスが Play ポリシーに抵触 | ストア公開不可 | 目的を最小化し、プライバシーを明記。必要なら GitHub Releases / F-Droid を主軸にする |
-| Alt+Space がアプリ / IME に横取りされる | 起動できない | `flagRequestFilterKeyEvents` を維持。主要 IME で検証。QS は削除するためフォールバックなし。README と権限案内で既知の制限を明記 |
-| OEM（Xiaomi 等）がサービスを kill | 常時トリガーが死ぬ | バッテリー最適化の除外を案内。状態画面に診断リンクを置く |
-| 設定を持たないためカスタマイズできない | ユーザーの好みに合わせられない | V2 は固定デフォルトと割り切る。状態 / 権限 / About のみ表示する |
-| ホームアプリではなくなる | 既存ユーザーのホームが空になる | README と状態画面で明示。別ホームアプリの設定手順を案内。確認ダイアログは出さない |
-| 設定を引き継がない | V1 のカスタマイズが消える | 仕様として明記する。移行処理・JSON バックアップは作らない |
-| 履歴 / favorite の設定 UI がない | 履歴のクリアや最大件数を変更できない | 固定値（最大 5 件）とし、必要なら V2.1 で再検討 |
-| 検索コアの作り直しで regression | 主要機能が動かない | Provider 単位で移行し、各 Phase で人間が手動確認する |
-| スコープが大きい | リリース遅延 | Phase ごとに完了条件を満たしてから次へ。V2.1 に回す項目を明示 |
-| タッチ端末で使えない | ユーザー層が限定される | V2 はキーボード前提と割り切る。QS は削除するためタッチ用の代替導線は持たない。将来のタッチ UI は V2.1 で検討 |
+| アクセシビリティサービスが Play ポリシーに抵触 | ストア公開不可 | 目的を最小化し、プライバシーを明記。GitHub Releases を主軸にする |
+| Alt+Space がアプリ / IME に横取りされる | 起動できない | `flagRequestFilterKeyEvents` を維持。主要 IME で検証。README と状態画面で既知の制限を明記 |
+| OEM（Xiaomi 等）がサービスを kill | トリガーと検索の両方が止まる | Power option チップでバッテリー最適化の除外を案内。状態画面に対処方法を表示（実装済み） |
+| 検索がサービス内のウィンドウになった | サービスが落ちると検索も使えない。メモリはサービスの寿命に引きずられる | オーバーレイを閉じたら ViewModel / Lifecycle を破棄する。kill 対策は上と同じ |
+| OEM のウィンドウ管理（デスクトップモード等） | 表示崩れ | `TYPE_ACCESSIBILITY_OVERLAY` で回避済み。HyperOS で継続確認 |
+| 設定を持たない | 好みに合わせられない | 固定デフォルトと割り切る |
+| ホームアプリではなくなる | 既存ユーザーのホームが空になる | Welcome と README で明示 |
+| 検索コアの作り直しで regression | 主要機能が動かない | アダプタ経由で Provider 単位に移行し、都度手動確認 |
+| タッチ端末で使えない | ユーザー層が限定される | V2 はキーボード前提。タッチの導線は V2.1 で検討 |
 
 ---
 
-## 9. 未決事項
+## 8. 未決事項
 
 | # | 決定事項 | 推奨 | 期限 |
 |---|---|---|---|
-| 1 | パッケージ名を維持するか | **維持**（`com.quartz.powerline`） | Phase 0 |
-| 2 | minSdk を 26 のままにするか | **維持** | Phase 0 |
+| 1 | パッケージ名を維持するか | **維持**（`com.quartz.powerline`） | Phase 7 前 |
+| 2 | minSdk を 26 のままにするか | **維持** | Phase 7 前 |
 | 3 | コマンド prefix を導入するか | **V2 では組み込み alias のみ**。`?` / `=` / `>` は V2.1 | Phase 4 |
 | 4 | UI 言語 | **V2 は英語**。日本語は V2.1 | Phase 6 |
 | 5 | 配布方法 | まず **GitHub Releases / 内部ベータ**。Play はポリシー確認後 | Phase 7 |
+| 6 | favicon を外部（`google.com/s2/favicons`）から取得し続けるか | **同梱アイコンに置き換え**（固定エンジンは 7 種のみのため）。URL 直接入力の favicon は出さない | Phase 5 |
+| 7 | 残っているユニットテスト 4 ファイルの扱い | **残すが受け入れ判定には使わない**。Phase 5 で旧モデルと一緒に壊れるものは削除 | Phase 5 |
 
 ---
 
-## 10. Definition of Done（V2.0）
+## 9. Definition of Done（V2.0）
 
-- [ ] `main` から `v2` ブランチが切られ、`v1-final` が保存されている。
-- [ ] 常時トリガーは Alt+Space のみ。QS タイルは存在しない。
-- [ ] 画面下トリガー / ステータスバートリガー / 下部透明 View が存在しない。
-- [ ] `MainActivity` が状態 / 権限 / About の案内画面で、`LAUNCHER` のみを持つ。
-- [ ] `SettingsActivity` / `PurchaseActivity` / `QuickSettingsService` が削除されている。
-- [ ] 既存の Settings 項目（Powerline Advanced / Overlay Settings / Appearance / Additional Settings / Powerline Functions）がすべて削除されている。
-- [ ] 設定を保存するコード（設定用の SharedPreferences / DataStore / `SettingsRepository`）が存在しない。
-- [ ] 設定画面、テーマ選択、アクセントカラー、Overlay / Launcher 設定、Provider ON/OFF、履歴設定が存在しない。
-- [ ] テーマは Material You 固定。Overlay の dim / blur / 背景タップ / ヘッダーテキストは固定値。
-- [ ] `isAdvanced` / Advanced トグル / 課金 UI が存在しない。
-- [ ] AdMob / UMP / 広告 Banner が存在しない。
-- [ ] QS / ASSIST / 音声アシスタントのサービス・エントリが削除されている。
-- [ ] `OverlayActivity` が Alt+Space からのみ開く。
+- [ ] `main` に `v1-final` タグがあり、V2 の作業ブランチが `main` にマージされている。
+- [x] 常時トリガーは Alt+Space のみ。QS / ASSIST / 画面下 / ステータスバーのトリガーが存在しない。
+- [x] `MainActivity` が状態 / 権限 / About の案内画面で、`LAUNCHER` のみを持つ。
+- [x] `SettingsActivity` / `PurchaseActivity` / `OverlayActivity` / `QuickSettingsService` / 音声アシスタントが削除されている。
+- [x] 旧設定画面（Powerline Advanced / Overlay Settings / Appearance / Additional Settings / Powerline Functions）が存在しない。
+- [x] 設定画面、テーマ選択、アクセントカラー、Provider ON/OFF、履歴設定が存在しない。
+- [x] テーマは Material You 固定（Android 12+ は壁紙連動、11 以下はブランドカラー）。
+- [x] `isAdvanced` / 課金 UI / AdMob / UMP が存在しない。
+- [x] JSON バックアップ / 復元 / 移行のコード・ファイル・UI が存在しない。
+- [x] 検索オーバーレイが Alt+Space からのみ開き、待機状態と結果リストがキーボードで操作できる。
 - [ ] 検索パイプライン（解析・並列・タイムアウト・ランキング・重複排除）が動作する。
-- [ ] Apps / Recents / Calculator / Web / Share / System が新 Provider で動作する。
-- [ ] JSON バックアップ / 復元 / 移行のコード・ファイル・UI が存在しない。
-- [ ] システム権限ダイアログ以外に、ユーザーへ質問する画面がない。
-- [ ] アクセシビリティ権限が有効なら、初回起動でも権限案内を挟まない。
-- [ ] 再起動後に設定・JSON が保持されない（履歴 / favorite は保持される）。
-- [ ] `./gradlew :app:assembleDebug` が成功する（テストは人間が実施）。
+- [ ] Apps / Calculator / Web / Share が新 Provider で動作する（Recents / System の Provider は存在しない）。
+- [ ] V1 の設定キーと `onboarding_completed` がディスクに残らない。
+- [ ] アクセシビリティ権限が有効なら、初回起動でも Welcome を挟まない。
+- [ ] システム権限画面以外に、ユーザーへ質問する画面がない。
 - [ ] 人間による手動テストマトリクスでクラッシュ / ANR がない。
-- [ ] `README.md` / `PRIVACY.md` が更新されている。`BACKUP_SPEC.md` は削除されている。
+- [ ] `README.md` / `PRIVACY.md` があり、状態画面からリンクされている。
 - [ ] `versionCode = 2` / `versionName = "2.0.0"` の署名済み APK が生成できる。
 
 ---
 
-## 11. マイルストーン
+## 10. マイルストーン
 
-| マイルストーン | 内容 | 目安 |
+| マイルストーン | 内容 | 目安 | 状態 |
+|---|---|---|---|
+| M0 | ベースライン | 0.5 日 | 🟡 |
+| M1 | Alt+Space 単一トリガー | 1–2 日 | ✅ |
+| M2 | Advanced / 課金 / 広告 / 設定保存の撤去 | 1–2 日 | ✅ |
+| M3 | 状態画面 + 検索オーバーレイの刷新 | 2–3 日 | ✅ |
+| M4 | 検索コア（パイプライン / ランキング） | 4–5 日 | ⬜ |
+| M5 | Provider 再実装（Apps / Calc / Web / Share） | 4–5 日 | ⬜ |
+| M6 | 初回起動と旧データの掃除 | 1 日 | 🟡 |
+| M7 | QA / プライバシー / リリース | 3–5 日 | 🟡 |
+| **残り** | | **約 2–3 週間**（個人開発の目安） | |
+
+---
+
+## 11. 付録: ファイル別の変更マップ
+
+| ファイル | V2 の変更 | 状態 |
 |---|---|---|
-| M0 | ベースライン、`v2` ブランチ、`v1-final` タグ | 0.5 日 |
-| M1 | Alt+Space 単一トリガー、下部トリガー / QS 撤去 | 1–2 日 |
-| M2 | Advanced / 課金 / 広告 / 設定保存撤去 | 1–2 日 |
-| M3 | MainActivity = 状態 / 権限、Overlay = 検索 | 2–3 日 |
-| M4 | 検索コア（パイプライン / ランキング） | 4–5 日 |
-| M5 | Provider 再実装（Apps / Recents / Calc / Web / Share / System） | 4–5 日 |
-| M6 | 状態画面 / 権限 / 初回起動 | 2–3 日 |
-| M7 | 人間による QA / プライバシー / リリース | 3–5 日 |
-| **合計** | | **約 3–4 週間**（個人開発の目安） |
+| `MainActivity.kt` | 状態 / 権限 / About。Welcome 振り分けを権限ベースに | 🟡 |
+| `WelcomeActivity.kt` | 権限が無効なときだけ表示する 2 ページ構成に | 🟡 |
+| `services/StatusBarAccessibilityService.kt` | Alt+Space のキーフィルタ + オーバーレイのホスト | ✅ |
+| `overlay/SearchOverlay.kt` | 新規。検索ウィンドウ | ✅ |
+| `ui/StatusScreen.kt` | 新規。状態 / 権限 / About | ✅（PRIVACY リンクのみ残り） |
+| `ui/SearchScreen.kt` / `StandbyContent.kt` / `StandbyGrid.kt` / `components/*` | 検索パネル・待機状態 | ✅（Tab 移動が残り） |
+| `ui/viewmodel/SearchViewModel.kt` | `SearchUiState` とパイプラインへの置き換え | ⬜ |
+| `ui/theme/Theme.kt` / `Color.kt` | Material You + ブランドカラーのフォールバック | ✅ |
+| `domain/SearchEngine.kt` | 削除し `search/SearchPipeline` へ | ⬜ |
+| `plugins/Plugin.kt` / `PluginManager.kt` / `plugins/impl/*` | 削除し `search/` 以下に Apps / Calculator / Web / Share の Provider を新規実装。Recents / System は作り直さない | ⬜ |
+| `domain/models/SearchResult.kt` | 削除し `SearchItem` へ | ⬜ |
+| `utils/ActionExecutor.kt` | `SearchAction` ベースに | ⬜ |
+| `data/UserDataRepository.kt` | `onboarding_completed` を削除、旧キーの起動時削除 | ⬜ |
+| `data/PowerlineDefaults.kt` | 固定値の集約 | ✅ |
+| `AndroidManifest.xml` | HOME / ASSIST / QS / 広告 / 廃止 Activity を削除 | ✅ |
+| `res/xml/accessibility_service_config.xml` | キー検出のみに最小化 | ✅ |
+| `app/build.gradle.kts` | 広告依存の削除 ✅ / バージョンと署名 ⬜ | 🟡 |
+| `README.md` / `PRIVACY.md` | 新規作成 | ⬜ |
 
 ---
 
-## 12. 付録: ファイル別の変更マップ
+## 12. 参考: V1 の主要な状態（`main` @ `1c739ae`）
 
-| ファイル | V2 の変更 |
-|---|---|
-| `app/src/main/java/com/quartz/powerline/MainActivity.kt` | 状態 / 権限 / About に変更。HOME を外す |
-| `app/src/main/java/com/quartz/powerline/SettingsActivity.kt` | 削除 |
-| `app/src/main/java/com/quartz/powerline/OverlayActivity.kt` | 検索サーフェス。Alt+Space 専用、`exported=false` |
-| `app/src/main/java/com/quartz/powerline/PurchaseActivity.kt` | 削除 |
-| `app/src/main/java/com/quartz/powerline/WelcomeActivity.kt` | 権限が無効なときだけ表示する最小の権限案内に刷新 |
-| `app/src/main/java/com/quartz/powerline/services/StatusBarAccessibilityService.kt` | キーフィルタのみに縮小 |
-| `app/src/main/java/com/quartz/powerline/services/QuickSettingsService.kt` | 削除 |
-| `app/src/main/java/com/quartz/powerline/services/PowerlineAssistantService.kt` | 削除 |
-| `app/src/main/java/com/quartz/powerline/services/PowerlineAssistantSessionService.kt` | 削除 |
-| `app/src/main/java/com/quartz/powerline/services/PowerlineAssistantSession.kt` | 削除 |
-| `app/src/main/java/com/quartz/powerline/ui/viewmodel/MainViewModel.kt` | `SearchViewModel.kt` に改名・整理 |
-| `app/src/main/java/com/quartz/powerline/ui/viewmodel/SettingsViewModel.kt` | 削除（設定状態を持たない） |
-| `app/src/main/java/com/quartz/powerline/ui/LauncherScreen.kt` | `SearchScreen.kt` に改名。Overlay 専用 |
-| `app/src/main/java/com/quartz/powerline/ui/SettingsScreen.kt` | 削除（状態 / 権限 / About は MainActivity に実装） |
-| `app/src/main/java/com/quartz/powerline/ui/AppearanceSettingsScreen.kt` | 削除（テーマは Material You 固定） |
-| `app/src/main/java/com/quartz/powerline/ui/theme/Theme.kt` | Material You 固定に簡素化（テーマ / アクセント引数を削除） |
-| `app/src/main/java/com/quartz/powerline/data/SettingsRepository.kt` | 削除（設定を永続化しない） |
-| `app/src/main/java/com/quartz/powerline/domain/models/AppBackupData.kt` | 削除（JSON バックアップを廃止） |
-| `app/src/main/java/com/quartz/powerline/plugins/Plugin.kt` | 削除し、`SearchProvider` を新規実装 |
-| `app/src/main/java/com/quartz/powerline/plugins/PluginManager.kt` | 削除し、`ProviderRegistry` を新規実装 |
-| `app/src/main/java/com/quartz/powerline/plugins/impl/*` | 全削除し、各 Provider として新規実装（コピーしない） |
-| `app/src/main/java/com/quartz/powerline/utils/ActionExecutor.kt` | `SearchAction` ベースに変更 |
-| `app/src/main/AndroidManifest.xml` | HOME / ASSIST / QS / 広告 / アシスタント / 廃止 Activity を削除 |
-| `app/src/main/res/xml/accessibility_service_config.xml` | キー検出のみに最小化 |
-| `app/src/main/res/values/strings.xml` | アクセシビリティ説明を更新 |
-| `app/src/main/res/values/themes.xml` | `.Home` テーマを削除 |
-| `app/build.gradle.kts` | AdMob / UMP 依存を削除 |
-| `BACKUP_SPEC.md` | 削除 |
-| `README.md` | V2 のセットアップ、Alt+Space、設定 / JSON を保持しないことを記載 |
-| `PRIVACY.md` | キーログ / 画面内容を取らないことを明記 |
-
----
-
-## 13. 参考: V1 の主要な状態
-
-- `main` は `1c739ae`（Alt+Space、ジェスチャー、並列検索、Advanced、外観設定のマージ済み）。
-- `isAdvanced` は既定 `false`。Share / 隠しアプリ管理 / 検索エンジン編集 / Material You トグル / カスタムヘッダーが制限される。
-- Alt+Space は `StatusBarAccessibilityService.onKeyEvent()` で処理され、`OverlayActivity` に `TOGGLE_OVERLAY` を送る。
-- `OverlayActivity` は `singleInstance`。表示中の再起動は `finish()`、非表示時はそのまま前面化する。QS タイルからも起動できる。
-- `SearchEngine` はプラグインを `Dispatchers.Default` で並列実行し、`flatten()` で連結する。
-- `MainActivity` は HOME + LAUNCHER。`LauncherScreen` が検索 UI。
-- `SettingsActivity` が設定ホスト。`SettingsScreen` は General（Powerline Advanced / Overlay Settings / Appearance Settings / Additional Settings）と Powerline Functions を持つ。
-- `AppearanceSettingsScreen` は Theme Selection（System / Light / Dark / Brand / Material You）、Use Material You Colors、Overlay（dim / blur / 背景タップ）、Launcher（ヘッダーテキスト）を持つ。
-- `SettingsRepository` は `app_theme` / `custom_accent_color` / `overlay_*` / `home_screen_text` を保持する。
-- `QuickSettingsService` と音声アシスタントのスタブが存在する。
+- `MainActivity` は HOME + LAUNCHER で、`LauncherScreen` が検索 UI。
+- `OverlayActivity`（`singleInstance`）が ASSIST / QS / 画面下トリガー / Alt+Space から開く。
+- `SettingsActivity` が設定ホスト。General（Powerline Advanced / Overlay / Appearance / Additional）と Powerline Functions を持つ。
+- `isAdvanced` は既定 `false` で、Share / 隠しアプリ管理 / 検索エンジン編集 / Material You トグルが制限される。
+- `SearchEngine` はプラグインを並列実行し、`flatten()` で連結する。
 - オンボーディングは 6 ページ（ホーム設定、下部トリガー、広告支援を含む）。
-- バックアップは v1 フラット JSON。下部トリガー / ステータスバー / テーマ / アクセント / Overlay の設定を含む。
-- `AppBackupData` / `BackupMigrator` と `BACKUP_SPEC.md` が存在する。
-- AdMob / UMP の同意取得と広告 Banner が存在する。
+- JSON バックアップ（`AppBackupData` / `BackupMigrator` / `BACKUP_SPEC.md`）と AdMob / UMP が存在する。
 - V2 は V1 の設定・JSON・履歴を引き継がない（V2 以降の履歴 / favorite は保持する）。
-
----
-
-> このロードマップは V2 の方向性を固定するための草案です。Phase 0 の未決事項が決まり次第、該当 Phase のタスクと完了条件を更新してください。
