@@ -16,6 +16,15 @@ class SettingsRepository(context: Context) {
 
     private var cachedCustomSearchEngines: List<CustomSearchEngine>? = null
 
+    // --- Advanced ---
+    fun getIsAdvanced(): Boolean {
+        return prefs.getBoolean("is_advanced", false)
+    }
+
+    fun setIsAdvanced(isAdvanced: Boolean) {
+        prefs.edit().putBoolean("is_advanced", isAdvanced).apply()
+    }
+
     // --- Hidden Apps ---
     fun getHiddenApps(): Set<String> {
         return prefs.getStringSet("hidden_apps", emptySet()) ?: emptySet()

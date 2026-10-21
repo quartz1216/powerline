@@ -57,7 +57,11 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
         }
 
         // Search Engines
-        val engines = settingsRepository.getCustomSearchEngines().filter { it.isEnabled }
+        val isAdvanced = settingsRepository.getIsAdvanced()
+        var engines = settingsRepository.getCustomSearchEngines().filter { it.isEnabled }
+        if (!isAdvanced) {
+            engines = engines.filter { it.name == "Google" }
+        }
 
         // Check for aliases (prefix + space)
         val aliasMatches = engines.filter { !it.alias.isNullOrBlank() && query.startsWith("${it.alias} ") }
@@ -127,9 +131,13 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
 
     @Composable
     override fun SettingsScreen(viewModel: SettingsViewModel) {
+        val isAdvanced by viewModel.isAdvanced.collectAsState()
         var engines by remember { mutableStateOf(settingsRepository.getCustomSearchEngines()) }
         var showDialog by remember { mutableStateOf(false) }
         var engineToEdit by remember { mutableStateOf<CustomSearchEngine?>(null) }
+
+        // Filter for display if not advanced
+        val displayEngines = if (isAdvanced) engines else engines.filter { it.name == "Google" }
 
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
@@ -137,9 +145,10 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    items(engines) { engine ->
+                    items(displayEngines) { engine ->
+                        val canEdit = isAdvanced
                         ListItem(
-                            modifier = Modifier.clickable {
+                            modifier = Modifier.clickable(enabled = canEdit) {
                                 engineToEdit = engine
                                 showDialog = true
                             },
@@ -153,14 +162,16 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
                                 }
                             },
                             trailingContent = {
-                                Switch(
-                                    checked = engine.isEnabled,
-                                    onCheckedChange = { isEnabled ->
-                                        val updated = engines.map { if (it.id == engine.id) it.copy(isEnabled = isEnabled) else it }
-                                        settingsRepository.setCustomSearchEngines(updated)
-                                        engines = updated
-                                    }
-                                )
+                                if (isAdvanced) {
+                                    Switch(
+                                        checked = engine.isEnabled,
+                                        onCheckedChange = { isEnabled ->
+                                            val updated = engines.map { if (it.id == engine.id) it.copy(isEnabled = isEnabled) else it }
+                                            settingsRepository.setCustomSearchEngines(updated)
+                                            engines = updated
+                                        }
+                                    )
+                                }
                             }
                         )
                         HorizontalDivider()
@@ -168,14 +179,16 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
                 }
             }
 
-            FloatingActionButton(
-                onClick = {
-                    engineToEdit = null
-                    showDialog = true
-                },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Engine")
+            if (isAdvanced) {
+                FloatingActionButton(
+                    onClick = {
+                        engineToEdit = null
+                        showDialog = true
+                    },
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Engine")
+                }
             }
         }
 

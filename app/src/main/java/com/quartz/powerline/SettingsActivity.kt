@@ -16,12 +16,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
+import com.quartz.powerline.ui.AdditionalSettingsSubpage
 import com.quartz.powerline.ui.AppearanceSettingsScreen
+import com.quartz.powerline.ui.OverlaySettingsSubpage
 import com.quartz.powerline.ui.PermissionsScreen
 import com.quartz.powerline.ui.PluginSettingsScreen
 import com.quartz.powerline.ui.SettingsScreen
-import com.quartz.powerline.ui.OverlaySettingsSubpage
-import com.quartz.powerline.ui.AdditionalSettingsSubpage
 import com.quartz.powerline.ui.components.AdMobBanner
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
 import com.quartz.powerline.ui.viewmodel.SettingsNav

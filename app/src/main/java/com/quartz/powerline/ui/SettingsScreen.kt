@@ -66,8 +66,9 @@ fun SettingsScreen(
                 Text("General", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
 
+                val isAdvanced by viewModel.isAdvanced.collectAsState()
                 ListItem(
-                    headlineContent = { Text("Powerline Advanced") },
+                    headlineContent = { Text(if (isAdvanced) "Powerline Advanced (Active)" else "Powerline Advanced") },
                     leadingContent = { Icon(Icons.Default.Star, contentDescription = null) },
                     modifier = Modifier.clickable {
                         context.startActivity(Intent(context, PurchaseActivity::class.java))
@@ -304,10 +305,12 @@ fun AdditionalSettingsSubpage(
     val activity = LocalContext.current as? androidx.activity.ComponentActivity
     val consentManager = GoogleMobileAdsConsentManager.getInstance(context)
     val scope = rememberCoroutineScope()
+    val isAdvanced by viewModel.isAdvanced.collectAsState()
 
     // Helper to reload settings after import/reset
     fun reloadState() {
         viewModel.reloadApps()
+        // isAdvanced observed from flow
     }
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -450,6 +453,23 @@ fun AdditionalSettingsSubpage(
                         viewModel.settingsRepository.clearAllSettings()
                         reloadState()
                         Toast.makeText(context, "Settings reset.", Toast.LENGTH_SHORT).show()
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Debug", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ListItem(
+                    headlineContent = { Text("Toggle Advanced Mode") },
+                    supportingContent = { Text("For testing purposes only") },
+                    trailingContent = {
+                        Switch(
+                            checked = isAdvanced,
+                            onCheckedChange = {
+                                viewModel.setIsAdvanced(it)
+                            }
+                        )
                     }
                 )
 

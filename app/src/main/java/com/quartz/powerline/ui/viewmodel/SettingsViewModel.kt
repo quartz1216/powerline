@@ -42,8 +42,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _materialYouEnabled = MutableStateFlow(settingsRepository.getMaterialYouEnabled())
     val materialYouEnabled: StateFlow<Boolean> = _materialYouEnabled.asStateFlow()
 
+    private val _isAdvanced = MutableStateFlow(settingsRepository.getIsAdvanced())
+    val isAdvanced: StateFlow<Boolean> = _isAdvanced.asStateFlow()
+
     init {
         reloadApps()
+    }
+
+    fun setIsAdvanced(isAdvanced: Boolean) {
+        settingsRepository.setIsAdvanced(isAdvanced)
+        _isAdvanced.value = isAdvanced
     }
 
     fun setMaterialYouEnabled(enabled: Boolean) {

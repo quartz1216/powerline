@@ -190,6 +190,7 @@ class AppLauncherPlugin(
 
     @Composable
     override fun SettingsScreen(viewModel: SettingsViewModel) {
+        val isAdvanced by viewModel.isAdvanced.collectAsState()
         var hiddenApps by remember { mutableStateOf(settingsRepository.getHiddenApps()) }
         var aliases by remember { mutableStateOf(settingsRepository.getAliases()) }
         var enableWeightSearch by remember { mutableStateOf(settingsRepository.getEnableWeightSearch()) }
@@ -261,11 +262,14 @@ class AppLauncherPlugin(
                     headlineContent = { Text("Manage Hidden Apps") },
                     supportingContent = { Text("${hiddenApps.size} hidden") },
                     trailingContent = {
-                        Button(onClick = { showHiddenAppsDialog = true }) {
+                        Button(
+                            onClick = { showHiddenAppsDialog = true },
+                            enabled = isAdvanced
+                        ) {
                             Text("Manage")
                         }
                     },
-                    modifier = Modifier.clickable { showHiddenAppsDialog = true }
+                    modifier = Modifier.clickable(enabled = isAdvanced) { showHiddenAppsDialog = true }
                 )
             }
 
@@ -285,8 +289,12 @@ class AppLauncherPlugin(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    IconButton(onClick = { showAddAliasDialog = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Alias")
+
+                    val canAddAlias = isAdvanced || aliases.isEmpty()
+                    if (canAddAlias) {
+                        IconButton(onClick = { showAddAliasDialog = true }) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Alias")
+                        }
                     }
                 }
             }

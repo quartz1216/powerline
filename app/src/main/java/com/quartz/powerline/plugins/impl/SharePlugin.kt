@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +31,7 @@ class SharePlugin(private val settingsRepository: SettingsRepository) : Plugin {
     override val icon = Icons.Default.Share
 
     override suspend fun search(query: String, context: Context): List<SearchResult> {
+        if (!settingsRepository.getIsAdvanced()) return emptyList()
         if (!settingsRepository.getShareEnabled()) return emptyList()
 
         if (query.isBlank()) return emptyList()
@@ -58,9 +61,19 @@ class SharePlugin(private val settingsRepository: SettingsRepository) : Plugin {
 
     @Composable
     override fun SettingsScreen(viewModel: SettingsViewModel) {
+        val isAdvanced by viewModel.isAdvanced.collectAsState()
         var enabled by remember { mutableStateOf(settingsRepository.getShareEnabled()) }
 
         Column(modifier = Modifier.padding(16.dp)) {
+            if (!isAdvanced) {
+                Text(
+                    text = "This feature is available in Powerline Advanced.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+
             ListItem(
                 headlineContent = { Text("Enable Share Action") },
                 trailingContent = {
@@ -69,7 +82,8 @@ class SharePlugin(private val settingsRepository: SettingsRepository) : Plugin {
                         onCheckedChange = {
                             enabled = it
                             settingsRepository.setShareEnabled(it)
-                        }
+                        },
+                        enabled = isAdvanced
                     )
                 }
             )
