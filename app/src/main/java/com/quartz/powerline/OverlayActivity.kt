@@ -16,9 +16,9 @@ import android.os.Build
 import android.view.WindowManager
 import androidx.lifecycle.ViewModelProvider
 import com.quartz.powerline.data.PowerlineDefaults
-import com.quartz.powerline.ui.LauncherScreen
+import com.quartz.powerline.ui.SearchScreen
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
-import com.quartz.powerline.ui.viewmodel.MainViewModel
+import com.quartz.powerline.ui.viewmodel.SearchViewModel
 import com.quartz.powerline.utils.ActionExecutor
 
 class OverlayActivity : ComponentActivity() {
@@ -34,12 +34,12 @@ class OverlayActivity : ComponentActivity() {
         val viewModel = ViewModelProvider(
             this,
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-        )[MainViewModel::class.java]
+        )[SearchViewModel::class.java]
 
         applyWindowAttributes()
 
         setContent {
-            CommandLauncherTheme {
+            CommandLauncherTheme(setSystemBars = false) {
                 // Transparent container that detects clicks outside to close
                 Box(
                     modifier = Modifier
@@ -56,21 +56,17 @@ class OverlayActivity : ComponentActivity() {
                 ) {
                     // Prevent clicks on the actual UI from closing the activity
                     Box(modifier = Modifier) {
-                        LauncherScreen(
+                        SearchScreen(
                             viewModel = viewModel,
                             onResultClick = { result ->
                                 if (result.payload == "settings_action") {
-                                    startActivity(Intent(this@OverlayActivity, SettingsActivity::class.java))
-                                    finish()
+                                    openStatusScreen()
                                 } else {
                                     ActionExecutor.execute(this@OverlayActivity, result, viewModel.userDataRepository, viewModel.pluginManager)
                                     finish()
                                 }
                             },
-                            onSettingsClick = {
-                                startActivity(Intent(this@OverlayActivity, SettingsActivity::class.java))
-                                finish()
-                            }
+                            onInfoClick = { openStatusScreen() }
                         )
                     }
                 }
@@ -99,9 +95,15 @@ class OverlayActivity : ComponentActivity() {
                 ViewModelProvider(
                     this,
                     ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-                )[MainViewModel::class.java].resetForOpen()
+                )[SearchViewModel::class.java].resetForOpen()
             }
         }
+    }
+
+    // Overlay is singleInstance, so the status screen needs its own task
+    private fun openStatusScreen() {
+        startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        finish()
     }
 
     private fun applyWindowAttributes() {

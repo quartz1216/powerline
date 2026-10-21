@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,20 +36,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.isSystemInDarkTheme
 import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
-import com.quartz.powerline.ui.theme.CommandLauncherTheme
 import com.quartz.powerline.ui.components.AppActionMenu
 import com.quartz.powerline.ui.components.CommandBar
 import com.quartz.powerline.ui.components.ResultItem
-import com.quartz.powerline.ui.viewmodel.MainViewModel
+import com.quartz.powerline.ui.viewmodel.SearchViewModel
 
 @Composable
-fun LauncherScreen(
-    viewModel: MainViewModel,
+fun SearchScreen(
+    viewModel: SearchViewModel,
     onResultClick: (SearchResult) -> Unit,
-    onSettingsClick: () -> Unit
+    onInfoClick: () -> Unit
 ) {
     val query by viewModel.query.collectAsState()
     val results by viewModel.results.collectAsState()
@@ -72,76 +70,71 @@ fun LauncherScreen(
             .padding(16.dp),
         contentAlignment = Alignment.TopCenter
     ) {
-        CommandLauncherTheme(
-            darkTheme = isSystemInDarkTheme(),
-            setSystemBars = false
+        Column(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Spacer to push it down a bit from top status bar
-                Spacer(modifier = Modifier.height(64.dp))
+            // Spacer to push it down a bit from top status bar
+            Spacer(modifier = Modifier.height(64.dp))
 
-                CommandBar(
-                    query = query,
-                    onQueryChange = viewModel::onQueryChange,
-                    onEnter = {
-                        if (results.isNotEmpty() && selectedIndex in results.indices) {
-                            onResultClick(results[selectedIndex])
-                        }
-                    },
-                    onArrowDown = viewModel::selectNext,
-                    onArrowUp = viewModel::selectPrevious,
-                    focusKey = openCount
-                )
+            CommandBar(
+                query = query,
+                onQueryChange = viewModel::onQueryChange,
+                onEnter = {
+                    if (results.isNotEmpty() && selectedIndex in results.indices) {
+                        onResultClick(results[selectedIndex])
+                    }
+                },
+                onArrowDown = viewModel::selectNext,
+                onArrowUp = viewModel::selectPrevious,
+                focusKey = openCount
+            )
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                if (results.isNotEmpty()) {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                                shape = MaterialTheme.shapes.medium
-                            )
-                            .clip(MaterialTheme.shapes.medium)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) {}
-                    ) {
-                        itemsIndexed(results) { index, result ->
-                            ResultItem(
-                                result = result,
-                                isSelected = index == selectedIndex,
-                                onClick = { onResultClick(result) },
-                                onLongClick = {
-                                    if (result.type == ResultType.APP && result.packageName != null) {
-                                        longPressedResult = result
-                                    }
+            if (results.isNotEmpty()) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {}
+                ) {
+                    itemsIndexed(results) { index, result ->
+                        ResultItem(
+                            result = result,
+                            isSelected = index == selectedIndex,
+                            onClick = { onResultClick(result) },
+                            onLongClick = {
+                                if (result.type == ResultType.APP && result.packageName != null) {
+                                    longPressedResult = result
                                 }
-                            )
-                        }
+                            }
+                        )
                     }
                 }
             }
-
-            // Long Press Menu
-            longPressedResult?.let { result ->
-                AppActionMenu(
-                    searchResult = result,
-                    isFavorite = result.packageName?.let { viewModel.isFavorite(it) } ?: false,
-                    onDismissRequest = { longPressedResult = null },
-                    onToggleFavorite = {
-                        result.packageName?.let { viewModel.toggleFavorite(it) }
-                    }
-                )
-            }
         }
 
-        // Header Row (Settings Button)
+        // Long Press Menu
+        longPressedResult?.let { result ->
+            AppActionMenu(
+                searchResult = result,
+                isFavorite = result.packageName?.let { viewModel.isFavorite(it) } ?: false,
+                onDismissRequest = { longPressedResult = null },
+                onToggleFavorite = {
+                    result.packageName?.let { viewModel.toggleFavorite(it) }
+                }
+            )
+        }
+
+        // Header Row (Info Button)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -151,16 +144,16 @@ fun LauncherScreen(
         ) {
             Spacer(modifier = Modifier.weight(1f))
 
-            // Settings Button (Top Right)
+            // Info Button (Top Right): opens the status screen
             IconButton(
-                onClick = onSettingsClick,
+                onClick = onInfoClick,
                 modifier = Modifier
                 // Removed background as requested
                 // .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), CircleShape)
             ) {
                 Icon(
-                    Icons.Default.Settings,
-                    contentDescription = "Settings",
+                    Icons.Default.Info,
+                    contentDescription = "Powerline status",
                     tint = MaterialTheme.colorScheme.onSurface // Use theme color
                 )
             }

@@ -433,40 +433,46 @@ MainActivity（状態 / 権限 / About）
 
 **タスク**
 
-- [ ] `MainActivity.kt` を**状態 / 権限 / About 画面**に置き換える。
-  - [ ] Alt+Space の状態（アクセシビリティ権限の有効/無効）を表示。
-  - [ ] 権限設定を開くボタン。
-  - [ ] 使い方（Alt+Space）。
-  - [ ] About（version / privacy）。
-  - [ ] `SettingsViewModel` / `SettingsScreen` / `SettingsNav` への依存を削除。
-  - [ ] `LauncherScreen` / `MainViewModel` / `ActionExecutor` / `rememberIsWallpaperLight` への依存を削除。
-  - [ ] 設定を保存する UI は置かない。旧 General / Overlay / Appearance / Additional / Powerline Functions は復活させない。
-- [ ] `SettingsActivity.kt` / `SettingsViewModel.kt` / `SettingsScreen.kt` を削除する。
-  - [ ] `OverlayActivity.kt` の設定遷移を削除。
-  - [ ] `AndroidManifest.xml` の `<activity>` を削除。
-- [ ] `MainViewModel.kt` を `SearchViewModel.kt` に改名。
-  - [ ] `Screen` enum、`openSettings()` / `closeSettings()` / `openAppearanceSettings()` / `openPluginSettings()` / `openPermissions()` / `closePermissions()` など、設定ナビゲーション用の不要 API を削除。
-  - [ ] `currentScreen` / `selectedPluginId` を削除。
-  - [ ] `OverlayActivity` / `SearchScreen` の参照を更新。
-- [ ] `LauncherScreen.kt` を `SearchScreen.kt` に改名。
-  - [ ] 内側の `CommandLauncherTheme` を削除し、`OverlayActivity` のテーマをそのまま使う（現在は `isSystemInDarkTheme()` で上書きしている）。
-  - [ ] 情報アイコンは `MainActivity`（状態 / 権限 / About）を開く。
-- [ ] `AndroidManifest.xml`
-  - [ ] `MainActivity`: `HOME` / `DEFAULT` カテゴリと `Theme.CommandLauncher.Home` を削除。`LAUNCHER` のみ残す。
-  - [ ] `MainActivity`: `stateNotNeeded` を削除。`launchMode="singleTask"` は維持。
-  - [ ] `OverlayActivity`: `ASSIST` intent-filter を削除。`exported="false"` に変更。
-  - [ ] `SettingsActivity` / `PurchaseActivity` の `<activity>` を削除。
-  - [ ] `PowerlineAssistantService` / `PowerlineAssistantSessionService` の `<service>` を削除。
-- [ ] `themes.xml`
-  - [ ] `Theme.CommandLauncher.Home` を削除。
-  - [ ] `Theme.CommandLauncher.Overlay` は維持。
-- [ ] `WelcomeActivity.kt`
-  - [ ] 完了後の遷移先を `MainActivity`（状態 / 権限）にする。
-  - [ ] 既存ユーザー向けに「Powerline はホームアプリではなくなりました」という案内を状態画面に表示する（保存はしない）。
-- [ ] 設定の永続化を削除する。
-  - [ ] `SettingsRepository` / SharedPreferences / DataStore の設定保存を削除。
-  - [ ] 設定変更の `StateFlow` 連携を削除。
-  - [ ] JSON バックアップ / 復元 / 移行を削除。
+- [x] `MainActivity.kt` を**状態 / 権限 / About 画面**に置き換える。
+  - [x] Alt+Space の状態（アクセシビリティ権限の有効/無効）を表示。
+  - [x] 権限設定を開くボタン。
+  - [x] 使い方（Alt+Space）。
+  - [x] About（version / privacy）。
+  - [x] `SettingsViewModel` / `SettingsScreen` / `SettingsNav` への依存を削除。
+  - [x] `LauncherScreen` / `MainViewModel` / `ActionExecutor` / `rememberIsWallpaperLight` への依存を削除。
+  - [x] 設定を保存する UI は置かない。旧 General / Overlay / Appearance / Additional / Powerline Functions は復活させない。
+- [x] `SettingsActivity.kt` / `SettingsViewModel.kt` / `SettingsScreen.kt` を削除する。
+  - [x] `OverlayActivity.kt` の設定遷移を削除。
+  - [x] `AndroidManifest.xml` の `<activity>` を削除。
+- [x] `MainViewModel.kt` を `SearchViewModel.kt` に改名。
+  - [x] `Screen` enum、`openSettings()` / `closeSettings()` / `openAppearanceSettings()` / `openPluginSettings()` / `openPermissions()` / `closePermissions()` など、設定ナビゲーション用の不要 API を削除。
+  - [x] `currentScreen` / `selectedPluginId` を削除。
+  - [x] `OverlayActivity` / `SearchScreen` の参照を更新。
+- [x] `LauncherScreen.kt` を `SearchScreen.kt` に改名。
+  - [x] 内側の `CommandLauncherTheme` を削除し、`OverlayActivity` のテーマをそのまま使う（現在は `isSystemInDarkTheme()` で上書きしている）。
+  - [x] 情報アイコンは `MainActivity`（状態 / 権限 / About）を開く。
+- [x] `AndroidManifest.xml`
+  - [x] `MainActivity`: `HOME` / `DEFAULT` カテゴリと `Theme.CommandLauncher.Home` を削除。`LAUNCHER` のみ残す。
+  - [x] `MainActivity`: `stateNotNeeded` を削除。`launchMode="singleTask"` は維持。
+  - [x] `OverlayActivity`: `ASSIST` intent-filter を削除。`exported="false"` に変更。
+  - [x] `SettingsActivity` / `PurchaseActivity` の `<activity>` を削除。
+  - [x] `PowerlineAssistantService` / `PowerlineAssistantSessionService` の `<service>` を削除。
+- [x] `themes.xml`
+  - [x] `Theme.CommandLauncher.Home` を削除。
+  - [x] `Theme.CommandLauncher.Overlay` は維持。
+- [x] `WelcomeActivity.kt`
+  - [x] 完了後の遷移先を `MainActivity`（状態 / 権限）にする。
+  - [x] 既存ユーザー向けに「Powerline はホームアプリではなくなりました」という案内を状態画面に表示する（保存はしない）。
+- [x] 設定の永続化を削除する。
+  - [x] `SettingsRepository` / SharedPreferences / DataStore の設定保存を削除。
+  - [x] 設定変更の `StateFlow` 連携を削除。
+  - [x] JSON バックアップ / 復元 / 移行を削除。
+
+> **Phase 3 の実装メモ**  
+> - 状態画面は `ui/StatusScreen.kt`（旧 `PermissionsScreen.kt`）。Alt+Space の状態 / アクセシビリティ設定 / 使い方 / ホームアプリ廃止の案内 / OEM 注意書き / About（version とプライバシー方針の本文）を表示。通知権限とデフォルトホームのチェックは削除。PRIVACY.md へのリンクは Phase 7 で追加する。  
+> - 設定の永続化・JSON の削除は Phase 2 で完了済み。`onboarding_completed` による Welcome 振り分けは Phase 6 まで残す。  
+> - 使われなくなった `WallpaperTheme.kt` / `NotificationHelper.kt` / 音声アシスタント関連（3 ファイル + `assistant_service.xml`）も削除。  
+> - 検索候補「settings」は「Powerline Status」として状態画面を開く。
 
 **完了条件**
 

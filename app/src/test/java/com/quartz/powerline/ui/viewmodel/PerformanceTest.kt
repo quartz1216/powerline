@@ -22,7 +22,7 @@ import kotlin.system.measureTimeMillis
 @OptIn(ExperimentalCoroutinesApi::class)
 class PerformanceTest {
 
-    private lateinit var viewModel: MainViewModel
+    private lateinit var viewModel: SearchViewModel
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var application: Application
 
@@ -47,7 +47,7 @@ class PerformanceTest {
             pm.installPackage(packageInfo)
         }
 
-        viewModel = MainViewModel(application)
+        viewModel = SearchViewModel(application)
 
         // Wait for initial load
         testDispatcher.scheduler.advanceUntilIdle()

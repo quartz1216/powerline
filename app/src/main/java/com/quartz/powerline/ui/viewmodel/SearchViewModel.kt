@@ -16,21 +16,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-enum class Screen {
-    LAUNCHER,
-    SETTINGS,
-    PERMISSIONS,
-    PLUGIN_SETTINGS,
-    APPEARANCE_SETTINGS
-}
-
-class MainViewModel(application: Application) : AndroidViewModel(application) {
+class SearchViewModel(application: Application) : AndroidViewModel(application) {
 
     val userDataRepository = UserDataRepository(application)
     private val appRepository = AppRepository(application)
-
-    private val _installedApps = MutableStateFlow<List<AppInfo>>(emptyList())
-    val installedApps: StateFlow<List<AppInfo>> = _installedApps.asStateFlow()
 
     private val _visibleApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val visibleApps: StateFlow<List<AppInfo>> = _visibleApps.asStateFlow()
@@ -47,26 +36,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedIndex = MutableStateFlow(0)
     val selectedIndex: StateFlow<Int> = _selectedIndex.asStateFlow()
 
-    private val _currentScreen = MutableStateFlow(Screen.LAUNCHER)
-    val currentScreen: StateFlow<Screen> = _currentScreen.asStateFlow()
-
-    private val _selectedPluginId = MutableStateFlow<String?>(null)
-    val selectedPluginId: StateFlow<String?> = _selectedPluginId.asStateFlow()
-
     private var searchJob: Job? = null
 
     init {
         loadApps()
     }
 
-    fun reloadApps() {
-        loadApps()
-    }
-
     private fun loadApps() {
         viewModelScope.launch {
             val apps = appRepository.getInstalledApps()
-            _installedApps.value = apps
             _visibleApps.value = apps
             // Initial search (empty)
             performSearch(_query.value)
@@ -100,39 +78,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (current > 0) {
             _selectedIndex.value = current - 1
         }
-    }
-
-    fun openSettings() {
-        _currentScreen.value = Screen.SETTINGS
-    }
-
-    fun closeSettings() {
-        if (_currentScreen.value == Screen.PLUGIN_SETTINGS || _currentScreen.value == Screen.APPEARANCE_SETTINGS) {
-            _currentScreen.value = Screen.SETTINGS
-            _selectedPluginId.value = null
-        } else {
-            _currentScreen.value = Screen.LAUNCHER
-            // Reload apps in case settings changed (hidden apps)
-            // And refresh search
-            reloadApps()
-        }
-    }
-
-    fun openAppearanceSettings() {
-        _currentScreen.value = Screen.APPEARANCE_SETTINGS
-    }
-
-    fun openPluginSettings(pluginId: String) {
-        _selectedPluginId.value = pluginId
-        _currentScreen.value = Screen.PLUGIN_SETTINGS
-    }
-
-    fun openPermissions() {
-        _currentScreen.value = Screen.PERMISSIONS
-    }
-
-    fun closePermissions() {
-        _currentScreen.value = Screen.SETTINGS
     }
 
     private fun performSearch(query: String) {

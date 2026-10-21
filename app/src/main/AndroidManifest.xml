@@ -15,41 +15,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CommandLauncher">
 
-        <!-- Home Launcher Activity -->
+        <!-- Status / Permissions / About (app icon) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:stateNotNeeded="true"
-            android:theme="@style/Theme.CommandLauncher.Home"
-            android:windowSoftInputMode="adjustResize|stateAlwaysVisible">
+            android:theme="@style/Theme.CommandLauncher">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.HOME" />
-                <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Overlay Activity (Transparent) -->
+        <!-- Overlay Activity (Transparent): search surface, opened only via Alt+Space -->
         <activity
             android:name=".OverlayActivity"
-            android:exported="true"
+            android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
             android:theme="@style/Theme.CommandLauncher.Overlay"
-            android:windowSoftInputMode="adjustResize|stateAlwaysVisible">
-            <intent-filter>
-                <action android:name="android.intent.action.ASSIST" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-
-
-        <activity
-            android:name=".SettingsActivity"
-            android:exported="false"
-            android:theme="@style/Theme.CommandLauncher" />
+            android:windowSoftInputMode="adjustResize|stateAlwaysVisible" />
 
         <activity
             android:name=".WelcomeActivity"
@@ -68,25 +53,6 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
-
-        <!-- Voice Interaction Service (Digital Assistant) -->
-        <service
-            android:name=".services.PowerlineAssistantService"
-            android:label="Powerline"
-            android:permission="android.permission.BIND_VOICE_INTERACTION"
-            android:exported="true">
-            <meta-data
-                android:name="android.voice_interaction"
-                android:resource="@xml/assistant_service" />
-            <intent-filter>
-                <action android:name="android.service.voice.VoiceInteractionService" />
-            </intent-filter>
-        </service>
-
-        <service
-            android:name=".services.PowerlineAssistantSessionService"
-            android:permission="android.permission.BIND_VOICE_INTERACTION"
-            android:exported="true" />
 
     </application>
 

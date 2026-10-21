@@ -20,8 +20,8 @@ class SystemPlugin : Plugin {
                 SearchResult(
                     id = "settings_action",
                     pluginId = id,
-                    title = "Settings",
-                    subtitle = "Open Settings",
+                    title = "Powerline Status",
+                    subtitle = "Alt+Space status and permissions",
                     icon = ContextCompat.getDrawable(context, android.R.drawable.ic_menu_preferences),
                     type = ResultType.APP,
                     payload = "settings_action"
