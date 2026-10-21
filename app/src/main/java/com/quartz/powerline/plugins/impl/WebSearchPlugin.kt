@@ -4,29 +4,14 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import com.quartz.powerline.data.SettingsRepository
-import com.quartz.powerline.domain.models.CustomSearchEngine
+import com.quartz.powerline.data.PowerlineDefaults
 import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.plugins.Plugin
-import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 
-class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plugin {
+class WebSearchPlugin : Plugin {
     override val id = "web_search"
     override val name = "Web Search"
     override val description = "Search the web or open URLs"
@@ -57,11 +42,7 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
         }
 
         // Search Engines
-        val isAdvanced = settingsRepository.getIsAdvanced()
-        var engines = settingsRepository.getCustomSearchEngines().filter { it.isEnabled }
-        if (!isAdvanced) {
-            engines = engines.filter { it.name == "Google" }
-        }
+        val engines = PowerlineDefaults.SEARCH_ENGINES.filter { it.isEnabled }
 
         // Check for aliases (prefix + space)
         val aliasMatches = engines.filter { !it.alias.isNullOrBlank() && query.startsWith("${it.alias} ") }
@@ -127,178 +108,5 @@ class WebSearchPlugin(private val settingsRepository: SettingsRepository) : Plug
             Toast.makeText(context, "No browser found", Toast.LENGTH_SHORT).show()
             false
         }
-    }
-
-    @Composable
-    override fun SettingsScreen(viewModel: SettingsViewModel) {
-        val isAdvanced by viewModel.isAdvanced.collectAsState()
-        var engines by remember { mutableStateOf(settingsRepository.getCustomSearchEngines()) }
-        var showDialog by remember { mutableStateOf(false) }
-        var engineToEdit by remember { mutableStateOf<CustomSearchEngine?>(null) }
-
-        // Filter for display if not advanced
-        val displayEngines = if (isAdvanced) engines else engines.filter { it.name == "Google" }
-
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(bottom = 80.dp)
-                ) {
-                    items(displayEngines) { engine ->
-                        val canEdit = isAdvanced
-                        ListItem(
-                            modifier = Modifier.clickable(enabled = canEdit) {
-                                engineToEdit = engine
-                                showDialog = true
-                            },
-                            headlineContent = { Text(engine.name) },
-                            supportingContent = {
-                                Column {
-                                    Text(engine.url, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    if (!engine.alias.isNullOrBlank()) {
-                                        Text("Alias: ${engine.alias}", style = MaterialTheme.typography.bodySmall)
-                                    }
-                                }
-                            },
-                            trailingContent = {
-                                if (isAdvanced) {
-                                    Switch(
-                                        checked = engine.isEnabled,
-                                        onCheckedChange = { isEnabled ->
-                                            val updated = engines.map { if (it.id == engine.id) it.copy(isEnabled = isEnabled) else it }
-                                            settingsRepository.setCustomSearchEngines(updated)
-                                            engines = updated
-                                        }
-                                    )
-                                }
-                            }
-                        )
-                        HorizontalDivider()
-                    }
-                }
-            }
-
-            if (isAdvanced) {
-                FloatingActionButton(
-                    onClick = {
-                        engineToEdit = null
-                        showDialog = true
-                    },
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Engine")
-                }
-            }
-        }
-
-        if (showDialog) {
-            AddEditEngineDialog(
-                engine = engineToEdit,
-                onDismiss = { showDialog = false },
-                onSave = { newEngine ->
-                    val updated = if (engineToEdit != null) {
-                        engines.map { if (it.id == engineToEdit!!.id) newEngine else it }
-                    } else {
-                        engines + newEngine
-                    }
-                    settingsRepository.setCustomSearchEngines(updated)
-                    engines = updated
-                    showDialog = false
-                },
-                onDelete = if (engineToEdit != null) {
-                    {
-                        val updated = engines.filter { it.id != engineToEdit!!.id }
-                        settingsRepository.setCustomSearchEngines(updated)
-                        engines = updated
-                        showDialog = false
-                    }
-                } else null
-            )
-        }
-    }
-
-    @Composable
-    private fun AddEditEngineDialog(
-        engine: CustomSearchEngine?,
-        onDismiss: () -> Unit,
-        onSave: (CustomSearchEngine) -> Unit,
-        onDelete: (() -> Unit)? = null
-    ) {
-        var name by remember { mutableStateOf(engine?.name ?: "") }
-        var url by remember { mutableStateOf(engine?.url ?: "") }
-        var alias by remember { mutableStateOf(engine?.alias ?: "") }
-        var isEnabled by remember { mutableStateOf(engine?.isEnabled ?: true) }
-
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text(if (engine == null) "Add Search Engine" else "Edit Search Engine") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Name") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = url,
-                        onValueChange = { url = it },
-                        label = { Text("URL (use %s)") },
-                        placeholder = { Text("https://example.com/search?q=%s") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = alias,
-                        onValueChange = { alias = it },
-                        label = { Text("Alias (optional)") },
-                        placeholder = { Text("e.g. ytm") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Enabled")
-                        Spacer(modifier = Modifier.weight(1f))
-                        Switch(checked = isEnabled, onCheckedChange = { isEnabled = it })
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (name.isNotBlank() && url.isNotBlank()) {
-                            onSave(
-                                CustomSearchEngine(
-                                    id = engine?.id ?: java.util.UUID.randomUUID().toString(),
-                                    name = name,
-                                    url = url,
-                                    alias = alias.takeIf { it.isNotBlank() },
-                                    isEnabled = isEnabled
-                                )
-                            )
-                        }
-                    }
-                ) {
-                    Text("Save")
-                }
-            },
-            dismissButton = {
-                Row {
-                    if (onDelete != null) {
-                        TextButton(onClick = onDelete) {
-                            Text("Delete", color = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancel")
-                    }
-                }
-            }
-        )
     }
 }

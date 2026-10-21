@@ -1,20 +1,12 @@
 package com.quartz.powerline.plugins.impl
 
 import android.content.Context
-import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.plugins.Plugin
-import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 
 class SystemPlugin : Plugin {
     override val id = "system"
@@ -44,12 +36,5 @@ class SystemPlugin : Plugin {
         // But we can return false here to indicate it's not a standard external action if we want.
         // Or we can let it return true and let the caller handle "settings_action" payload.
         return true
-    }
-
-    @Composable
-    override fun SettingsScreen(viewModel: SettingsViewModel) {
-         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Text("This plugin handles core system commands.", style = MaterialTheme.typography.bodyLarge)
-        }
     }
 }

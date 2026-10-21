@@ -351,59 +351,66 @@ MainActivity（状態 / 権限 / About）
 
 **タスク**
 
-- [ ] `SettingsRepository.kt`
-  - [ ] 設定保存を全廃する。参照を固定定数に置き換えてからクラスを削除する。
-  - [ ] `getIsAdvanced()` / `setIsAdvanced()` を削除。
-  - [ ] `getDebugMode()` / `setDebugMode()` を削除。
-  - [ ] `getMaterialYouEnabled()` / `setMaterialYouEnabled()` を削除。
-  - [ ] `getAppTheme()` / `setAppTheme()` を削除（Material You 固定）。
-  - [ ] `getCustomAccentColor()` / `setCustomAccentColor()` を削除。
-  - [ ] `getOverlayCloseOnBackgroundTap()` / `getOverlayDimAmount()` / `getOverlayBlurRadius()` を削除（固定値）。
-  - [ ] `getHomeScreenText()` / `setHomeScreenText()` を削除（Launcher 設定の削除）。
-  - [ ] その他の設定キーの getter/setter を削除し、固定値に置き換える。
-- [ ] `SettingsViewModel.kt`
-  - [ ] 設定状態（`_isAdvanced` / `_materialYouEnabled` / `_appTheme` / `_customAccentColor` / Provider / 履歴）を全削除。
-  - [ ] 状態画面に必要な権限状態だけを残すか、ViewModel 自体を削除する。
-  - [ ] `setDebugMode()` と `navigateBack()` 内の debug 処理を削除。
-- [ ] `SettingsScreen.kt`
-  - [ ] 「Powerline Advanced」リスト項目を削除。
-  - [ ] 「Appearance Settings」リスト項目を削除。
-  - [ ] 「Additional Settings」リスト項目を削除。
-  - [ ] 「Powerline Functions」セクションとプラグイン一覧を削除。
-  - [ ] 「Debug → Toggle Advanced Mode」を削除。
-  - [ ] 「Support Powerline」「広告」関連の文言を削除。
-  - [ ] 設定項目を全削除し、Phase 3 で状態 / 権限 / About 画面に置き換える。
-- [ ] `AppLauncherPlugin.kt`
-  - [ ] `isAdvanced` による Hidden Apps / Alias 追加の制限を削除（機能自体は Phase 5 で削除）。
-- [ ] `WebSearchPlugin.kt`
-  - [ ] `!isAdvanced` 時の Google 限定フィルタを削除。
-  - [ ] 旧プラグイン設定画面の `displayEngines` / `canEdit` / FAB の Advanced 条件を削除（画面自体は Phase 5 で削除）。
-- [ ] `SharePlugin.kt`
-  - [ ] `if (!settingsRepository.getIsAdvanced()) return emptyList()` を削除。
-  - [ ] 旧プラグイン設定画面の「Powerline Advanced で利用可能」表示と `enabled = isAdvanced` を削除（画面自体は Phase 5 で削除）。
-- [ ] `AppearanceSettingsScreen.kt` を削除する（テーマ選択・アクセント・Overlay・Launcher 設定ごと削除）。
-- [ ] `Theme.kt` を Material You 固定に簡素化する。
-  - [ ] `appTheme` / `customAccentColor` / `dynamicColor` 引数を削除。
-  - [ ] Android 12+ は dynamic color、非対応端末はブランドカラーにフォールバック。
-  - [ ] `setSystemBars` など必要な引数だけ残す。
-- [ ] `MainActivity.kt` / `SettingsActivity.kt` / `OverlayActivity.kt` / `SearchScreen.kt`
-  - [ ] `CommandLauncherTheme` の `appTheme` / `customAccentColor` / `dynamicColor` 引数を削除。
-  - [ ] `appTheme` / `customAccentColor` / `materialYouEnabled` の `collectAsState` を削除。
-- [ ] `PurchaseActivity.kt` を削除。
-- [ ] `AdMobBanner.kt` / `GoogleMobileAdsConsentManager.kt` を削除。
-- [ ] `MainActivity.kt` / `SettingsActivity.kt` / `WelcomeActivity.kt`
-  - [ ] `GoogleMobileAdsConsentManager` の初期化・同意取得を削除。
-- [ ] `app/build.gradle.kts`
-  - [ ] `play-services-ads` と `user-messaging-platform` を削除。
-- [ ] `AndroidManifest.xml`
-  - [ ] AdMob の `APPLICATION_ID` meta-data を削除。
-  - [ ] `PurchaseActivity` の `<activity>` を削除。
-- [ ] `WelcomeActivity.kt`
-  - [ ] `SupportPage`（アップグレード / 広告同意）を削除する。
-- [ ] `AppBackupData.kt` / `BackupMigrator` / `BACKUP_SPEC.md`
-  - [ ] バックアップ JSON のモデル・移行・仕様書を削除。
-  - [ ] `SettingsRepository` のバックアップ連携を削除。
-  - [ ] 旧キーを読み込むマイグレーションは作らない。
+- [x] `SettingsRepository.kt`
+  - [x] 設定保存を全廃する。参照を固定定数に置き換えてからクラスを削除する。
+  - [x] `getIsAdvanced()` / `setIsAdvanced()` を削除。
+  - [x] `getDebugMode()` / `setDebugMode()` を削除。
+  - [x] `getMaterialYouEnabled()` / `setMaterialYouEnabled()` を削除。
+  - [x] `getAppTheme()` / `setAppTheme()` を削除（Material You 固定）。
+  - [x] `getCustomAccentColor()` / `setCustomAccentColor()` を削除。
+  - [x] `getOverlayCloseOnBackgroundTap()` / `getOverlayDimAmount()` / `getOverlayBlurRadius()` を削除（固定値）。
+  - [x] `getHomeScreenText()` / `setHomeScreenText()` を削除（Launcher 設定の削除）。
+  - [x] その他の設定キーの getter/setter を削除し、固定値に置き換える。
+- [x] `SettingsViewModel.kt`
+  - [x] 設定状態（`_isAdvanced` / `_materialYouEnabled` / `_appTheme` / `_customAccentColor` / Provider / 履歴）を全削除。
+  - [x] 状態画面に必要な権限状態だけを残すか、ViewModel 自体を削除する。
+  - [x] `setDebugMode()` と `navigateBack()` 内の debug 処理を削除。
+- [x] `SettingsScreen.kt`
+  - [x] 「Powerline Advanced」リスト項目を削除。
+  - [x] 「Appearance Settings」リスト項目を削除。
+  - [x] 「Additional Settings」リスト項目を削除。
+  - [x] 「Powerline Functions」セクションとプラグイン一覧を削除。
+  - [x] 「Debug → Toggle Advanced Mode」を削除。
+  - [x] 「Support Powerline」「広告」関連の文言を削除。
+  - [x] 設定項目を全削除し、Phase 3 で状態 / 権限 / About 画面に置き換える。
+- [x] `AppLauncherPlugin.kt`
+  - [x] `isAdvanced` による Hidden Apps / Alias 追加の制限を削除（機能自体は Phase 5 で削除）。
+- [x] `WebSearchPlugin.kt`
+  - [x] `!isAdvanced` 時の Google 限定フィルタを削除。
+  - [x] 旧プラグイン設定画面の `displayEngines` / `canEdit` / FAB の Advanced 条件を削除（画面自体は Phase 5 で削除）。
+- [x] `SharePlugin.kt`
+  - [x] `if (!settingsRepository.getIsAdvanced()) return emptyList()` を削除。
+  - [x] 旧プラグイン設定画面の「Powerline Advanced で利用可能」表示と `enabled = isAdvanced` を削除（画面自体は Phase 5 で削除）。
+- [x] `AppearanceSettingsScreen.kt` を削除する（テーマ選択・アクセント・Overlay・Launcher 設定ごと削除）。
+- [x] `Theme.kt` を Material You 固定に簡素化する。
+  - [x] `appTheme` / `customAccentColor` / `dynamicColor` 引数を削除。
+  - [x] Android 12+ は dynamic color、非対応端末はブランドカラーにフォールバック。
+  - [x] `setSystemBars` など必要な引数だけ残す。
+- [x] `MainActivity.kt` / `SettingsActivity.kt` / `OverlayActivity.kt` / `SearchScreen.kt`
+  - [x] `CommandLauncherTheme` の `appTheme` / `customAccentColor` / `dynamicColor` 引数を削除。
+  - [x] `appTheme` / `customAccentColor` / `materialYouEnabled` の `collectAsState` を削除。
+- [x] `PurchaseActivity.kt` を削除。
+- [x] `AdMobBanner.kt` / `GoogleMobileAdsConsentManager.kt` を削除。
+- [x] `MainActivity.kt` / `SettingsActivity.kt` / `WelcomeActivity.kt`
+  - [x] `GoogleMobileAdsConsentManager` の初期化・同意取得を削除。
+- [x] `app/build.gradle.kts`
+  - [x] `play-services-ads` と `user-messaging-platform` を削除。
+- [x] `AndroidManifest.xml`
+  - [x] AdMob の `APPLICATION_ID` meta-data を削除。
+  - [x] `PurchaseActivity` の `<activity>` を削除。
+- [x] `WelcomeActivity.kt`
+  - [x] `SupportPage`（アップグレード / 広告同意）を削除する。
+- [x] `AppBackupData.kt` / `BackupMigrator` / `BACKUP_SPEC.md`
+  - [x] バックアップ JSON のモデル・移行・仕様書を削除。
+  - [x] `SettingsRepository` のバックアップ連携を削除。
+  - [x] 旧キーを読み込むマイグレーションは作らない。
+
+> **Phase 2 の実装メモ**  
+> - `SettingsRepository` は `UserDataRepository` に改名・縮小し、`history` / `favorite_apps` / `app_weights` / `onboarding_completed` だけを扱う。固定値は `PowerlineDefaults` に集約。  
+> - `onboarding_completed` は Phase 6（Welcome 刷新）までの暫定。  
+> - プラグイン設定画面（`Plugin.SettingsScreen` / `PluginSettingsScreen`）は Phase 5 を待たずに前倒しで削除。hidden apps / ユーザー alias / 検索エンジン編集は廃止。  
+> - 削除 API を参照していた既存ユニットテスト 8 件を削除（テストは移行しない方針）。  
+> - 旧 SharedPreferences キーはディスクに残る（起動時削除は Phase 6）。`SettingsActivity` は Permissions のみの暫定画面（Phase 3 で削除）。
 
 **完了条件**
 

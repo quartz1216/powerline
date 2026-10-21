@@ -2,34 +2,19 @@ package com.quartz.powerline.plugins.impl
 
 import android.content.Context
 import android.widget.Toast
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.quartz.powerline.data.SettingsRepository
+import com.quartz.powerline.data.PowerlineDefaults
+import com.quartz.powerline.data.UserDataRepository
 import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.plugins.Plugin
-import com.quartz.powerline.ui.AddAliasDialog
-import com.quartz.powerline.ui.HiddenAppsDialog
-import com.quartz.powerline.ui.viewmodel.SettingsViewModel
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import kotlin.math.max
 
 class AppLauncherPlugin(
-    private val settingsRepository: SettingsRepository,
-    private val installedAppsFlow: StateFlow<List<AppInfo>>,
+    private val userDataRepository: UserDataRepository,
     private val visibleAppsFlow: StateFlow<List<AppInfo>>
 ) : Plugin {
     override val id = "app_launcher"
@@ -45,77 +30,47 @@ class AppLauncherPlugin(
         val trimmedQuery = query.trim()
         val lowerQuery = trimmedQuery.lowercase()
 
-        val aliases = settingsRepository.getAliases()
-        val favorites = settingsRepository.getFavoriteApps()
-        val weights = settingsRepository.getAppWeights()
-        val enableWeightSearch = settingsRepository.getEnableWeightSearch()
-        val enablePackageSearch = settingsRepository.getEnablePackageSearch()
-
-        val aliasPackage = aliases[trimmedQuery]
+        val favorites = userDataRepository.getFavoriteApps()
+        val weights = userDataRepository.getAppWeights()
 
         val appMatches = visibleApps.mapNotNull { app ->
             val isFavorite = favorites.contains(app.packageName)
-            val isAlias = aliasPackage == app.packageName
 
-            var finalScore = 0
-            var matched = false
+            val nameScore = fuzzyMatch(lowerQuery, app.label)
 
-            if (isAlias) {
-                finalScore = 500_000
-                matched = true
-            } else {
-                val nameScore = fuzzyMatch(lowerQuery, app.label)
-
-                var pkgScore = 0
-                if (enablePackageSearch) {
-                    val searchPkg = if (app.packageName.contains('.')) {
-                        app.packageName.substringAfter('.')
-                    } else {
-                        app.packageName
-                    }
-                    pkgScore = fuzzyMatch(lowerQuery, searchPkg)
+            var pkgScore = 0
+            if (PowerlineDefaults.ENABLE_PACKAGE_SEARCH) {
+                val searchPkg = if (app.packageName.contains('.')) {
+                    app.packageName.substringAfter('.')
+                } else {
+                    app.packageName
                 }
-
-                val matchScore = max(nameScore, pkgScore)
-
-                if (matchScore > 0) {
-                    var baseScore = matchScore
-
-                    if (enableWeightSearch) {
-                        baseScore += (weights[app.packageName] ?: 0)
-                    }
-
-                    if (isFavorite) {
-                        baseScore += 100_000
-                    }
-
-                    finalScore = baseScore
-                    matched = true
-                }
+                pkgScore = fuzzyMatch(lowerQuery, searchPkg)
             }
 
-            if (matched) {
-                app to finalScore
-            } else {
-                null
+            val matchScore = max(nameScore, pkgScore)
+            if (matchScore <= 0) return@mapNotNull null
+
+            var finalScore = matchScore
+            if (PowerlineDefaults.ENABLE_WEIGHT_SEARCH) {
+                finalScore += (weights[app.packageName] ?: 0)
             }
+            if (isFavorite) {
+                finalScore += 100_000
+            }
+
+            app to finalScore
         }.sortedWith(
             compareByDescending<Pair<AppInfo, Int>> { it.second }
                 .thenBy { it.first.label }
         )
 
         return appMatches.map { (app, _) ->
-            val subtitle = if (aliasPackage == app.packageName) {
-                "Alias: ${app.packageName}"
-            } else {
-                app.packageName
-            }
-
             SearchResult(
                 id = app.packageName,
                 pluginId = id,
                 title = app.label,
-                subtitle = subtitle,
+                subtitle = app.packageName,
                 icon = app.icon,
                 type = ResultType.APP,
                 packageName = app.packageName,
@@ -152,8 +107,8 @@ class AppLauncherPlugin(
                 context.startActivity(intent)
 
                 // Update weights
-                if (settingsRepository.getEnableWeightSearch()) {
-                    val weights = settingsRepository.getAppWeights().toMutableMap()
+                if (PowerlineDefaults.ENABLE_WEIGHT_SEARCH) {
+                    val weights = userDataRepository.getAppWeights().toMutableMap()
 
                     // Decay all existing weights and add newly executed app if missing
                     val allApps = weights.keys.toMutableSet()
@@ -177,7 +132,7 @@ class AppLauncherPlugin(
                         }
                     }
 
-                    settingsRepository.setAppWeights(weights)
+                    userDataRepository.setAppWeights(weights)
                 }
 
                 return true
@@ -186,169 +141,5 @@ class AppLauncherPlugin(
             }
         }
         return false
-    }
-
-    @Composable
-    override fun SettingsScreen(viewModel: SettingsViewModel) {
-        val isAdvanced by viewModel.isAdvanced.collectAsState()
-        var hiddenApps by remember { mutableStateOf(settingsRepository.getHiddenApps()) }
-        var aliases by remember { mutableStateOf(settingsRepository.getAliases()) }
-        var enableWeightSearch by remember { mutableStateOf(settingsRepository.getEnableWeightSearch()) }
-        var enablePackageSearch by remember { mutableStateOf(settingsRepository.getEnablePackageSearch()) }
-        val allApps by installedAppsFlow.collectAsState()
-        val scope = rememberCoroutineScope()
-
-        var showHiddenAppsDialog by remember { mutableStateOf(false) }
-        var showAddAliasDialog by remember { mutableStateOf(false) }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 80.dp)
-        ) {
-            // Search Options Section
-            item {
-                Text(
-                    "Search Options",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-
-            item {
-                ListItem(
-                    headlineContent = { Text("Enable Weight Search") },
-                    trailingContent = {
-                        Switch(
-                            checked = enableWeightSearch,
-                            onCheckedChange = {
-                                enableWeightSearch = it
-                                settingsRepository.setEnableWeightSearch(it)
-                            }
-                        )
-                    }
-                )
-            }
-
-            item {
-                ListItem(
-                    headlineContent = { Text("Enable Package Search") },
-                    trailingContent = {
-                        Switch(
-                            checked = enablePackageSearch,
-                            onCheckedChange = {
-                                enablePackageSearch = it
-                                settingsRepository.setEnablePackageSearch(it)
-                            }
-                        )
-                    }
-                )
-            }
-
-            item { HorizontalDivider() }
-
-            // Hidden Apps Section
-            item {
-                Text(
-                    "Hidden Apps",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-
-            item {
-                ListItem(
-                    headlineContent = { Text("Manage Hidden Apps") },
-                    supportingContent = { Text("${hiddenApps.size} hidden") },
-                    trailingContent = {
-                        Button(
-                            onClick = { showHiddenAppsDialog = true },
-                            enabled = isAdvanced
-                        ) {
-                            Text("Manage")
-                        }
-                    },
-                    modifier = Modifier.clickable(enabled = isAdvanced) { showHiddenAppsDialog = true }
-                )
-            }
-
-            item { HorizontalDivider() }
-
-            // Aliases Section
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Aliases",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    val canAddAlias = isAdvanced || aliases.isEmpty()
-                    if (canAddAlias) {
-                        IconButton(onClick = { showAddAliasDialog = true }) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Alias")
-                        }
-                    }
-                }
-            }
-
-            items(aliases.toList()) { (alias, packageName) ->
-                val appName = allApps.find { it.packageName == packageName }?.label ?: packageName
-                ListItem(
-                    headlineContent = { Text(alias) },
-                    supportingContent = { Text(appName) },
-                    trailingContent = {
-                        IconButton(onClick = {
-                            val newAliases = aliases.toMutableMap()
-                            newAliases.remove(alias)
-                            aliases = newAliases
-                            scope.launch {
-                                settingsRepository.setAliases(newAliases)
-                            }
-                        }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
-                        }
-                    }
-                )
-                HorizontalDivider()
-            }
-        }
-
-        if (showHiddenAppsDialog) {
-            HiddenAppsDialog(
-                allApps = allApps,
-                hiddenApps = hiddenApps,
-                onDismiss = { showHiddenAppsDialog = false },
-                onSave = { newHidden ->
-                    hiddenApps = newHidden
-                    settingsRepository.setHiddenApps(newHidden)
-                    showHiddenAppsDialog = false
-                    viewModel.reloadApps()
-                }
-            )
-        }
-
-        if (showAddAliasDialog) {
-            AddAliasDialog(
-                allApps = allApps,
-                onDismiss = { showAddAliasDialog = false },
-                onSave = { alias, pkg ->
-                    val newAliases = aliases.toMutableMap()
-                    newAliases[alias] = pkg
-                    aliases = newAliases
-                    scope.launch {
-                        settingsRepository.setAliases(newAliases)
-                    }
-                    showAddAliasDialog = false
-                }
-            )
-        }
     }
 }

@@ -57,9 +57,6 @@ fun LauncherScreen(
     val openCount by viewModel.openCount.collectAsState()
     val listState = rememberLazyListState()
     var longPressedResult by remember { mutableStateOf<SearchResult?>(null) }
-    val homeScreenText by viewModel.homeScreenText.collectAsState()
-    var showHomeTextDialog by remember { mutableStateOf(false) }
-    val materialYouEnabled by viewModel.materialYouEnabled.collectAsState()
 
     LaunchedEffect(selectedIndex) {
         if (results.isNotEmpty()) {
@@ -77,7 +74,6 @@ fun LauncherScreen(
     ) {
         CommandLauncherTheme(
             darkTheme = isSystemInDarkTheme(),
-            dynamicColor = materialYouEnabled,
             setSystemBars = false
         ) {
             Column(
@@ -145,7 +141,7 @@ fun LauncherScreen(
             }
         }
 
-        // Header Row (Custom Text & Settings Button)
+        // Header Row (Settings Button)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -153,30 +149,7 @@ fun LauncherScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Home Screen Text (Top Left)
-            if (homeScreenText.isNotEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .clickable { showHomeTextDialog = true }
-                ) {
-                    val fontSize = when {
-                        homeScreenText.length > 35 -> 12.sp
-                        homeScreenText.length > 25 -> 14.sp
-                        homeScreenText.length > 15 -> 16.sp
-                        else -> 20.sp
-                    }
-
-                    Text(
-                        text = homeScreenText,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = fontSize),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            } else {
-                Spacer(modifier = Modifier.weight(1f)) // Fill space if no text
-            }
+            Spacer(modifier = Modifier.weight(1f))
 
             // Settings Button (Top Right)
             IconButton(
@@ -191,17 +164,6 @@ fun LauncherScreen(
                     tint = MaterialTheme.colorScheme.onSurface // Use theme color
                 )
             }
-        }
-
-        if (showHomeTextDialog) {
-            EditHomeScreenTextDialog(
-                initialText = homeScreenText,
-                onDismiss = { showHomeTextDialog = false },
-                onSave = {
-                    viewModel.updateHomeScreenText(it)
-                    showHomeTextDialog = false
-                }
-            )
         }
     }
 }

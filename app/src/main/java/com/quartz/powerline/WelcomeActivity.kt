@@ -31,9 +31,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.quartz.powerline.data.SettingsRepository
+import com.quartz.powerline.data.UserDataRepository
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
-import com.quartz.powerline.utils.GoogleMobileAdsConsentManager
 import kotlinx.coroutines.launch
 
 class WelcomeActivity : ComponentActivity() {
@@ -41,16 +40,13 @@ class WelcomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val settingsRepository = SettingsRepository(this)
-        val consentManager = GoogleMobileAdsConsentManager.getInstance(this)
+        val userDataRepository = UserDataRepository(this)
 
         setContent {
             CommandLauncherTheme {
                 WelcomeScreen(
-                    settingsRepository = settingsRepository,
-                    consentManager = consentManager,
                     onFinish = {
-                        settingsRepository.setOnboardingCompleted(true)
+                        userDataRepository.setOnboardingCompleted(true)
                         val intent = Intent(this, MainActivity::class.java)
                         startActivity(intent)
                         finish()
@@ -61,13 +57,11 @@ class WelcomeActivity : ComponentActivity() {
     }
 }
 
-private const val WELCOME_PAGE_COUNT = 4
+private const val WELCOME_PAGE_COUNT = 3
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WelcomeScreen(
-    settingsRepository: SettingsRepository,
-    consentManager: GoogleMobileAdsConsentManager,
     onFinish: () -> Unit
 ) {
     var initialPage by rememberSaveable { mutableStateOf(0) }
@@ -81,7 +75,6 @@ fun WelcomeScreen(
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val activity = LocalContext.current as? androidx.activity.ComponentActivity
 
     // Observe permission states
     var isAccessibilityGranted by remember { mutableStateOf(false) }
@@ -143,13 +136,8 @@ fun WelcomeScreen(
                     )
                     2 -> AltSpacePage(
                         isAccessibilityGranted = isAccessibilityGranted,
-                        onSkip = { scope.launch { pagerState.animateScrollToPage(3) } },
-                        onNext = { scope.launch { pagerState.animateScrollToPage(3) } }
-                    )
-                    3 -> SupportPage(
-                        consentManager = consentManager,
-                        activity = activity,
-                        onFinish = onFinish
+                        onSkip = onFinish,
+                        onNext = onFinish
                     )
                 }
             }
@@ -297,76 +285,6 @@ fun AltSpacePage(
                 enabled = isAccessibilityGranted
             ) {
                 Text("Continue")
-            }
-        }
-    }
-}
-
-@Composable
-fun SupportPage(
-    consentManager: GoogleMobileAdsConsentManager,
-    activity: androidx.activity.ComponentActivity?,
-    onFinish: () -> Unit
-) {
-    val context = LocalContext.current
-    var isLoading by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(Icons.Default.Settings, null, modifier = Modifier.size(80.dp))
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = "Support Powerline",
-            style = MaterialTheme.typography.headlineMedium,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "To keep Powerline free, we show ads in the Settings menu. You can remove them by upgrading to Advanced.",
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = {
-                context.startActivity(Intent(context, PurchaseActivity::class.java))
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Upgrade to Advanced")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextButton(
-            onClick = {
-                if (activity != null) {
-                    isLoading = true
-                    consentManager.gatherConsent(activity) { error ->
-                        isLoading = false
-                        if (error != null) {
-                            // Log error?
-                            android.util.Log.e("WelcomeActivity", "Consent error: ${error.message}")
-                        }
-                        onFinish()
-                    }
-                } else {
-                    onFinish()
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp))
-            } else {
-                Text("Continue with Ads")
             }
         }
     }

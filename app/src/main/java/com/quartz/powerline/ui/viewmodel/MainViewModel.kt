@@ -3,11 +3,10 @@ package com.quartz.powerline.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.quartz.powerline.data.SettingsRepository
+import com.quartz.powerline.data.UserDataRepository
 import com.quartz.powerline.domain.AppRepository
 import com.quartz.powerline.domain.SearchEngine
 import com.quartz.powerline.domain.models.AppInfo
-import com.quartz.powerline.domain.models.AppTheme
 import com.quartz.powerline.domain.models.SearchResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,7 +26,7 @@ enum class Screen {
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    val settingsRepository = SettingsRepository(application)
+    val userDataRepository = UserDataRepository(application)
     private val appRepository = AppRepository(application)
 
     private val _installedApps = MutableStateFlow<List<AppInfo>>(emptyList())
@@ -36,8 +35,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _visibleApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val visibleApps: StateFlow<List<AppInfo>> = _visibleApps.asStateFlow()
 
-    val pluginManager = com.quartz.powerline.plugins.PluginManager(settingsRepository, _installedApps, _visibleApps)
-    private val searchEngine = SearchEngine(application, pluginManager, settingsRepository)
+    val pluginManager = com.quartz.powerline.plugins.PluginManager(userDataRepository, _visibleApps)
+    private val searchEngine = SearchEngine(application, pluginManager)
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
@@ -54,51 +53,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedPluginId = MutableStateFlow<String?>(null)
     val selectedPluginId: StateFlow<String?> = _selectedPluginId.asStateFlow()
 
-    private val _homeScreenText = MutableStateFlow(settingsRepository.getHomeScreenText())
-    val homeScreenText: StateFlow<String> = _homeScreenText.asStateFlow()
-
-    private val _materialYouEnabled = MutableStateFlow(settingsRepository.getMaterialYouEnabled())
-    val materialYouEnabled: StateFlow<Boolean> = _materialYouEnabled.asStateFlow()
-
     private var searchJob: Job? = null
-
-    private val _appTheme = MutableStateFlow(settingsRepository.getAppTheme())
-    val appTheme: StateFlow<AppTheme> = _appTheme.asStateFlow()
-
-    private val _customAccentColor = MutableStateFlow(settingsRepository.getCustomAccentColor())
-    val customAccentColor: StateFlow<Int> = _customAccentColor.asStateFlow()
 
     init {
         loadApps()
     }
 
-    fun refreshSettings() {
-        _materialYouEnabled.value = settingsRepository.getMaterialYouEnabled()
-        _appTheme.value = settingsRepository.getAppTheme()
-        _customAccentColor.value = settingsRepository.getCustomAccentColor()
-    }
-
     fun reloadApps() {
         loadApps()
-        // Reload settings that might have changed externally (e.g. import)
-        _homeScreenText.value = settingsRepository.getHomeScreenText()
-        refreshSettings()
     }
 
     private fun loadApps() {
         viewModelScope.launch {
             val apps = appRepository.getInstalledApps()
             _installedApps.value = apps
-            val hiddenApps = settingsRepository.getHiddenApps()
-            _visibleApps.value = apps.filter { !hiddenApps.contains(it.packageName) }
+            _visibleApps.value = apps
             // Initial search (empty)
             performSearch(_query.value)
         }
-    }
-
-    fun updateHomeScreenText(text: String) {
-        settingsRepository.setHomeScreenText(text)
-        _homeScreenText.value = text
     }
 
     fun onQueryChange(newQuery: String) {
@@ -175,18 +147,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun toggleFavorite(packageName: String) {
-        val current = settingsRepository.getFavoriteApps().toMutableSet()
+        val current = userDataRepository.getFavoriteApps().toMutableSet()
         if (current.contains(packageName)) {
             current.remove(packageName)
         } else {
             current.add(packageName)
         }
-        settingsRepository.setFavoriteApps(current)
+        userDataRepository.setFavoriteApps(current)
         // Refresh search to update ordering
         performSearch(_query.value)
     }
 
     fun isFavorite(packageName: String): Boolean {
-        return settingsRepository.getFavoriteApps().contains(packageName)
+        return userDataRepository.getFavoriteApps().contains(packageName)
     }
 }

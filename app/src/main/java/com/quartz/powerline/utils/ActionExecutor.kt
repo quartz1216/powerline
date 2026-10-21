@@ -2,7 +2,7 @@ package com.quartz.powerline.utils
 
 import android.content.Context
 import com.quartz.powerline.data.HistoryItem
-import com.quartz.powerline.data.SettingsRepository
+import com.quartz.powerline.data.UserDataRepository
 import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.plugins.PluginManager
 
@@ -11,7 +11,7 @@ object ActionExecutor {
     fun execute(
         context: Context,
         result: SearchResult,
-        settingsRepository: SettingsRepository,
+        userDataRepository: UserDataRepository,
         pluginManager: PluginManager
     ) {
         val plugin = pluginManager.getPlugin(result.pluginId)
@@ -27,7 +27,7 @@ object ActionExecutor {
                 timestamp = System.currentTimeMillis(),
                 faviconUrl = result.faviconUrl
             )
-            settingsRepository.addToHistory(historyItem)
+            userDataRepository.addToHistory(historyItem)
         }
     }
 }

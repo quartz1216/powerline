@@ -15,10 +15,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CommandLauncher">
 
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
-
         <!-- Home Launcher Activity -->
         <activity
             android:name=".MainActivity"
@@ -57,11 +53,6 @@
 
         <activity
             android:name=".WelcomeActivity"
-            android:exported="false"
-            android:theme="@style/Theme.CommandLauncher" />
-
-        <activity
-            android:name=".PurchaseActivity"
             android:exported="false"
             android:theme="@style/Theme.CommandLauncher" />
 
