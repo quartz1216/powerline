@@ -6,6 +6,7 @@ import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.domain.models.ResultType
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -36,7 +37,7 @@ class RecentsPluginTest {
     }
 
     @Test
-    fun testFaviconUrlRestoration() {
+    fun testFaviconUrlRestoration() = runTest {
         val historyItem = HistoryItem(
             id = "web_search:1:test",
             type = ResultType.WEB,
@@ -58,7 +59,7 @@ class RecentsPluginTest {
     }
 
     @Test
-    fun testSearchNotEmpty() {
+    fun testSearchNotEmpty() = runTest {
         val results = plugin.search("something", context)
         assertEquals(0, results.size)
     }

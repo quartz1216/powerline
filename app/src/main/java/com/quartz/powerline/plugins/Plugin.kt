@@ -12,7 +12,7 @@ interface Plugin {
     val description: String
     val icon: ImageVector
 
-    fun search(query: String, context: Context): List<SearchResult>
+    suspend fun search(query: String, context: Context): List<SearchResult>
     fun execute(context: Context, result: SearchResult): Boolean
 
     @Composable

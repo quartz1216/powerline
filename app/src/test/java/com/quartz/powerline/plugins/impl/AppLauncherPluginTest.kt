@@ -9,6 +9,7 @@ import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -45,7 +46,7 @@ class AppLauncherPluginTest {
     }
 
     @Test
-    fun `test fuzzyMatch exact start contains returns 100`() {
+    fun `test fuzzyMatch exact start contains returns 100`() = runTest {
         // Since fuzzyMatch is private, we test via search scoring or reflect.
         // Or we trust search results. Let's test via search results with controlled environment.
         // Single app, check score via sorting or assumption.
@@ -61,7 +62,7 @@ class AppLauncherPluginTest {
     }
 
     @Test
-    fun `test scoring precedence alias beats everything`() {
+    fun `test scoring precedence alias beats everything`() = runTest {
         // App A: Alias match (Score 500,000)
         // App B: Favorite + Name Match + High Weight (Max possible normal score)
 
@@ -82,7 +83,7 @@ class AppLauncherPluginTest {
     }
 
     @Test
-    fun `test subtitle format`() {
+    fun `test subtitle format`() = runTest {
         val app = createApp("Settings", "com.android.settings")
         val appAlias = createApp("Calc", "com.calc")
 
@@ -99,7 +100,7 @@ class AppLauncherPluginTest {
     }
 
     @Test
-    fun `test package search ignores first dot prefix`() {
+    fun `test package search ignores first dot prefix`() = runTest {
         // "com.android.settings" -> searches "android.settings"
         // Query "android" should match "com.android.settings" (contains) -> 100
         // Query "settings" should match "com.android.settings" (contains) -> 100
@@ -122,7 +123,7 @@ class AppLauncherPluginTest {
     }
 
     @Test
-    fun `test weight calculation in execute`() {
+    fun `test weight calculation in execute`() = runTest {
         val app1 = "com.app1"
         val app2 = "com.app2"
         val weights = mapOf(app1 to 100, app2 to 50)
@@ -150,7 +151,7 @@ class AppLauncherPluginTest {
     }
 
     @Test
-    fun `test discontinuous match score`() {
+    fun `test discontinuous match score`() = runTest {
         // "System Settings" vs "ss"
         // 's' matches 'S'ystem
         // 's' matches 'S'ettings
@@ -166,7 +167,7 @@ class AppLauncherPluginTest {
     }
 
     @Test
-    fun `test favorite bonus`() {
+    fun `test favorite bonus`() = runTest {
         val appFav = createApp("Alpha", "com.alpha") // Favorite
         val appNorm = createApp("Alpha", "com.beta") // Normal
 
@@ -180,7 +181,7 @@ class AppLauncherPluginTest {
     }
 
     @Test
-    fun `test max of name or package score`() {
+    fun `test max of name or package score`() = runTest {
         // Name: "Photo" (Match), Pkg: "com.camera" (No match) -> Score from Name
         // Name: "Camera" (No match), Pkg: "com.photo" (Match) -> Score from Pkg
 
@@ -195,7 +196,7 @@ class AppLauncherPluginTest {
     }
 
     @Test
-    fun `test sorting order score desc then name asc`() {
+    fun `test sorting order score desc then name asc`() = runTest {
         // App A: Score 100, Name "Zebra"
         // App B: Score 100, Name "Alpha"
         // App C: Score 200, Name "Beta"

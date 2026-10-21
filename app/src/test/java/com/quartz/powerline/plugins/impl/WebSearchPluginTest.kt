@@ -4,6 +4,7 @@ import android.content.Context
 import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.domain.models.CustomSearchEngine
 import com.quartz.powerline.domain.models.ResultType
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mockito.Mockito.mock
@@ -12,7 +13,7 @@ import org.mockito.Mockito.`when`
 class WebSearchPluginTest {
 
     @Test
-    fun testSearchQueryReturnsCorrectResult() {
+    fun testSearchQueryReturnsCorrectResult() = runTest {
         val settingsRepository = mock(SettingsRepository::class.java)
         // Mock default engines
         val defaultEngine = CustomSearchEngine("1", "Google", "https://www.google.com/search?q=%s", null, true)
