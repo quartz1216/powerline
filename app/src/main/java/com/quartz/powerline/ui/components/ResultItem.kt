@@ -41,6 +41,8 @@ fun ResultItem(
     onLongClick: (() -> Unit)? = null
 ) {
     val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+    val titleColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+    val subtitleColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
 
     Row(
         modifier = Modifier
@@ -54,7 +56,7 @@ fun ResultItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Icon
-        ResultIcon(result = result)
+        ResultIcon(result = result, isSelected = isSelected)
 
         Spacer(modifier = Modifier.width(16.dp))
 
@@ -63,13 +65,13 @@ fun ResultItem(
             Text(
                 text = result.title,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = titleColor
             )
             result.subtitle?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = subtitleColor
                 )
             }
         }
@@ -77,7 +79,9 @@ fun ResultItem(
 }
 
 @Composable
-fun ResultIcon(result: SearchResult) {
+fun ResultIcon(result: SearchResult, isSelected: Boolean = false) {
+    val tintColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary
+
     when (result.type) {
         ResultType.APP -> {
             result.icon?.let { drawable ->
@@ -89,7 +93,7 @@ fun ResultIcon(result: SearchResult) {
                 imageVector = Icons.Default.Calculate,
                 contentDescription = null,
                 modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = tintColor
             )
         }
         ResultType.WEB -> {
@@ -98,7 +102,7 @@ fun ResultIcon(result: SearchResult) {
                     imageVector = Icons.Default.Search,
                     contentDescription = null,
                     modifier = Modifier.size(40.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = tintColor
                 )
                 if (result.faviconUrl != null) {
                     AsyncImage(
@@ -117,11 +121,12 @@ fun ResultIcon(result: SearchResult) {
                 imageVector = Icons.Default.Share,
                 contentDescription = null,
                 modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = tintColor
             )
         }
     }
 }
+
 
 @Composable
 fun AppIcon(drawable: Drawable) {

@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.quartz.powerline.domain.models.AppTheme
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -52,15 +53,83 @@ fun CommandLauncherTheme(
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     setSystemBars: Boolean = true,
+    appTheme: AppTheme = AppTheme.MATERIAL_YOU, // Default to Material You
+    customAccentColor: Int = 0xFF4CDC8F.toInt(), // Default to Brand Color
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    val context = LocalContext.current
+
+    val colorScheme = when (appTheme) {
+        AppTheme.BRAND -> {
+            if (darkTheme) BrandDarkColorScheme else BrandLightColorScheme
         }
-        darkTheme -> BrandDarkColorScheme
-        else -> BrandLightColorScheme
+        AppTheme.MATERIAL_YOU -> {
+             if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+             } else {
+                 // Fallback to Brand if Material You not supported/disabled
+                 if (darkTheme) BrandDarkColorScheme else BrandLightColorScheme
+             }
+        }
+        AppTheme.LIGHT -> {
+            // Light background, custom accent
+            val accent = Color(customAccentColor)
+            // Generate container colors for consistency
+            val primaryContainer = accent.copy(alpha = 0.2f) // Light tint
+            val onPrimaryContainer = Color.Black // Dark text on light tint
+
+            lightColorScheme(
+                primary = accent,
+                onPrimary = Color.White,
+                primaryContainer = primaryContainer,
+                onPrimaryContainer = onPrimaryContainer,
+                secondary = PurpleGrey40,
+                tertiary = Pink40
+            )
+        }
+        AppTheme.DARK -> {
+            // Dark background, custom accent
+            val accent = Color(customAccentColor)
+            // Generate container colors
+            val primaryContainer = accent.copy(alpha = 0.3f) // Darker tint
+            val onPrimaryContainer = Color.White // Light text on dark tint
+
+            darkColorScheme(
+                primary = accent,
+                onPrimary = Color.Black,
+                primaryContainer = primaryContainer,
+                onPrimaryContainer = onPrimaryContainer,
+                secondary = PurpleGrey80,
+                tertiary = Pink80
+            )
+        }
+        AppTheme.SYSTEM -> {
+            // Follow system dark/light, custom accent
+             val accent = Color(customAccentColor)
+             if (darkTheme) {
+                 val primaryContainer = accent.copy(alpha = 0.3f)
+                 val onPrimaryContainer = Color.White
+                 darkColorScheme(
+                    primary = accent,
+                    onPrimary = Color.Black,
+                    primaryContainer = primaryContainer,
+                    onPrimaryContainer = onPrimaryContainer,
+                    secondary = PurpleGrey80,
+                    tertiary = Pink80
+                )
+             } else {
+                 val primaryContainer = accent.copy(alpha = 0.2f)
+                 val onPrimaryContainer = Color.Black
+                 lightColorScheme(
+                    primary = accent,
+                    onPrimary = Color.White,
+                    primaryContainer = primaryContainer,
+                    onPrimaryContainer = onPrimaryContainer,
+                    secondary = PurpleGrey40,
+                    tertiary = Pink40
+                )
+             }
+        }
     }
     val view = LocalView.current
     if (!view.isInEditMode && setSystemBars) {

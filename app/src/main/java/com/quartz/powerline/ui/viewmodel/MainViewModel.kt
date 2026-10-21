@@ -7,6 +7,7 @@ import com.quartz.powerline.data.SettingsRepository
 import com.quartz.powerline.domain.AppRepository
 import com.quartz.powerline.domain.SearchEngine
 import com.quartz.powerline.domain.models.AppInfo
+import com.quartz.powerline.domain.models.AppTheme
 import com.quartz.powerline.domain.models.SearchResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -61,12 +62,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var searchJob: Job? = null
 
+    private val _appTheme = MutableStateFlow(settingsRepository.getAppTheme())
+    val appTheme: StateFlow<AppTheme> = _appTheme.asStateFlow()
+
+    private val _customAccentColor = MutableStateFlow(settingsRepository.getCustomAccentColor())
+    val customAccentColor: StateFlow<Int> = _customAccentColor.asStateFlow()
+
     init {
         loadApps()
     }
 
     fun refreshSettings() {
         _materialYouEnabled.value = settingsRepository.getMaterialYouEnabled()
+        _appTheme.value = settingsRepository.getAppTheme()
+        _customAccentColor.value = settingsRepository.getCustomAccentColor()
     }
 
     fun reloadApps() {

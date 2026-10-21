@@ -30,5 +30,9 @@ data class AppBackupData(
 
     // Plugin Settings
     val calculatorEnabled: Boolean? = true,
-    val historyEnabled: Boolean? = true
+    val historyEnabled: Boolean? = true,
+
+    // Theme Settings
+    val appTheme: String? = null,
+    val customAccentColor: Int? = null
 )

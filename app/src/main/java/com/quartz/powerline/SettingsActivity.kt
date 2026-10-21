@@ -44,7 +44,14 @@ class SettingsActivity : ComponentActivity() {
 
         setContent {
             val materialYouEnabled by viewModel.materialYouEnabled.collectAsState()
-            CommandLauncherTheme(dynamicColor = materialYouEnabled) {
+            val appTheme by viewModel.appTheme.collectAsState()
+            val customAccentColor by viewModel.customAccentColor.collectAsState()
+
+            CommandLauncherTheme(
+                dynamicColor = materialYouEnabled,
+                appTheme = appTheme,
+                customAccentColor = customAccentColor
+            ) {
                 val currentNav by viewModel.currentNav.collectAsState()
 
                 Column(
