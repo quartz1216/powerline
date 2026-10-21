@@ -113,6 +113,7 @@ class SearchOverlay(private val service: AccessibilityService) {
         }
     }
 
+    // The fade-out is the window exit animation (windowAnimations), run by the system after removal
     fun hide() {
         val root = rootView ?: return
         rootView = null
@@ -144,6 +145,7 @@ class SearchOverlay(private val service: AccessibilityService) {
                     WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             PixelFormat.TRANSLUCENT
         ).apply {
+            windowAnimations = R.style.OverlayWindowAnimation
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
                     WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
             layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES

@@ -4,4 +4,10 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
+
+    <!-- Search overlay window: appears instantly, fades out on close -->
+    <style name="OverlayWindowAnimation">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/overlay_fade_out</item>
+    </style>
 </resources>

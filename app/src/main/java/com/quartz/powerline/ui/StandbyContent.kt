@@ -32,6 +32,7 @@ import com.quartz.powerline.data.PowerlineDefaults
 import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.domain.models.CustomSearchEngine
 import com.quartz.powerline.ui.components.AppTile
+import com.quartz.powerline.ui.components.faviconRequest
 
 // Empty-query state of the overlay: feature chips, recent apps row, divider, all apps by name
 @Composable
@@ -106,7 +107,7 @@ private fun FeatureChips(onChipClick: (CustomSearchEngine) -> Unit) {
                 label = { Text(engine.name) },
                 leadingIcon = {
                     AsyncImage(
-                        model = faviconUrl(engine),
+                        model = faviconRequest(faviconUrl(engine)),
                         contentDescription = null,
                         placeholder = fallbackIcon,
                         error = fallbackIcon,
