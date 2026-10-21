@@ -5,18 +5,26 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.quxomiya.powerline.data.UserDataRepository
 import dev.quxomiya.powerline.domain.AppRepository
-import dev.quxomiya.powerline.domain.SearchEngine
 import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.domain.models.AppInfo
 import dev.quxomiya.powerline.domain.models.ResultType
-import dev.quxomiya.powerline.domain.models.SearchResult
+import dev.quxomiya.powerline.search.ProviderRegistry
+import dev.quxomiya.powerline.search.QueryParser
+import dev.quxomiya.powerline.search.RankingSignals
+import dev.quxomiya.powerline.search.ResultSection
+import dev.quxomiya.powerline.search.SearchAction
+import dev.quxomiya.powerline.search.SearchItem
+import dev.quxomiya.powerline.search.SearchPipeline
+import dev.quxomiya.powerline.search.SearchUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -30,17 +38,23 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val _recentApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val recentApps: StateFlow<List<AppInfo>> = _recentApps.asStateFlow()
 
-    val pluginManager = dev.quxomiya.powerline.plugins.PluginManager(userDataRepository, _visibleApps)
-    private val searchEngine = SearchEngine(application, pluginManager)
+    private val pipeline = SearchPipeline(
+        context = application,
+        registry = ProviderRegistry(userDataRepository, _visibleApps),
+        parser = QueryParser(PowerlineDefaults.SEARCH_ENGINES),
+        signals = {
+            RankingSignals(
+                favoriteApps = userDataRepository.getFavoriteApps(),
+                appWeights = if (PowerlineDefaults.ENABLE_WEIGHT_SEARCH) userDataRepository.getAppWeights() else emptyMap()
+            )
+        }
+    )
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
-    private val _results = MutableStateFlow<List<SearchResult>>(emptyList())
-    val results: StateFlow<List<SearchResult>> = _results.asStateFlow()
-
-    private val _selectedIndex = MutableStateFlow(0)
-    val selectedIndex: StateFlow<Int> = _selectedIndex.asStateFlow()
+    private val _uiState = MutableStateFlow(SearchUiState())
+    val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
     private var searchJob: Job? = null
 
@@ -53,8 +67,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             val apps = appRepository.getInstalledApps()
             _visibleApps.value = apps
             refreshRecentApps()
-            // Initial search (empty)
-            performSearch(_query.value)
+            performSearch(_query.value, debounce = false)
         }
     }
 
@@ -85,40 +98,43 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             .toList()
     }
 
-    fun appResult(app: AppInfo): SearchResult = SearchResult(
+    fun appItem(app: AppInfo): SearchItem = SearchItem(
         id = app.packageName,
-        pluginId = "app_launcher",
+        providerId = "apps",
         title = app.label,
         subtitle = app.packageName,
         icon = app.icon,
-        type = ResultType.APP,
-        packageName = app.packageName,
-        className = app.className
+        section = ResultSection.APPS,
+        score = 0,
+        action = SearchAction.LaunchApp(app.packageName, app.className)
     )
 
     fun selectNext() {
-        val current = _selectedIndex.value
-        val max = _results.value.lastIndex
-        if (current < max) {
-            _selectedIndex.value = current + 1
+        _uiState.update { state ->
+            if (state.selectedIndex < state.items.lastIndex) state.copy(selectedIndex = state.selectedIndex + 1) else state
         }
     }
 
     fun selectPrevious() {
-        val current = _selectedIndex.value
-        if (current > 0) {
-            _selectedIndex.value = current - 1
+        _uiState.update { state ->
+            if (state.selectedIndex > 0) state.copy(selectedIndex = state.selectedIndex - 1) else state
         }
     }
 
-    private fun performSearch(query: String) {
+    // Cancels the previous search right away, then waits out the debounce before searching
+    private fun performSearch(query: String, debounce: Boolean = true) {
         searchJob?.cancel()
-        searchJob = viewModelScope.launch(Dispatchers.Default) {
-            val results = searchEngine.search(query)
-            if (isActive) {
-                _results.value = results
-                _selectedIndex.value = 0
-            }
+        if (query.isBlank()) {
+            // Back to standby: drop the old results now so they never flash on the next keystroke
+            _uiState.value = SearchUiState()
+            return
+        }
+        _uiState.update { it.copy(isLoading = true) }
+        // Runs on Main like the cancel above, so a cancelled search can never publish its results
+        searchJob = viewModelScope.launch {
+            if (debounce) delay(PowerlineDefaults.SEARCH_DEBOUNCE_MS)
+            val sections = withContext(Dispatchers.Default) { pipeline.search(query) }
+            _uiState.value = SearchUiState(sections = sections)
         }
     }
 
@@ -131,10 +147,14 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         }
         userDataRepository.setFavoriteApps(current)
         // Refresh search to update ordering
-        performSearch(_query.value)
+        performSearch(_query.value, debounce = false)
     }
 
     fun isFavorite(packageName: String): Boolean {
         return userDataRepository.getFavoriteApps().contains(packageName)
+    }
+
+    override fun onCleared() {
+        pipeline.close()
     }
 }

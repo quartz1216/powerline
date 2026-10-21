@@ -34,14 +34,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import dev.quxomiya.powerline.domain.models.ResultType
-import dev.quxomiya.powerline.domain.models.SearchResult
+import dev.quxomiya.powerline.search.SearchAction
+import dev.quxomiya.powerline.search.SearchItem
 import dev.quxomiya.powerline.ui.theme.PanelItemShape
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ResultItem(
-    result: SearchResult,
+    item: SearchItem,
     isSelected: Boolean,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null
@@ -64,20 +64,20 @@ fun ResultItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Icon
-        ResultIcon(result = result, isSelected = isSelected)
+        ResultIcon(item = item, isSelected = isSelected)
 
         Spacer(modifier = Modifier.width(16.dp))
 
         // Text
         Column {
             Text(
-                text = result.title,
+                text = item.title,
                 style = MaterialTheme.typography.bodyLarge,
                 color = titleColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            result.subtitle?.let {
+            item.subtitle?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.labelMedium,
@@ -91,16 +91,16 @@ fun ResultItem(
 }
 
 @Composable
-fun ResultIcon(result: SearchResult, isSelected: Boolean = false) {
+fun ResultIcon(item: SearchItem, isSelected: Boolean = false) {
     val tintColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.primary
 
-    when (result.type) {
-        ResultType.APP -> {
-            result.icon?.let { drawable ->
+    when (item.action) {
+        is SearchAction.LaunchApp -> {
+            item.icon?.let { drawable ->
                 AppIcon(drawable = drawable)
             }
         }
-        ResultType.CALC -> {
+        is SearchAction.CopyText -> {
             Icon(
                 imageVector = Icons.Default.Calculate,
                 contentDescription = null,
@@ -108,7 +108,7 @@ fun ResultIcon(result: SearchResult, isSelected: Boolean = false) {
                 tint = tintColor
             )
         }
-        ResultType.WEB -> {
+        is SearchAction.OpenUrl -> {
             Box {
                 Icon(
                     imageVector = Icons.Default.Search,
@@ -116,9 +116,9 @@ fun ResultIcon(result: SearchResult, isSelected: Boolean = false) {
                     modifier = Modifier.size(40.dp),
                     tint = tintColor
                 )
-                if (result.faviconUrl != null) {
+                if (item.iconUrl != null) {
                     AsyncImage(
-                        model = faviconRequest(result.faviconUrl),
+                        model = faviconRequest(item.iconUrl),
                         contentDescription = null,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
@@ -128,7 +128,7 @@ fun ResultIcon(result: SearchResult, isSelected: Boolean = false) {
                 }
             }
         }
-        ResultType.SHARE -> {
+        is SearchAction.ShareText -> {
             Icon(
                 imageVector = Icons.Default.Share,
                 contentDescription = null,

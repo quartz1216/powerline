@@ -33,6 +33,17 @@ class UserDataRepository(context: Context) {
         prefs.edit().putString("app_weights", json).apply()
     }
 
+    // Decays every weight by 5% and adds 5 to the launched app, so weights stay within 0–100
+    fun recordAppLaunch(packageName: String) {
+        val weights = getAppWeights().toMutableMap()
+        for (pkg in weights.keys + packageName) {
+            var next = ((weights[pkg] ?: 0) * 0.95).toInt()
+            if (pkg == packageName) next += 5
+            if (next > 0) weights[pkg] = next else weights.remove(pkg)
+        }
+        setAppWeights(weights)
+    }
+
     // --- History ---
 
     private data class LegacyHistoryItem(

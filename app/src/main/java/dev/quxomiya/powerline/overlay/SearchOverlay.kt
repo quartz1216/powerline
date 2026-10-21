@@ -83,13 +83,9 @@ class SearchOverlay(private val service: AccessibilityService) {
                     ) {
                         SearchScreen(
                             viewModel = viewModel,
-                            onResultClick = { result ->
-                                if (result.payload == "settings_action") {
-                                    openStatusScreen()
-                                } else {
-                                    ActionExecutor.execute(context, result, viewModel.userDataRepository, viewModel.pluginManager)
-                                    hide()
-                                }
+                            onResultClick = { item ->
+                                ActionExecutor.execute(context, item, viewModel.userDataRepository)
+                                hide()
                             },
                             onInfoClick = { openStatusScreen() }
                         )

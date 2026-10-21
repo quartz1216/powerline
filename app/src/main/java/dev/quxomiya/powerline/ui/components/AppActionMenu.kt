@@ -42,12 +42,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
-import dev.quxomiya.powerline.domain.models.SearchResult
+import dev.quxomiya.powerline.search.SearchItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppActionMenu(
-    searchResult: SearchResult,
+    item: SearchItem,
+    packageName: String,
     isFavorite: Boolean,
     onDismissRequest: () -> Unit,
     onToggleFavorite: () -> Unit
@@ -56,17 +57,15 @@ fun AppActionMenu(
     val context = LocalContext.current
     var shortcuts by remember { mutableStateOf<List<ShortcutInfo>>(emptyList()) }
 
-    LaunchedEffect(searchResult.packageName) {
-        if (searchResult.packageName != null) {
-            val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
-            val query = LauncherApps.ShortcutQuery()
-            query.setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED)
-            query.setPackage(searchResult.packageName)
-            try {
-                shortcuts = launcherApps.getShortcuts(query, Process.myUserHandle()) ?: emptyList()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+    LaunchedEffect(packageName) {
+        val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
+        val query = LauncherApps.ShortcutQuery()
+        query.setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED)
+        query.setPackage(packageName)
+        try {
+            shortcuts = launcherApps.getShortcuts(query, Process.myUserHandle()) ?: emptyList()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -86,10 +85,10 @@ fun AppActionMenu(
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                ResultIcon(result = searchResult)
+                ResultIcon(item = item)
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = searchResult.title,
+                    text = item.title,
                     style = MaterialTheme.typography.titleLarge
                 )
             }
@@ -116,7 +115,7 @@ fun AppActionMenu(
                 leadingContent = { Icon(Icons.Default.Info, contentDescription = null) },
                 modifier = Modifier.clickable {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.fromParts("package", searchResult.packageName, null)
+                        data = Uri.fromParts("package", packageName, null)
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     }
                     context.startActivity(intent)

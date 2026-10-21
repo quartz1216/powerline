@@ -1,8 +1,8 @@
 # Powerline V2 Roadmap
 
-> **Status:** 進行中（Phase 1–3 と検索オーバーレイの刷新が完了。Phase 4 から未着手）  
+> **Status:** 進行中（Phase 1–3 と検索オーバーレイの刷新が完了。Phase 4 は実装済みで手動テスト待ち。Phase 5 から未着手）  
 > **Baseline:** `main` @ `1c739ae`  
-> **作業ブランチ:** `v2/phase1-alt-space-trigger` → `v2/phase2-remove-monetization-settings` → `v2/phase3-status-screen`（積み上げ。`main` へは未マージ）  
+> **作業ブランチ:** `v2/phase1-alt-space-trigger` → `v2/phase2-remove-monetization-settings` → `v2/phase3-status-screen` → `v2/phase4-search-pipeline`（積み上げ。`main` へは未マージ）  
 > **Target:** V2.0（内部ベータ → 公開）  
 > **Last updated:** 2026-10-22
 
@@ -53,7 +53,7 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | G1 | **トリガーの統一** — Alt+Space に一本化し、画面下・ステータスバー・QS・アシスタント経由の起動を撤去 | ✅ 完了 |
 | G2 | **画面の役割反転** — `MainActivity` を状態 / 権限 / About にし、検索オーバーレイを唯一の検索サーフェスにする | ✅ 完了 |
 | G3 | **マネタイズ層の撤去** — `isAdvanced`、課金、AdMob / UMP を削除 | ✅ 完了 |
-| G4 | **検索コアの再構築** — クエリ解析、並列実行、タイムアウト、ランキング、重複排除 | ⬜ Phase 4 |
+| G4 | **検索コアの再構築** — クエリ解析、並列実行、タイムアウト、ランキング、重複排除 | 🟡 実装済み（手動テスト待ち） |
 | G5 | **機能の再構築** — Apps / Calculator / Web / Share を Provider で作り直す（Recents / System は Provider にしない） | ⬜ Phase 5 |
 | G6 | **設定・バックアップを持たない** — 設定の永続化と JSON を削除 | 🟡 ほぼ完了（旧キーの起動時削除が残り） |
 | G7 | **品質とプライバシー** — キーボード操作、IME、アクセシビリティ、OEM 対策、説明責任 | 🟡 一部 |
@@ -74,7 +74,7 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 
 ---
 
-## 3. 現状（`v2/phase3-status-screen` @ `4dd288c`）
+## 3. 現状（`v2/phase4-search-pipeline`）
 
 ### 3.1 コンポーネント
 
@@ -86,18 +86,18 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | `overlay/SearchOverlay.kt` | `TYPE_ACCESSIBILITY_OVERLAY` ウィンドウに `SearchScreen` を載せる。独自の Lifecycle / ViewModelStore / SavedState。Esc・Back・背景タップで閉じ、閉じるときは 150ms フェード | — |
 | `ui/SearchScreen.kt` / `ui/StandbyContent.kt` / `ui/StandbyGrid.kt` | 検索パネル。空クエリ時は待機状態（エンジンチップ、最近のアプリ最大 8、全アプリ）、入力時は結果リスト | Tab でのセクション移動（Phase 7） |
 | `ui/components/CommandBar.kt` | 検索欄。↑↓←→ / Enter を処理 | — |
-| `ui/viewmodel/SearchViewModel.kt` | クエリ・結果・選択位置・待機状態の最近のアプリ。新しい入力で前の検索ジョブをキャンセル | パイプラインへの置き換え（Phase 4） |
-| `domain/SearchEngine.kt` | エイリアス一致なら Web のみ、それ以外は全プラグインを並列実行して `flatten()` | `SearchPipeline` に置き換え（Phase 4） |
-| `plugins/Plugin.kt` / `PluginManager.kt` / `plugins/impl/*` | V1 のプラグイン（AppLauncher / Calculator / Recents / Share / System / WebSearch）。設定画面と Advanced ゲートは削除済み | 全削除。Apps / Calculator / Web / Share のみ Provider で再実装し、Recents / System は廃止（Phase 5） |
-| `utils/ActionExecutor.kt` | `pluginId` から実行先を逆引き | `SearchAction` ベースに（Phase 4） |
+| `ui/viewmodel/SearchViewModel.kt` | クエリ・`SearchUiState`（セクション・選択位置・読み込み中）・待機状態の最近のアプリ。入力のたびに前の検索を即キャンセルし、40ms 待ってから `SearchPipeline` を呼ぶ | — |
+| `search/*` | `SearchPipeline`（解析 → 並列実行 + タイムアウト → ランキング → 重複排除 → 件数制限）、`QueryParser`、`SearchRanker`、`SearchDeduplicator`、`ProviderRegistry`、契約型（`SearchProvider` / `SearchRequest` / `SearchItem` / `SearchAction` / `ResultSection` / `SearchUiState`） | — |
+| `search/PluginSearchProviderAdapter.kt` | V1 プラグイン（AppLauncher / Calculator / WebSearch / Share）を `SearchProvider` として包む移行用アダプタ | Provider の新規実装に置き換えて削除（Phase 5） |
+| `plugins/Plugin.kt` / `PluginManager.kt` / `plugins/impl/*` | V1 のプラグイン。検索はアダプタ経由の 4 つだけが使われ、`PluginManager` / `RecentsPlugin` / `SystemPlugin` / 各 `execute()` はどこからも呼ばれていない | 全削除。Apps / Calculator / Web / Share のみ Provider で再実装し、Recents / System は廃止（Phase 5） |
+| `utils/ActionExecutor.kt` | `SearchAction` の `when` で実行し、成功したら履歴（とアプリの重み）を記録 | 履歴を `SearchAction` ベースに（Phase 5） |
 | `data/UserDataRepository.kt` | `history` / `favorite_apps` / `app_weights` のみ保持 | 旧キーの起動時削除（Phase 6） |
 | `data/PowerlineDefaults.kt` | 固定値（背景タップで閉じる、Recents 5 件、待機状態の最近のアプリ 8 件、検索エンジン 7 種） | Recents 廃止に合わせて `MAX_RECENT_ITEMS` を削除（Phase 5） |
 | `ui/theme/Theme.kt` / `Color.kt` | Android 12+ は `dynamicLight/DarkColorScheme`、11 以下は #4CDC8F から生成したブランド配色 | — |
 
 ### 3.2 現状の課題
 
-- **検索結果が単純連結**: プラグイン順に `flatten()` するだけで、横断ランキング・表記ゆれの正規化・タイムアウトがない。1 プラグインが遅いと全体が待たされる。
-- **プラグイン契約が重い**: `Plugin` が検索・実行・アイコンを同時に持ち、実行は `pluginId` の逆引きに依存している。
+- **Provider の中身が V1 のまま**: パイプラインは新しいが、各 Provider はアダプタ越しの V1 プラグイン（Phase 5）。
 - **履歴が結果型依存**: `ResultType` と `pluginId` に依存し、Recents が他プラグインの代わりに結果を組み立てている。
 - **favicon をネットワークから取得**: Web 結果とエンジンチップの favicon を `google.com/s2/favicons` から読み込んでいる。「検索時はネットワークアクセスしない」方針と食い違うため、Phase 5 で扱いを決める（第 8 章）。
 - **旧設定キーがディスクに残る**: V1 の SharedPreferences キーを削除していない（Phase 6）。
@@ -249,7 +249,7 @@ MainActivity
 | 2 | Advanced / 課金 / 広告 / 設定保存の撤去 | ✅ | `c54b28b` |
 | 3 | MainActivity = 状態 / 権限、Overlay = 検索 | ✅ | `01221ee`, `3dae973` |
 | 3.5 | 検索オーバーレイの刷新（ウィンドウ化・待機状態・Material You） | ✅ | `c097417` … `4dd288c` |
-| 4 | 検索コアの再構築 | ⬜ | — |
+| 4 | 検索コアの再構築 | 🟡 実装済み・手動テスト待ち | — |
 | 5 | 機能（Provider）の再構築 | ⬜ | — |
 | 6 | 初回起動と旧データの掃除 | 🟡 一部 | — |
 | 7 | 品質・プライバシー・リリース | 🟡 一部 | — |
@@ -317,31 +317,38 @@ MainActivity
 
 **タスク**
 
-- [ ] 新パッケージ `dev.quxomiya.powerline.search` を作成。
-  - [ ] `SearchProvider.kt` / `SearchRequest.kt` / `SearchMode.kt`
-  - [ ] `SearchItem.kt` / `ResultSection.kt` / `SearchAction.kt`
-  - [ ] `QueryParser.kt`（正規化・エイリアス判定）
-  - [ ] `SearchPipeline.kt` / `SearchRanker.kt` / `SearchDeduplicator.kt`
-  - [ ] `SearchUiState.kt` / `ProviderRegistry.kt`
+- [x] 新パッケージ `dev.quxomiya.powerline.search` を作成。
+  - [x] `SearchProvider.kt` / `SearchRequest.kt` / `SearchMode.kt`
+  - [x] `SearchItem.kt` / `ResultSection.kt` / `SearchAction.kt`
+  - [x] `QueryParser.kt`（正規化・エイリアス判定）
+  - [x] `SearchPipeline.kt` / `SearchRanker.kt` / `SearchDeduplicator.kt`
+  - [x] `SearchUiState.kt` / `ProviderRegistry.kt`
 - [ ] `SearchViewModel`
   - [x] 新しい入力で前の検索をキャンセル（`searchJob?.cancel()`）。
   - [x] ↑↓ / Enter による選択と実行。
-  - [ ] クエリを `StateFlow` にし、`debounce(30–50ms)` + `collectLatest` に置き換える。
-  - [ ] `SearchUiState`（セクション・選択位置・読み込み中）を公開する。
+  - [x] 40ms のデバウンス。`debounce` + `collectLatest` ではなく、入力のたびに前のジョブを即キャンセルし、新しいジョブの先頭で `delay(40)` する（`collectLatest` だとデバウンス中に古い検索が結果を出せてしまうため）。結果の反映は Main で行い、キャンセル済みの検索は反映されない。
+  - [x] 空クエリに戻ったら結果を即座に捨てる（次の入力で古い結果が一瞬出ない）。
+  - [x] `SearchUiState`（セクション・選択位置・読み込み中）を公開する。
 - [ ] `SearchPipeline`
-  - [ ] すべての Provider を並列実行（`async(Dispatchers.Default)`）。
-  - [ ] Provider ごとの `withTimeout(150)` と全体 `withTimeout(300)`。
-  - [ ] `SearchRanker` で採点し、`SearchDeduplicator` で重複排除。
-  - [ ] セクションごとに最大 5 件、全体 20 件に制限。
+  - [x] すべての Provider を並列実行（`Dispatchers.Default`）。Provider の処理は呼び出し側と別のスコープで動かし、ブロッキングしていてもタイムアウトで待つのをやめて結果を捨てる。
+  - [x] Provider ごとに 150ms、全体で 300ms の締め切り（各 Provider の待ち時間は `min(150ms, 全体の残り)`）。例外を投げた Provider も結果から外す。
+  - [x] `SearchRanker` で採点し、`SearchDeduplicator` で重複排除。
+  - [x] セクションごとに最大 5 件、全体 20 件に制限（重複排除のあとに適用）。
+  - [x] エイリアス入力（`yt laneige`）は Web だけを実行。
 - [ ] `SearchRanker`
-  - [ ] 完全一致 / 前方一致 / 単語境界・頭文字 / 部分一致 / 曖昧一致のスコアリング。
-  - [ ] favorite / frecency（`app_weights` と履歴）/ alias / provider priority の加算。
-  - [ ] 大文字小文字・全角半角・空白の正規化。
+  - [x] 完全一致 1000 / 前方一致 800 / 単語境界・頭文字・全トークンが単語の先頭 600 / 部分一致 400 / 曖昧一致（部分列）200。タイトルと `keywords`（アプリはパッケージ名）の最大値。
+  - [x] favorite +300、frecency は `app_weights`（0–100）× 2。provider priority は同点時のタイブレーク。
+  - [x] 計算・Web・共有のようにクエリから作る結果（`rankByMatch = false`）は文字列一致で採点せず、Provider の順序を保つ。
+  - [x] 大文字小文字・全角半角（NFKC）・前後と連続の空白の正規化。
+  - [ ] alias ボーナス（アプリの組み込みエイリアスは Phase 5 の Apps で扱う）。
+  - [ ] 履歴の時間減衰を frecency に使う（Phase 5 の履歴で扱う）。
 - [ ] `ActionExecutor`
-  - [ ] `SearchAction` の `when` で実行する形に変更し、`pluginId` の逆引きを廃止。
-  - [ ] 実行後に履歴を記録。
+  - [x] `SearchAction` の `when` で実行する形に変更し、`pluginId` の逆引きを廃止。`PluginManager` は使われなくなった。
+  - [x] 実行後に履歴を記録。アプリの重みの更新は `AppLauncherPlugin.execute()` から `UserDataRepository.recordAppLaunch()` へ移動。
 - [ ] 移行用アダプタ
-  - [ ] `PluginSearchProviderAdapter` で既存プラグインを包み、Phase 5 で順次置き換える。
+  - [x] `PluginSearchProviderAdapter` で既存プラグインを包み、Phase 5 で順次置き換える。
+  - [x] 登録するのは Apps / Calculator / Web / Share の 4 つだけ。Recents（空クエリ専用）と System（`settings` → Powerline Status）は登録しないため、Phase 4 の時点で候補から消える。`SearchOverlay` の `settings_action` 特別扱いも削除。
+  - [x] `domain/SearchEngine.kt` を削除（Phase 5 の予定を前倒し）。
 
 **完了条件**
 
@@ -350,6 +357,8 @@ MainActivity
 - 入力時の結果リストで同じアプリ・URL・アクションが二重に出ない（待機状態の重複は対象外）。
 - 遅い Provider があっても他の結果が 300ms 以内に表示される。
 - 人間による手動テストで主要フローが動作する。
+
+**状態:** 実装済み。`assembleDebug` と既存ユニットテストは通過。実機での手動テストが残り（特に 1–2 文字の検索速度、入力中のちらつき、エイリアスチップ → 入力）。
 
 **目安:** 4–5 日
 
@@ -403,7 +412,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 
 #### 共通
 
-- [ ] `plugins/impl/*`、`Plugin`、`PluginManager`、`SearchEngine` を**全削除**する（コピーせず新規実装）。
+- [ ] `plugins/impl/*`、`Plugin`、`PluginManager`、`search/PluginSearchProviderAdapter` を**全削除**する（コピーせず新規実装。`SearchEngine` は Phase 4 で削除済み）。
 - [ ] `ResultType` / `SearchResult` を削除する。
 - [ ] Provider ごとの設定・ON/OFF は持たない。
 
@@ -591,7 +600,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 | M1 | Alt+Space 単一トリガー | 1–2 日 | ✅ |
 | M2 | Advanced / 課金 / 広告 / 設定保存の撤去 | 1–2 日 | ✅ |
 | M3 | 状態画面 + 検索オーバーレイの刷新 | 2–3 日 | ✅ |
-| M4 | 検索コア（パイプライン / ランキング） | 4–5 日 | ⬜ |
+| M4 | 検索コア（パイプライン / ランキング） | 4–5 日 | 🟡 |
 | M5 | Provider 再実装（Apps / Calc / Web / Share） | 4–5 日 | ⬜ |
 | M6 | 初回起動と旧データの掃除 | 1 日 | 🟡 |
 | M7 | QA / プライバシー / リリース | 3–5 日 | 🟡 |
@@ -609,12 +618,12 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 | `overlay/SearchOverlay.kt` | 新規。検索ウィンドウ | ✅ |
 | `ui/StatusScreen.kt` | 新規。状態 / 権限 / About | ✅（PRIVACY リンクのみ残り） |
 | `ui/SearchScreen.kt` / `StandbyContent.kt` / `StandbyGrid.kt` / `components/*` | 検索パネル・待機状態 | ✅（Tab 移動が残り） |
-| `ui/viewmodel/SearchViewModel.kt` | `SearchUiState` とパイプラインへの置き換え | ⬜ |
+| `ui/viewmodel/SearchViewModel.kt` | `SearchUiState` とパイプラインへの置き換え | ✅ |
 | `ui/theme/Theme.kt` / `Color.kt` | Material You + ブランドカラーのフォールバック | ✅ |
-| `domain/SearchEngine.kt` | 削除し `search/SearchPipeline` へ | ⬜ |
+| `domain/SearchEngine.kt` | 削除し `search/SearchPipeline` へ | ✅ |
 | `plugins/Plugin.kt` / `PluginManager.kt` / `plugins/impl/*` | 削除し `search/` 以下に Apps / Calculator / Web / Share の Provider を新規実装。Recents / System は作り直さない | ⬜ |
 | `domain/models/SearchResult.kt` | 削除し `SearchItem` へ | ⬜ |
-| `utils/ActionExecutor.kt` | `SearchAction` ベースに | ⬜ |
+| `utils/ActionExecutor.kt` | `SearchAction` ベースに | ✅ |
 | `data/UserDataRepository.kt` | `onboarding_completed` API を削除、旧キーの起動時削除 | 🟡 |
 | `data/PowerlineDefaults.kt` | 固定値の集約 | ✅ |
 | `AndroidManifest.xml` | HOME / ASSIST / QS / 広告 / 廃止 Activity を削除 | ✅ |

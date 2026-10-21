@@ -12,6 +12,13 @@ object PowerlineDefaults {
     const val ENABLE_WEIGHT_SEARCH = true
     const val ENABLE_PACKAGE_SEARCH = true
 
+    // Search pipeline (ROADMAP §4.4)
+    const val SEARCH_DEBOUNCE_MS = 40L
+    const val PROVIDER_TIMEOUT_MS = 150L
+    const val SEARCH_TIMEOUT_MS = 300L
+    const val MAX_RESULTS_PER_SECTION = 5
+    const val MAX_TOTAL_RESULTS = 20
+
     val SEARCH_ENGINES: List<CustomSearchEngine> = listOf(
         CustomSearchEngine("google", "Google", "https://www.google.com/search?q=%s", isEnabled = true),
         CustomSearchEngine("youtube_music", "YouTube Music", "https://music.youtube.com/search?q=%s", "ytm", true),

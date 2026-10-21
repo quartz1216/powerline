@@ -36,8 +36,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.quxomiya.powerline.domain.models.ResultType
-import dev.quxomiya.powerline.domain.models.SearchResult
+import dev.quxomiya.powerline.search.SearchAction
+import dev.quxomiya.powerline.search.SearchItem
 import dev.quxomiya.powerline.ui.components.AppActionMenu
 import dev.quxomiya.powerline.ui.components.CommandBar
 import dev.quxomiya.powerline.ui.components.ResultItem
@@ -52,24 +52,25 @@ private val AppTileMinWidth = 96.dp
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel,
-    onResultClick: (SearchResult) -> Unit,
+    onResultClick: (SearchItem) -> Unit,
     onInfoClick: () -> Unit
 ) {
     val query by viewModel.query.collectAsState()
-    val results by viewModel.results.collectAsState()
-    val selectedIndex by viewModel.selectedIndex.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val results = uiState.items
+    val selectedIndex = uiState.selectedIndex
     val openCount by viewModel.openCount.collectAsState()
     val allApps by viewModel.visibleApps.collectAsState()
     val recentAppsAll by viewModel.recentApps.collectAsState()
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
-    var longPressedResult by remember { mutableStateOf<SearchResult?>(null) }
+    var longPressedResult by remember { mutableStateOf<SearchItem?>(null) }
 
     val isStandby = query.isEmpty()
     var standbyIndex by remember(openCount, isStandby) { mutableIntStateOf(0) }
 
     LaunchedEffect(selectedIndex) {
-        if (results.isNotEmpty()) {
+        if (selectedIndex in results.indices) {
             listState.animateScrollToItem(selectedIndex)
         }
     }
@@ -147,7 +148,7 @@ fun SearchScreen(
                             onQueryChange = viewModel::onQueryChange,
                             onEnter = {
                                 if (isStandby) {
-                                    standbyAppAt(standbySelection)?.let { onResultClick(viewModel.appResult(it)) }
+                                    standbyAppAt(standbySelection)?.let { onResultClick(viewModel.appItem(it)) }
                                 } else if (results.isNotEmpty() && selectedIndex in results.indices) {
                                     onResultClick(results[selectedIndex])
                                 }
@@ -190,8 +191,8 @@ fun SearchScreen(
                             selectedIndex = standbySelection,
                             gridState = gridState,
                             onChipClick = { engine -> viewModel.onQueryChange("${engine.alias} ") },
-                            onAppClick = { onResultClick(viewModel.appResult(it)) },
-                            onAppLongClick = { longPressedResult = viewModel.appResult(it) }
+                            onAppClick = { onResultClick(viewModel.appItem(it)) },
+                            onAppLongClick = { longPressedResult = viewModel.appItem(it) }
                         )
                     } else if (results.isNotEmpty()) {
                         HorizontalDivider(
@@ -205,11 +206,11 @@ fun SearchScreen(
                         ) {
                             itemsIndexed(results) { index, result ->
                                 ResultItem(
-                                    result = result,
+                                    item = result,
                                     isSelected = index == selectedIndex,
                                     onClick = { onResultClick(result) },
                                     onLongClick = {
-                                        if (result.type == ResultType.APP && result.packageName != null) {
+                                        if (result.action is SearchAction.LaunchApp) {
                                             longPressedResult = result
                                         }
                                     }
@@ -224,14 +225,14 @@ fun SearchScreen(
         }
 
         // Long Press Menu
-        longPressedResult?.let { result ->
+        longPressedResult?.let { item ->
+            val launch = item.action as? SearchAction.LaunchApp ?: return@let
             AppActionMenu(
-                searchResult = result,
-                isFavorite = result.packageName?.let { viewModel.isFavorite(it) } ?: false,
+                item = item,
+                packageName = launch.packageName,
+                isFavorite = viewModel.isFavorite(launch.packageName),
                 onDismissRequest = { longPressedResult = null },
-                onToggleFavorite = {
-                    result.packageName?.let { viewModel.toggleFavorite(it) }
-                }
+                onToggleFavorite = { viewModel.toggleFavorite(launch.packageName) }
             )
         }
     }
