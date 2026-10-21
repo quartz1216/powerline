@@ -1,87 +1,105 @@
 package dev.quxomiya.powerline.domain
 
-import java.text.DecimalFormat
+import java.math.BigDecimal
+import java.math.MathContext
 
+// + - * / (also × ÷), parentheses, postfix percent (50% = 0.5), unary minus, decimals.
+// Returns null unless the input is a complete expression with at least one operator,
+// so plain numbers and half-typed input ("12+") produce no result.
 object Calculator {
 
+    private val allowed = setOf('+', '-', '*', '/', '×', '÷', '%', '(', ')', '.')
+
+    // Enough digits to hide binary rounding noise (0.1 + 0.2 = 0.3)
+    private val precision = MathContext(12)
+
     fun evaluate(expression: String): String? {
-        // Basic validation: only numbers and operators allowed
-        val sanitized = expression.replace(" ", "")
-        if (sanitized.isEmpty()) return null
-        // Must contain at least one operator to be considered a calculation for our launcher
-        if (!sanitized.any { it in setOf('+', '-', '*', '/') }) return null
-        if (!sanitized.all { it.isDigit() || it in setOf('.', '+', '-', '*', '/', '(', ')') }) return null
+        val input = expression.filterNot { it.isWhitespace() }
+        if (input.isEmpty()) return null
+        if (!input.all { it in '0'..'9' || it in allowed }) return null
 
-        return try {
-            val result = object : Any() {
-                var pos = -1
-                var ch = 0
+        val parser = Parser(input)
+        val result = try {
+            parser.parse()
+        } catch (e: IllegalArgumentException) {
+            return null
+        }
+        if (!parser.sawOperator || result.isNaN() || result.isInfinite()) return null
+        return format(result)
+    }
 
-                fun nextChar() {
-                    ch = if (++pos < sanitized.length) sanitized[pos].code else -1
-                }
+    private fun format(value: Double): String {
+        if (value == 0.0) return "0" // also -0.0
+        return BigDecimal(value).round(precision).stripTrailingZeros().toPlainString()
+    }
 
-                fun eat(charToEat: Int): Boolean {
-                    while (ch == ' '.code) nextChar()
-                    if (ch == charToEat) {
-                        nextChar()
-                        return true
-                    }
-                    return false
-                }
+    private class Parser(private val input: String) {
+        private var pos = 0
+        var sawOperator = false
+            private set
 
-                fun parse(): Double {
-                    nextChar()
-                    val x = parseExpression()
-                    if (pos < sanitized.length) throw RuntimeException("Unexpected: " + ch.toChar())
-                    return x
-                }
+        fun parse(): Double {
+            val value = expression()
+            require(pos == input.length) { "Unexpected '${input[pos]}'" }
+            return value
+        }
 
-                fun parseExpression(): Double {
-                    var x = parseTerm()
-                    while (true) {
-                        if      (eat('+'.code)) x += parseTerm() // addition
-                        else if (eat('-'.code)) x -= parseTerm() // subtraction
-                        else return x
-                    }
-                }
-
-                fun parseTerm(): Double {
-                    var x = parseFactor()
-                    while (true) {
-                        if      (eat('*'.code)) x *= parseFactor() // multiplication
-                        else if (eat('/'.code)) x /= parseFactor() // division
-                        else return x
-                    }
-                }
-
-                fun parseFactor(): Double {
-                    if (eat('+'.code)) return parseFactor() // unary plus
-                    if (eat('-'.code)) return -parseFactor() // unary minus
-
-                    var x: Double
-                    val startPos = pos
-                    if (eat('('.code)) { // parentheses
-                        x = parseExpression()
-                        eat(')'.code)
-                    } else if (ch in '0'.code..'9'.code || ch == '.'.code) { // numbers
-                        while (ch in '0'.code..'9'.code || ch == '.'.code) nextChar()
-                        x = sanitized.substring(startPos, pos).toDouble()
-                    } else {
-                        throw RuntimeException("Unexpected: " + ch.toChar())
-                    }
-                    return x
-                }
-            }.parse()
-
-            // Format result (remove .0 if integer)
-            if (result == result.toLong().toDouble()) {
-                result.toLong().toString()
-            } else {
-                result.toString()
+        private fun eat(vararg chars: Char): Boolean {
+            if (pos < input.length && input[pos] in chars) {
+                pos++
+                return true
             }
-        } catch (e: Exception) {
-            null
+            return false
+        }
+
+        private fun expression(): Double {
+            var x = term()
+            while (true) {
+                x = when {
+                    eat('+') -> x + term()
+                    eat('-') -> x - term()
+                    else -> return x
+                }
+                sawOperator = true
+            }
+        }
+
+        private fun term(): Double {
+            var x = factor()
+            while (true) {
+                x = when {
+                    eat('*', '×') -> x * factor()
+                    eat('/', '÷') -> x / factor()
+                    else -> return x
+                }
+                sawOperator = true
+            }
+        }
+
+        private fun factor(): Double {
+            if (eat('+')) return factor()
+            if (eat('-')) return -factor()
+
+            var x = if (eat('(')) {
+                val inner = expression()
+                require(eat(')')) { "Missing ')'" }
+                inner
+            } else {
+                number()
+            }
+            while (eat('%')) {
+                x /= 100
+                sawOperator = true
+            }
+            return x
+        }
+
+        private fun number(): Double {
+            val start = pos
+            while (pos < input.length && (input[pos] in '0'..'9' || input[pos] == '.')) pos++
+            require(pos > start) { "Expected a number" }
+            return input.substring(start, pos).toDoubleOrNull()
+                ?: throw IllegalArgumentException("Bad number")
         }
     }
 }

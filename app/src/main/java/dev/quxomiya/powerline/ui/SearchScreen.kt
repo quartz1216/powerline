@@ -62,6 +62,7 @@ fun SearchScreen(
     val openCount by viewModel.openCount.collectAsState()
     val allApps by viewModel.visibleApps.collectAsState()
     val recentAppsAll by viewModel.recentApps.collectAsState()
+    val engines by viewModel.engines.collectAsState()
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
     var longPressedResult by remember { mutableStateOf<SearchItem?>(null) }
@@ -185,12 +186,13 @@ fun SearchScreen(
 
                     if (isStandby) {
                         StandbyContent(
+                            engines = engines,
                             recentApps = recentApps,
                             allApps = allApps,
                             grid = grid,
                             selectedIndex = standbySelection,
                             gridState = gridState,
-                            onChipClick = { engine -> viewModel.onQueryChange("${engine.alias} ") },
+                            onChipClick = { engine -> viewModel.onQueryChange("${engine.engine.alias} ") },
                             onAppClick = { onResultClick(viewModel.appItem(it)) },
                             onAppLongClick = { longPressedResult = viewModel.appItem(it) }
                         )

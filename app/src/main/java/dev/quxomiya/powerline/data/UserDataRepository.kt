@@ -4,9 +4,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import dev.quxomiya.powerline.domain.models.ResultType
+import kotlin.math.pow
 
-// Stores user data only (history, favorites, usage weights). Settings are fixed in PowerlineDefaults.
+// Stores user data only (launch history, favorites). Settings are fixed in PowerlineDefaults.
 class UserDataRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
     private val gson = Gson()
@@ -20,79 +20,48 @@ class UserDataRepository(context: Context) {
         prefs.edit().putStringSet("favorite_apps", favorites).apply()
     }
 
-    // --- App Weights ---
-    // Map<PackageName, Weight>
-    fun getAppWeights(): Map<String, Int> {
-        val json = prefs.getString("app_weights", "{}")
-        val type = object : TypeToken<Map<String, Int>>() {}.type
-        return gson.fromJson(json, type)
-    }
-
-    fun setAppWeights(weights: Map<String, Int>) {
-        val json = gson.toJson(weights)
-        prefs.edit().putString("app_weights", json).apply()
-    }
-
-    // Decays every weight by 5% and adds 5 to the launched app, so weights stay within 0–100
-    fun recordAppLaunch(packageName: String) {
-        val weights = getAppWeights().toMutableMap()
-        for (pkg in weights.keys + packageName) {
-            var next = ((weights[pkg] ?: 0) * 0.95).toInt()
-            if (pkg == packageName) next += 5
-            if (next > 0) weights[pkg] = next else weights.remove(pkg)
-        }
-        setAppWeights(weights)
-    }
-
     // --- History ---
 
-    private data class LegacyHistoryItem(
-        val id: String,
-        val type: String,
-        val title: String,
-        val subtitle: String? = null,
-        val payload: String? = null,
-        val timestamp: Long,
-        val faviconUrl: String? = null
+    // Reads both the current entries and V1 entries ({id, type, title, ...}), where an app
+    // launch was type "APP" with the package name as id. V1 web / calc / share entries are dropped.
+    private data class StoredHistoryItem(
+        val packageName: String? = null,
+        val className: String? = null,
+        val id: String? = null,
+        val type: String? = null,
+        val timestamp: Long = 0
     )
 
+    // App launches, most recent first
     fun getHistory(): List<HistoryItem> {
         val json = prefs.getString("history", "[]")
         return try {
-            val typeToken = object : TypeToken<List<LegacyHistoryItem>>() {}.type
-            val legacyItems: List<LegacyHistoryItem> = gson.fromJson(json, typeToken) ?: emptyList()
-
-            legacyItems.mapNotNull { legacy ->
-                try {
-                    if (legacy.type == "MEMO") return@mapNotNull null
-                    HistoryItem(
-                        id = legacy.id,
-                        type = ResultType.valueOf(legacy.type),
-                        title = legacy.title,
-                        subtitle = legacy.subtitle,
-                        payload = legacy.payload,
-                        timestamp = legacy.timestamp,
-                        faviconUrl = legacy.faviconUrl
-                    )
-                } catch (e: IllegalArgumentException) {
-                    null
-                }
+            val typeToken = object : TypeToken<List<StoredHistoryItem>>() {}.type
+            val stored: List<StoredHistoryItem> = gson.fromJson(json, typeToken) ?: emptyList()
+            stored.mapNotNull { item ->
+                val packageName = item.packageName
+                    ?: item.id.takeIf { item.type == "APP" && it != "settings_action" }
+                    ?: return@mapNotNull null
+                HistoryItem(packageName, item.className, item.timestamp)
             }
         } catch (e: Exception) {
             emptyList()
         }
     }
 
-    fun addToHistory(item: HistoryItem) {
-        val currentHistory = getHistory().toMutableList()
-        currentHistory.add(0, item)
-        // Keep last 100
-        val trimmed = if (currentHistory.size > 100) currentHistory.take(100) else currentHistory
-        saveHistory(trimmed)
+    fun recordAppLaunch(packageName: String, className: String?, timestamp: Long = System.currentTimeMillis()) {
+        val history = listOf(HistoryItem(packageName, className, timestamp)) + getHistory()
+        prefs.edit().putString("history", gson.toJson(history.take(PowerlineDefaults.MAX_HISTORY_ITEMS))).apply()
     }
 
-    private fun saveHistory(history: List<HistoryItem>) {
-        val json = gson.toJson(history)
-        prefs.edit().putString("history", json).apply()
+    // Package name -> sum over its launches of 0.5^(age / half-life); a launch just now counts 1
+    fun getAppFrecency(now: Long = System.currentTimeMillis()): Map<String, Double> {
+        val frecency = mutableMapOf<String, Double>()
+        for (item in getHistory()) {
+            val age = (now - item.timestamp).coerceAtLeast(0)
+            val weight = 0.5.pow(age.toDouble() / PowerlineDefaults.FRECENCY_HALF_LIFE_MS)
+            frecency[item.packageName] = (frecency[item.packageName] ?: 0.0) + weight
+        }
+        return frecency
     }
 }

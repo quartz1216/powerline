@@ -40,7 +40,7 @@ class SearchPipeline(
 
         val priorities = providers.associate { it.id to it.priority }
         val ranked = items
-            .map { it to SearchRanker.score(it, request, signals) }
+            .map { it to SearchRanker.score(it, signals) }
             .sortedWith(
                 compareBy<Pair<SearchItem, Int>> { it.first.section.ordinal }
                     .thenByDescending { it.second }

@@ -7,8 +7,8 @@ object SearchDeduplicator {
     fun deduplicate(items: List<SearchItem>): List<SearchItem> = items.distinctBy { key(it.action) }
 
     private fun key(action: SearchAction): Any = when (action) {
-        // One entry per app, whichever launcher activity it came with
-        is SearchAction.LaunchApp -> "app:${action.packageName}"
+        // Per launcher activity: a package with two launcher icons keeps both
+        is SearchAction.LaunchApp -> "app:${action.packageName}/${action.className}"
         is SearchAction.OpenUrl -> "url:${action.url.trimEnd('/')}"
         else -> action
     }

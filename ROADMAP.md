@@ -1,8 +1,8 @@
 # Powerline V2 Roadmap
 
-> **Status:** 進行中（Phase 1–3 と検索オーバーレイの刷新が完了。Phase 4 は実装済みで手動テスト待ち。Phase 5 から未着手）  
+> **Status:** 進行中（Phase 1–3 と検索オーバーレイの刷新が完了。Phase 4–5 は実装済みで手動テスト待ち。Phase 6 から未着手）  
 > **Baseline:** `main` @ `1c739ae`  
-> **作業ブランチ:** `v2/phase1-alt-space-trigger` → `v2/phase2-remove-monetization-settings` → `v2/phase3-status-screen` → `v2/phase4-search-pipeline`（積み上げ。`main` へは未マージ）  
+> **作業ブランチ:** `v2/phase1-alt-space-trigger` → `v2/phase2-remove-monetization-settings` → `v2/phase3-status-screen` → `v2/phase4-search-pipeline`（Phase 5 も同じブランチ。積み上げ。`main` へは未マージ）  
 > **Target:** V2.0（内部ベータ → 公開）  
 > **Last updated:** 2026-10-22
 
@@ -87,19 +87,16 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | `ui/SearchScreen.kt` / `ui/StandbyContent.kt` / `ui/StandbyGrid.kt` | 検索パネル。空クエリ時は待機状態（エンジンチップ、最近のアプリ最大 8、全アプリ）、入力時は結果リスト | Tab でのセクション移動（Phase 7） |
 | `ui/components/CommandBar.kt` | 検索欄。↑↓←→ / Enter を処理 | — |
 | `ui/viewmodel/SearchViewModel.kt` | クエリ・`SearchUiState`（セクション・選択位置・読み込み中）・待機状態の最近のアプリ。入力のたびに前の検索を即キャンセルし、40ms 待ってから `SearchPipeline` を呼ぶ | — |
-| `search/*` | `SearchPipeline`（解析 → 並列実行 + タイムアウト → ランキング → 重複排除 → 件数制限）、`QueryParser`、`SearchRanker`、`SearchDeduplicator`、`ProviderRegistry`、契約型（`SearchProvider` / `SearchRequest` / `SearchItem` / `SearchAction` / `ResultSection` / `SearchUiState`） | — |
-| `search/PluginSearchProviderAdapter.kt` | V1 プラグイン（AppLauncher / Calculator / WebSearch / Share）を `SearchProvider` として包む移行用アダプタ | Provider の新規実装に置き換えて削除（Phase 5） |
-| `plugins/Plugin.kt` / `PluginManager.kt` / `plugins/impl/*` | V1 のプラグイン。検索はアダプタ経由の 4 つだけが使われ、`PluginManager` / `RecentsPlugin` / `SystemPlugin` / 各 `execute()` はどこからも呼ばれていない | 全削除。Apps / Calculator / Web / Share のみ Provider で再実装し、Recents / System は廃止（Phase 5） |
-| `utils/ActionExecutor.kt` | `SearchAction` の `when` で実行し、成功したら履歴（とアプリの重み）を記録 | 履歴を `SearchAction` ベースに（Phase 5） |
-| `data/UserDataRepository.kt` | `history` / `favorite_apps` / `app_weights` のみ保持 | 旧キーの起動時削除（Phase 6） |
-| `data/PowerlineDefaults.kt` | 固定値（背景タップで閉じる、Recents 5 件、待機状態の最近のアプリ 8 件、検索エンジン 7 種） | Recents 廃止に合わせて `MAX_RECENT_ITEMS` を削除（Phase 5） |
+| `search/*` | `SearchPipeline`（解析 → 並列実行 + タイムアウト → ランキング → 重複排除 → 件数制限）、`QueryParser`、`SearchRanker`、`SearchDeduplicator`、`ProviderRegistry`、契約型（`SearchProvider` / `SearchRequest` / `SearchItem` / `SearchAction` / `ResultSection` / `SearchUiState` / `WebSearchEngine`） | — |
+| `search/AppIndex.kt` | 起動可能なアプリの一覧と正規化済みの検索キー（ラベル / パッケージ / 組み込みエイリアス）。`LauncherApps.Callback` でインストール・削除・更新のたびに読み直す。待機状態と Apps で共有 | — |
+| `search/providers/*` | `AppsProvider` / `CalculatorProvider` / `WebProvider` / `ShareProvider` | — |
+| `utils/ActionExecutor.kt` | `SearchAction` の `when` で実行。アプリ起動が成功したら履歴に記録 | — |
+| `data/UserDataRepository.kt` | `history`（アプリ起動のみ）/ `favorite_apps` を保持。frecency は履歴から計算 | 旧キーの起動時削除（Phase 6） |
+| `data/PowerlineDefaults.kt` | 固定値（背景タップで閉じる、待機状態の最近のアプリ 8 件、履歴 100 件・半減期 7 日、検索パイプラインの各値、検索エンジン 7 種、アプリの組み込みエイリアス） | — |
 | `ui/theme/Theme.kt` / `Color.kt` | Android 12+ は `dynamicLight/DarkColorScheme`、11 以下は #4CDC8F から生成したブランド配色 | — |
 
 ### 3.2 現状の課題
 
-- **Provider の中身が V1 のまま**: パイプラインは新しいが、各 Provider はアダプタ越しの V1 プラグイン（Phase 5）。
-- **履歴が結果型依存**: `ResultType` と `pluginId` に依存し、Recents が他プラグインの代わりに結果を組み立てている。
-- **favicon をネットワークから取得**: Web 結果とエンジンチップの favicon を `google.com/s2/favicons` から読み込んでいる。「検索時はネットワークアクセスしない」方針と食い違うため、Phase 5 で扱いを決める（第 8 章）。
 - **旧設定キーがディスクに残る**: V1 の SharedPreferences キーを削除していない（Phase 6）。
 - **リリース準備が未着手**: `README.md` / `PRIVACY.md` がない。`versionCode = 1` / `versionName = "1.0"`、`isMinifyEnabled = false`（Phase 7）。
 
@@ -227,15 +224,15 @@ MainActivity
 ### 4.6 設定・データ・バックアップ
 
 - **設定は保持しない。** 固定値は `PowerlineDefaults` に集約する。
-- **データは保持する。** `history` / `favorite_apps` / `app_weights` は設定ではないため保持する（設定 UI なし、JSON バックアップなし）。alias / hidden apps / カスタム検索エンジンは扱わない。
+- **データは保持する。** `history`（アプリ起動のみ）/ `favorite_apps` は設定ではないため保持する（設定 UI なし、JSON バックアップなし）。`app_weights` は Phase 5 で履歴ベースの frecency に置き換えたため使わない（旧キーとして Phase 6 で削除）。alias / hidden apps / カスタム検索エンジンは扱わない。
 - **JSON は扱わない。** export / import / 復元 / 移行は削除済み。
 - 固定デフォルト:
   - テーマ: Material You（Android 12+ は dynamic color、11 以下はブランドカラー #4CDC8F）
   - オーバーレイ: dim / blur なし、背景タップで閉じる、ヘッダーテキストなし
   - 待機状態: 最近のアプリ最大 8 件
   - 検索: すべての Provider を有効、履歴 ON
-  - 検索エンジン: Google（既定）/ YouTube Music `ytm` / Maps `maps` / X `x` / YouTube `yt` / Wikipedia `wiki` / Play Store `play`
-- V1 の設定キー（`is_advanced`, `debug_mode`, `status_bar*`, `bottom_trigger*`, `hide_triggers_on_keyboard`, `material_you_enabled`, `app_theme`, `custom_accent_color`, `overlay_*`, `home_screen_text`, `max_recent_items`, `history_enabled`, `calculator_enabled`, `share_enabled`, `share_alias`, `enable_weight_search`, `enable_package_search`, `aliases`, `hidden_apps`, `custom_search_engines`）と `onboarding_completed` は**起動時に削除**する（Phase 6）。移行はしない。
+  - 検索エンジン: Google（既定）/ YouTube Music `ytm` / Maps `maps` / X `x` / YouTube `yt` / Wikipedia `wiki` / Play Store `play`。エンジンは「名前・エイリアス・URL（`%s` に検索語）」だけで定義し、URL をどのアプリで開くかは Android に任せる
+- V1 の設定キー（`is_advanced`, `debug_mode`, `status_bar*`, `bottom_trigger*`, `hide_triggers_on_keyboard`, `material_you_enabled`, `app_theme`, `custom_accent_color`, `overlay_*`, `home_screen_text`, `max_recent_items`, `history_enabled`, `calculator_enabled`, `share_enabled`, `share_alias`, `enable_weight_search`, `enable_package_search`, `aliases`, `hidden_apps`, `custom_search_engines`）、`onboarding_completed`、`app_weights` は**起動時に削除**する（Phase 6）。移行はしない。
 
 ---
 
@@ -251,7 +248,7 @@ MainActivity
 | 3 | MainActivity = 状態 / 権限、Overlay = 検索 | ✅ | `01221ee`, `3dae973` |
 | 3.5 | 検索オーバーレイの刷新（ウィンドウ化・待機状態・Material You） | ✅ | `c097417` … `4dd288c` |
 | 4 | 検索コアの再構築 | 🟡 実装済み・手動テスト待ち | — |
-| 5 | 機能（Provider）の再構築 | ⬜ | — |
+| 5 | 機能（Provider）の再構築 | 🟡 実装済み・手動テスト待ち | — |
 | 6 | 初回起動と旧データの掃除 | 🟡 一部 | — |
 | 7 | 品質・プライバシー・リリース | 🟡 一部 | — |
 
@@ -339,11 +336,11 @@ MainActivity
   - [x] エイリアス入力（`yt laneige`）は Web だけを実行。
 - [ ] `SearchRanker`
   - [x] 完全一致 1000 / 前方一致 800 / 単語境界・頭文字・全トークンが単語の先頭 600 / 部分一致 400 / 曖昧一致（部分列）200。タイトルと `keywords`（アプリはパッケージ名）の最大値。
-  - [x] favorite +300、frecency は `app_weights`（0–100）× 2。provider priority は同点時のタイブレーク。
+  - [x] favorite +300、frecency は `app_weights`（0–100）× 2（Phase 5 で履歴の時間減衰ベースに変更）。provider priority は同点時のタイブレーク。
   - [x] 計算・Web・共有のようにクエリから作る結果（`rankByMatch = false`）は文字列一致で採点せず、Provider の順序を保つ。
   - [x] 大文字小文字・全角半角（NFKC）・前後と連続の空白の正規化。
-  - [ ] alias ボーナス（アプリの組み込みエイリアスは Phase 5 の Apps で扱う）。
-  - [ ] 履歴の時間減衰を frecency に使う（Phase 5 の履歴で扱う）。
+  - [x] alias ボーナス → Phase 5 でアプリの組み込みエイリアスを検索キーに加える形で実装。
+  - [x] 履歴の時間減衰を frecency に使う → Phase 5 で実装。
 - [ ] `ActionExecutor`
   - [x] `SearchAction` の `when` で実行する形に変更し、`pluginId` の逆引きを廃止。`PluginManager` は使われなくなった。
   - [x] 実行後に履歴を記録。アプリの重みの更新は `AppLauncherPlugin.execute()` から `UserDataRepository.recordAppLaunch()` へ移動。
@@ -372,57 +369,64 @@ MainActivity
 
 #### Apps
 
-- [ ] `AppIndex` を導入し、アプリ一覧・ラベル・パッケージ・クラス名をキャッシュ（待機状態の全アプリ表示と共有）。
-- [ ] ラベル / パッケージ / 組み込みエイリアスの検索。
-- [ ] あいまい一致の改善（単語境界、頭文字、大文字小文字）。
-- [ ] favorite / frecency は設定 UI なしで保持（`favorite_apps` / `app_weights`）。
-- [ ] 長押しメニュー（`AppActionMenu`）: favorite、アプリ情報、共有。
+- [x] `AppIndex` を導入し、アプリ一覧・ラベル・パッケージ・クラス名と正規化済みの検索キーをキャッシュ（待機状態の全アプリ表示と共有）。`LauncherApps.Callback` でパッケージの変更時に読み直す（以前はサービスの起動中ずっと同じ一覧だった）。
+- [x] ラベル / パッケージ（先頭セグメントを除く）/ 組み込みエイリアス（`PowerlineDefaults.APP_ALIASES`。例: `phone` → 電話、`play store` → Play ストア）の検索。
+- [x] あいまい一致（単語境界、頭文字、大文字小文字、全角半角）— Phase 4 の `SearchRanker.match` を使用。
+- [x] favorite / frecency は設定 UI なしで保持（`favorite_apps` / 履歴）。
+- [x] 長押しメニュー（`AppActionMenu`）: favorite、アプリ情報、共有（アプリ名 + Play ストアのリンク）、ショートカット。
+- [x] 起動は既知のランチャー Activity を明示して行う（ランチャーアイコンが複数あるパッケージで別の画面が開かないように）。重複排除もパッケージ単位ではなく Activity 単位。
 
 #### 履歴（Provider ではない）
 
 Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「最近のアプリ」と Apps の frecency のためのデータとして扱う。
 
-- [ ] `HistoryItem` を `SearchAction` ベースに移行し、`ResultType` / `pluginId` への依存をなくす。
-- [ ] 履歴の記録はアプリ起動のみにする（Web / Calc / Share の履歴は表示先がなくなるため記録しない）。
-- [ ] 時間減衰（例: 7 日でスコア半減）を導入し、frecency に使う。
-- [ ] 待機状態の「最近のアプリ」は `SearchViewModel` が履歴から直接組み立てる（現状どおり）。
+- [x] `HistoryItem` を `(packageName, className, timestamp)` にし、`ResultType` / `pluginId` への依存をなくす。V1 の履歴（`type = "APP"` の項目）はそのまま読める。
+- [x] 履歴の記録はアプリ起動のみにする（Web / Calc / Share は記録しない。V1 の該当項目は読み飛ばす）。
+- [x] 時間減衰: frecency = Σ 0.5^(経過時間 / 7 日)。ボーナスは 1 回あたり 40、上限 200。`app_weights` は使わなくなった。
+- [x] 待機状態の「最近のアプリ」は `SearchViewModel` が履歴から直接組み立てる（起動した Activity を優先）。
 
 #### Calculator
 
-- [ ] 四則演算、括弧、パーセント、負数、小数点。
-- [ ] 計算結果のコピー。
-- [ ] エラー時の表示を整理。
-- [ ] 単位変換は V2 では扱わない。
+- [x] 四則演算（`×` `÷` も可）、括弧、後置パーセント（`50%` = 0.5、`200*10%` = 20）、負数、小数点。
+- [x] 計算結果のコピー。
+- [x] 表示: 有効数字 12 桁に丸めて指数表記を使わない（`0.1+0.2` = `0.3`）。
+- [x] エラー時は結果を出さない（入力途中の `12+`、閉じ括弧のない `(1+2`、`1/0`、演算子のない `-5`）。入力中にエラーが点滅しないため。
+- [x] 単位変換は V2 では扱わない。
 
 #### Web
 
-- [ ] 固定の検索エンジン（第 4.6 節）。ユーザー編集なし。
-- [ ] エイリアス prefix（例: `yt laneige`）。待機状態のエンジンチップからも選べる。
-- [ ] URL 直接入力、`https://` 補完。
-- [ ] favicon の扱いを決める（第 8 章 #6）。同梱アイコンにするか、取得結果をキャッシュして失敗時はアイコンにフォールバックする。
-- [ ] 検索時に検索クエリを外部へ送らない。実行時のみブラウザを開く。
+- [x] 固定の検索エンジン（第 4.6 節）。ユーザー編集なし。
+- [x] エイリアス prefix（例: `yt laneige`、大文字小文字・全角は問わない）。待機状態のエンジンチップからも選べる。
+- [x] URL 直接入力（`https://` 補完、ポート・パス・クエリ可）。URL 候補は既定エンジンでの検索より上に出る。
+- [x] エンジンは URL テンプレートだけで定義する（`SearchEngine(id, name, alias, url)`）。組み込みも、将来ユーザーが追加するエンジン（第 8 章 #8）も同じ扱い。アプリ固有の検索インテント（Gmail・Kindle などのアプリ内検索）は、アプリによって使えないものがあり公平でもないため入れない。
+- [x] favicon の取得をやめ、エンジンのアイコンは**その URL を Android が開くアプリのアイコン**にする（YouTube の URL なら YouTube アプリ、リンクを持つアプリがなければ既定のブラウザ。既定がなく選択画面になる場合は検索アイコン）。ブランドロゴは同梱しない。`AppIndex` がパッケージの変更時に更新する。
+- [x] AI アプリ（Claude / ChatGPT / Gemini）・翻訳などは追加しない（Share で渡せるため）。
+- [x] 検索時に検索クエリを外部へ送らない。実行時のみブラウザを開く。favicon 取得をやめたため **Coil 依存と `INTERNET` 権限を削除**。
 
 #### Share
 
-- [ ] クエリ文字列の共有。共有シート起動。
+- [x] クエリ文字列の共有。共有シート起動。
 
 #### 廃止する Provider
 
-- [ ] `RecentsPlugin` を削除し、作り直さない（代わりは待機状態と frecency）。
-- [ ] `SystemPlugin` を削除し、作り直さない（「settings → Powerline Status」の候補もなくなる）。
-- [ ] `PowerlineDefaults.MAX_RECENT_ITEMS` を削除。
+- [x] `RecentsPlugin` を削除し、作り直さない（代わりは待機状態と frecency）。
+- [x] `SystemPlugin` を削除し、作り直さない（「settings → Powerline Status」の候補もなくなる）。
+- [x] `PowerlineDefaults.MAX_RECENT_ITEMS` / `ENABLE_WEIGHT_SEARCH` / `ENABLE_PACKAGE_SEARCH` を削除。
 
 #### 共通
 
-- [ ] `plugins/impl/*`、`Plugin`、`PluginManager`、`search/PluginSearchProviderAdapter` を**全削除**する（コピーせず新規実装。`SearchEngine` は Phase 4 で削除済み）。
-- [ ] `ResultType` / `SearchResult` を削除する。
-- [ ] Provider ごとの設定・ON/OFF は持たない。
+- [x] `plugins/`（`Plugin` / `PluginManager` / `impl/*`）、`search/PluginSearchProviderAdapter`、`domain/AppRepository`（`AppIndex` に統合）を**全削除**。
+- [x] `ResultType` / `SearchResult` / `CustomSearchEngine`（→ `WebSearchEngine`）を削除。
+- [x] Provider ごとの設定・ON/OFF は持たない。
+- [x] `CalculatorTest` に新しい挙動（パーセント、`×` `÷`、丸め、エラー）のケースを追加。
 
 **完了条件**
 
-- 旧 `Plugin` / `PluginManager` / `plugins/impl/*` / `SearchResult` / `SearchEngine` への参照が 0。
+- 旧 `Plugin` / `PluginManager` / `plugins/impl/*` / `SearchResult` / `SearchEngine` への参照が 0。✅
 - 検索結果のセクション表示とキーボード操作が破綻しない。
 - 人間による手動テストで主要フローが動作する。
+
+**状態:** 実装済み。`assembleDebug` とユニットテスト（21 件）は通過。実機での手動テストが残り。
 
 **目安:** 4–5 日
 
@@ -443,7 +447,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 **完了条件**
 
 - 初回起動でも Welcome を挟まず、状態画面を開く。
-- `powerline_settings` に `history` / `favorite_apps` / `app_weights` 以外のキーが残らない。
+- `powerline_settings` に `history` / `favorite_apps` 以外のキーが残らない。
 - システム権限画面以外に、ユーザーへ質問する画面がない。
 
 **目安:** 1 日
@@ -489,7 +493,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 **ドキュメント**
 
 - [ ] `README.md`: V2 のセットアップ（アクセシビリティ有効化、Power option、Alt+Space）、ホームアプリではなくなったこと、設定・JSON を保持しないこと。
-- [ ] `PRIVACY.md`: 画面内容を読まない、キーログを取らない、favicon 取得時の通信先（残す場合）。
+- [ ] `PRIVACY.md`: 画面内容を読まない、キーログを取らない、`INTERNET` 権限を持たない（通信しない）。
 - [ ] 状態画面の About から `PRIVACY.md` へリンク。
 
 **リリース**
@@ -566,8 +570,9 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 | 3 | コマンド prefix を導入するか | **V2 では組み込み alias のみ**。`?` / `=` / `>` は V2.1 | Phase 4 |
 | 4 | UI 言語 | **V2 は英語**。日本語は V2.1 | Phase 6 |
 | 5 | 配布方法 | まず **GitHub Releases / 内部ベータ**。Play はポリシー確認後 | Phase 7 |
-| 6 | favicon を外部（`google.com/s2/favicons`）から取得し続けるか | **同梱アイコンに置き換え**（固定エンジンは 7 種のみのため）。URL 直接入力の favicon は出さない | Phase 5 |
-| 7 | 残っているユニットテスト 4 ファイルの扱い | **残すが受け入れ判定には使わない**。Phase 5 で旧モデルと一緒に壊れるものは削除 | Phase 5 |
+| 6 | favicon を外部（`google.com/s2/favicons`）から取得し続けるか | **決定済み**：同梱のベクターアイコンに置き換え、`INTERNET` 権限も削除 | — |
+| 7 | 残っているユニットテスト 4 ファイルの扱い | **決定済み**：残すが受け入れ判定には使わない。Phase 5 で壊れたものはなし（`CalculatorTest` はケース追加） | — |
+| 8 | ユーザー登録のエイリアス（設定は次の 2 項目のみ） | **後で実装**（V2.1 候補）。(1) **URL クエリー**: 名前・エイリアス・URL（`%s`）。エンジンは URL テンプレートだけで定義済みなので、登録 UI と保存を足せば済む。(2) **クイック共有**: エイリアス・共有先アプリ（`text/plain` の `SEND` を受け付けるアプリから選ぶ）。`cl 質問` で共有シートを出さずにそのアプリへ送る。V2 の「設定を持たない」（G6）の例外になるため、入れるときに方針を見直す | V2.1 |
 
 ---
 
@@ -603,7 +608,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 | M2 | Advanced / 課金 / 広告 / 設定保存の撤去 | 1–2 日 | ✅ |
 | M3 | 状態画面 + 検索オーバーレイの刷新 | 2–3 日 | ✅ |
 | M4 | 検索コア（パイプライン / ランキング） | 4–5 日 | 🟡 |
-| M5 | Provider 再実装（Apps / Calc / Web / Share） | 4–5 日 | ⬜ |
+| M5 | Provider 再実装（Apps / Calc / Web / Share） | 4–5 日 | 🟡 |
 | M6 | 初回起動と旧データの掃除 | 1 日 | 🟡 |
 | M7 | QA / プライバシー / リリース | 3–5 日 | 🟡 |
 | **残り** | | **約 2–3 週間**（個人開発の目安） | |
@@ -623,8 +628,8 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 | `ui/viewmodel/SearchViewModel.kt` | `SearchUiState` とパイプラインへの置き換え | ✅ |
 | `ui/theme/Theme.kt` / `Color.kt` | Material You + ブランドカラーのフォールバック | ✅ |
 | `domain/SearchEngine.kt` | 削除し `search/SearchPipeline` へ | ✅ |
-| `plugins/Plugin.kt` / `PluginManager.kt` / `plugins/impl/*` | 削除し `search/` 以下に Apps / Calculator / Web / Share の Provider を新規実装。Recents / System は作り直さない | ⬜ |
-| `domain/models/SearchResult.kt` | 削除し `SearchItem` へ | ⬜ |
+| `plugins/Plugin.kt` / `PluginManager.kt` / `plugins/impl/*` | 削除し `search/` 以下に Apps / Calculator / Web / Share の Provider を新規実装。Recents / System は作り直さない | ✅ |
+| `domain/models/SearchResult.kt` | 削除し `SearchItem` へ | ✅ |
 | `utils/ActionExecutor.kt` | `SearchAction` ベースに | ✅ |
 | `data/UserDataRepository.kt` | `onboarding_completed` API を削除、旧キーの起動時削除 | 🟡 |
 | `data/PowerlineDefaults.kt` | 固定値の集約 | ✅ |

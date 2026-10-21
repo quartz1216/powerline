@@ -7,10 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
-import dev.quxomiya.powerline.data.HistoryItem
-import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.data.UserDataRepository
-import dev.quxomiya.powerline.domain.models.ResultType
 import dev.quxomiya.powerline.search.SearchAction
 import dev.quxomiya.powerline.search.SearchItem
 
@@ -27,22 +24,21 @@ object ActionExecutor {
             is SearchAction.CopyText -> copyText(context, action.text)
             is SearchAction.ShareText -> shareText(context, action.text)
         }
-        if (!success) return
-
+        // Only app launches are history (recent row and frecency); see HistoryItem
         val action = item.action
-        if (action is SearchAction.LaunchApp && PowerlineDefaults.ENABLE_WEIGHT_SEARCH) {
-            userDataRepository.recordAppLaunch(action.packageName)
+        if (success && action is SearchAction.LaunchApp) {
+            userDataRepository.recordAppLaunch(action.packageName, action.className)
         }
-        userDataRepository.addToHistory(historyItem(item))
     }
 
     private fun launchApp(context: Context, action: SearchAction.LaunchApp): Boolean {
-        val intent = context.packageManager.getLaunchIntentForPackage(action.packageName)
-            ?: action.className?.let { className ->
-                Intent(Intent.ACTION_MAIN)
-                    .addCategory(Intent.CATEGORY_LAUNCHER)
-                    .setComponent(ComponentName(action.packageName, className))
-            }
+        // The exact launcher activity when known: a package can have several launcher icons
+        val intent = action.className?.let { className ->
+            Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setComponent(ComponentName(action.packageName, className))
+                .addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+        } ?: context.packageManager.getLaunchIntentForPackage(action.packageName)
         if (intent == null) {
             Toast.makeText(context, "Cannot launch app", Toast.LENGTH_SHORT).show()
             return false
@@ -74,31 +70,12 @@ object ActionExecutor {
         return true
     }
 
-    private fun shareText(context: Context, text: String): Boolean {
+    fun shareText(context: Context, text: String): Boolean {
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
             putExtra(Intent.EXTRA_TEXT, text)
             type = "text/plain"
         }
         context.startActivity(Intent.createChooser(sendIntent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         return true
-    }
-
-    // History still uses the V1 shape until Phase 5 moves it onto SearchAction
-    private fun historyItem(item: SearchItem): HistoryItem {
-        val (id, type, payload) = when (val action = item.action) {
-            is SearchAction.LaunchApp -> Triple(action.packageName, ResultType.APP, null)
-            is SearchAction.OpenUrl -> Triple(item.id, ResultType.WEB, action.url)
-            is SearchAction.CopyText -> Triple(item.id, ResultType.CALC, action.text)
-            is SearchAction.ShareText -> Triple(item.id, ResultType.SHARE, action.text)
-        }
-        return HistoryItem(
-            id = id,
-            type = type,
-            title = item.title,
-            subtitle = item.subtitle,
-            payload = payload,
-            timestamp = System.currentTimeMillis(),
-            faviconUrl = item.iconUrl
-        )
     }
 }

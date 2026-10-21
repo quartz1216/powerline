@@ -1,7 +1,5 @@
 package dev.quxomiya.powerline.search
 
-import dev.quxomiya.powerline.domain.models.CustomSearchEngine
-
 data class SearchRequest(
     // As typed, for the search field
     val rawQuery: String,
@@ -12,7 +10,7 @@ data class SearchRequest(
     val tokens: List<String>,
     val mode: SearchMode,
     // Set in ALIAS mode
-    val engine: CustomSearchEngine? = null,
+    val engine: SearchEngine? = null,
     // In ALIAS mode, the part after the alias
     val aliasQuery: String = ""
 )

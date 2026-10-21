@@ -1,9 +1,8 @@
 package dev.quxomiya.powerline.search
 
-import dev.quxomiya.powerline.domain.models.CustomSearchEngine
 import java.text.Normalizer
 
-class QueryParser(private val engines: List<CustomSearchEngine>) {
+class QueryParser(private val engines: List<SearchEngine>) {
 
     private val whitespace = Regex("\\s+")
 
@@ -17,7 +16,7 @@ class QueryParser(private val engines: List<CustomSearchEngine>) {
 
         val engine = engines.firstOrNull { engine ->
             val alias = engine.alias
-            engine.isEnabled && !alias.isNullOrBlank() && leading.lowercase().startsWith("${alias.lowercase()} ")
+            !alias.isNullOrBlank() && leading.lowercase().startsWith("${alias.lowercase()} ")
         }
 
         return SearchRequest(

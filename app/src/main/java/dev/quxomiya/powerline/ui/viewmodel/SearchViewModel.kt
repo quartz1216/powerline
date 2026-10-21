@@ -4,18 +4,17 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.quxomiya.powerline.data.UserDataRepository
-import dev.quxomiya.powerline.domain.AppRepository
 import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.domain.models.AppInfo
-import dev.quxomiya.powerline.domain.models.ResultType
+import dev.quxomiya.powerline.search.AppIndex
+import dev.quxomiya.powerline.search.AvailableEngine
 import dev.quxomiya.powerline.search.ProviderRegistry
 import dev.quxomiya.powerline.search.QueryParser
 import dev.quxomiya.powerline.search.RankingSignals
-import dev.quxomiya.powerline.search.ResultSection
-import dev.quxomiya.powerline.search.SearchAction
 import dev.quxomiya.powerline.search.SearchItem
 import dev.quxomiya.powerline.search.SearchPipeline
 import dev.quxomiya.powerline.search.SearchUiState
+import dev.quxomiya.powerline.search.providers.toSearchItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -29,8 +28,9 @@ import kotlinx.coroutines.withContext
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
 
     val userDataRepository = UserDataRepository(application)
-    private val appRepository = AppRepository(application)
+    private val appIndex = AppIndex(application, viewModelScope)
 
+    // Launchable apps by name (the standby "all apps" grid)
     private val _visibleApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val visibleApps: StateFlow<List<AppInfo>> = _visibleApps.asStateFlow()
 
@@ -38,14 +38,17 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val _recentApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val recentApps: StateFlow<List<AppInfo>> = _recentApps.asStateFlow()
 
+    // Search engines with their icons (standby chips)
+    val engines: StateFlow<List<AvailableEngine>> = appIndex.availableEngines
+
     private val pipeline = SearchPipeline(
         context = application,
-        registry = ProviderRegistry(userDataRepository, _visibleApps),
+        registry = ProviderRegistry(appIndex),
         parser = QueryParser(PowerlineDefaults.SEARCH_ENGINES),
         signals = {
             RankingSignals(
                 favoriteApps = userDataRepository.getFavoriteApps(),
-                appWeights = if (PowerlineDefaults.ENABLE_WEIGHT_SEARCH) userDataRepository.getAppWeights() else emptyMap()
+                appFrecency = userDataRepository.getAppFrecency()
             )
         }
     )
@@ -59,15 +62,13 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private var searchJob: Job? = null
 
     init {
-        loadApps()
-    }
-
-    private fun loadApps() {
+        // Initial load and every reload after a package change
         viewModelScope.launch {
-            val apps = appRepository.getInstalledApps()
-            _visibleApps.value = apps
-            refreshRecentApps()
-            performSearch(_query.value, debounce = false)
+            appIndex.apps.collect { indexed ->
+                _visibleApps.value = indexed.map { it.app }
+                refreshRecentApps()
+                performSearch(_query.value, debounce = false)
+            }
         }
     }
 
@@ -87,27 +88,21 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun refreshRecentApps() {
-        val appsByPackage = _visibleApps.value.associateBy { it.packageName }
+        val apps = _visibleApps.value
+        val appsByPackage = apps.groupBy { it.packageName }
         _recentApps.value = userDataRepository.getHistory()
             .asSequence()
-            .filter { it.type == ResultType.APP }
-            .map { it.id }
+            // The launched activity, or the package's first one for V1 entries without a class
+            .mapNotNull { item ->
+                val candidates = appsByPackage[item.packageName] ?: return@mapNotNull null
+                candidates.find { it.className == item.className } ?: candidates.first()
+            }
             .distinct()
-            .mapNotNull { appsByPackage[it] }
             .take(PowerlineDefaults.MAX_STANDBY_RECENT_APPS)
             .toList()
     }
 
-    fun appItem(app: AppInfo): SearchItem = SearchItem(
-        id = app.packageName,
-        providerId = "apps",
-        title = app.label,
-        subtitle = app.packageName,
-        icon = app.icon,
-        section = ResultSection.APPS,
-        score = 0,
-        action = SearchAction.LaunchApp(app.packageName, app.className)
-    )
+    fun appItem(app: AppInfo): SearchItem = app.toSearchItem()
 
     fun selectNext() {
         _uiState.update { state ->
@@ -155,6 +150,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     override fun onCleared() {
+        appIndex.close()
         pipeline.close()
     }
 }

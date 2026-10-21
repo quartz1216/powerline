@@ -1,6 +1,5 @@
 package dev.quxomiya.powerline.ui
 
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,42 +13,39 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.domain.models.AppInfo
-import dev.quxomiya.powerline.domain.models.CustomSearchEngine
 import dev.quxomiya.powerline.ui.components.AppTile
-import dev.quxomiya.powerline.ui.components.faviconRequest
+import dev.quxomiya.powerline.search.AvailableEngine
+import dev.quxomiya.powerline.ui.components.AppIcon
 import dev.quxomiya.powerline.ui.theme.PanelItemInset
 
 // Empty-query state of the overlay: feature chips, recent apps row, divider, all apps by name
 @Composable
 fun StandbyContent(
+    engines: List<AvailableEngine>,
     recentApps: List<AppInfo>,
     allApps: List<AppInfo>,
     grid: StandbyGrid,
     selectedIndex: Int,
     gridState: LazyGridState,
-    onChipClick: (CustomSearchEngine) -> Unit,
+    onChipClick: (AvailableEngine) -> Unit,
     onAppClick: (AppInfo) -> Unit,
     onAppLongClick: (AppInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        FeatureChips(onChipClick = onChipClick)
+        FeatureChips(engines = engines, onChipClick = onChipClick)
 
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -94,32 +90,33 @@ fun StandbyContent(
 
 // Shortcuts for the built-in search engine aliases; tapping one types "<alias> " into the field
 @Composable
-private fun FeatureChips(onChipClick: (CustomSearchEngine) -> Unit) {
-    val engines = PowerlineDefaults.SEARCH_ENGINES.filter { it.isEnabled && !it.alias.isNullOrBlank() }
-    val fallbackIcon = rememberVectorPainter(Icons.Default.Search)
+private fun FeatureChips(engines: List<AvailableEngine>, onChipClick: (AvailableEngine) -> Unit) {
+    val aliased = engines.filter { !it.engine.alias.isNullOrBlank() }
 
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(engines, key = { it.id }) { engine ->
+        items(aliased, key = { it.engine.id }) { engine ->
             AssistChip(
                 onClick = { onChipClick(engine) },
-                label = { Text(engine.name) },
+                label = { Text(engine.engine.name) },
                 leadingIcon = {
-                    AsyncImage(
-                        model = faviconRequest(faviconUrl(engine)),
-                        contentDescription = null,
-                        placeholder = fallbackIcon,
-                        error = fallbackIcon,
-                        modifier = Modifier
-                            .size(AssistChipDefaults.IconSize)
-                            .clip(CircleShape)
-                    )
+                    // Icon of the app that opens the engine's URLs
+                    val appIcon = engine.icon
+                    if (appIcon != null) {
+                        AppIcon(drawable = appIcon, size = AssistChipDefaults.IconSize)
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(AssistChipDefaults.IconSize)
+                        )
+                    }
                 },
                 trailingIcon = {
                     Text(
-                        text = engine.alias.orEmpty(),
+                        text = engine.engine.alias.orEmpty(),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -127,10 +124,4 @@ private fun FeatureChips(onChipClick: (CustomSearchEngine) -> Unit) {
             )
         }
     }
-}
-
-private fun faviconUrl(engine: CustomSearchEngine): String? {
-    val engineUrl = if (engine.url.startsWith("http")) engine.url else "https://${engine.url}"
-    val domain = Uri.parse(engineUrl).host ?: return null
-    return "https://www.google.com/s2/favicons?sz=64&domain_url=$domain"
 }

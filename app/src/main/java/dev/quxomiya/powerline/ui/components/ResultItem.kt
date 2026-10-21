@@ -5,7 +5,6 @@ import android.widget.ImageView
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,8 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -22,18 +21,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import dev.quxomiya.powerline.search.SearchAction
 import dev.quxomiya.powerline.search.SearchItem
 import dev.quxomiya.powerline.ui.theme.PanelItemShape
@@ -93,52 +88,24 @@ fun ResultItem(
 @Composable
 fun ResultIcon(item: SearchItem, isSelected: Boolean = false) {
     val tintColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.primary
-
-    when (item.action) {
-        is SearchAction.LaunchApp -> {
-            item.icon?.let { drawable ->
-                AppIcon(drawable = drawable)
-            }
-        }
-        is SearchAction.CopyText -> {
-            Icon(
-                imageVector = Icons.Default.Calculate,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = tintColor
-            )
-        }
-        is SearchAction.OpenUrl -> {
-            Box {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = tintColor
-                )
-                if (item.iconUrl != null) {
-                    AsyncImage(
-                        model = faviconRequest(item.iconUrl),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(16.dp)
-                            .clip(CircleShape)
-                    )
-                }
-            }
-        }
-        is SearchAction.ShareText -> {
-            Icon(
-                imageVector = Icons.Default.Share,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = tintColor
-            )
-        }
+    val drawable = item.icon
+    if (drawable != null) {
+        AppIcon(drawable = drawable)
+        return
     }
+    val vector = item.vectorIcon ?: when (item.action) {
+        is SearchAction.LaunchApp -> Icons.Default.Apps
+        is SearchAction.CopyText -> Icons.Default.Calculate
+        is SearchAction.OpenUrl -> Icons.Default.Search
+        is SearchAction.ShareText -> Icons.Default.Share
+    }
+    Icon(
+        imageVector = vector,
+        contentDescription = null,
+        modifier = Modifier.size(40.dp),
+        tint = tintColor
+    )
 }
-
 
 @Composable
 fun AppIcon(drawable: Drawable, size: Dp = 40.dp) {
@@ -154,16 +121,4 @@ fun AppIcon(drawable: Drawable, size: Dp = 40.dp) {
         },
         modifier = Modifier.size(size)
     )
-}
-
-// The overlay window can fall back to software rendering, which cannot draw hardware bitmaps
-@Composable
-fun faviconRequest(url: String?): ImageRequest {
-    val context = LocalContext.current
-    return remember(url) {
-        ImageRequest.Builder(context)
-            .data(url)
-            .allowHardware(false)
-            .build()
-    }
 }

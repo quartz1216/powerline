@@ -1,13 +1,9 @@
 package dev.quxomiya.powerline.data
 
-import dev.quxomiya.powerline.domain.models.ResultType
-
+// One app launch from Powerline. Only app launches are recorded: they feed the standby
+// "recent apps" row and the frecency bonus in search.
 data class HistoryItem(
-    val id: String, // package name or special ID
-    val type: ResultType,
-    val title: String,
-    val subtitle: String? = null,
-    val payload: String? = null,
-    val timestamp: Long,
-    val faviconUrl: String? = null
+    val packageName: String,
+    val className: String? = null,
+    val timestamp: Long
 )

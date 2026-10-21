@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shortcut
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import dev.quxomiya.powerline.search.SearchItem
+import dev.quxomiya.powerline.utils.ActionExecutor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,6 +121,18 @@ fun AppActionMenu(
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     }
                     context.startActivity(intent)
+                    onDismissRequest()
+                }
+            )
+
+            ListItem(
+                headlineContent = { Text("Share") },
+                leadingContent = { Icon(Icons.Default.Share, contentDescription = null) },
+                modifier = Modifier.clickable {
+                    ActionExecutor.shareText(
+                        context,
+                        "${item.title}\nhttps://play.google.com/store/apps/details?id=$packageName"
+                    )
                     onDismissRequest()
                 }
             )

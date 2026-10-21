@@ -135,8 +135,7 @@ class SearchOverlay(private val service: AccessibilityService) {
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            // Hardware acceleration is off by default for service windows; Coil's hardware bitmaps
-            // (favicons) crash under software rendering
+            // Hardware acceleration is off by default for service windows
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             PixelFormat.TRANSLUCENT

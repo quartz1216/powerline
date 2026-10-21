@@ -5,8 +5,8 @@ import java.text.Normalizer
 // Usage data read once per search
 data class RankingSignals(
     val favoriteApps: Set<String> = emptySet(),
-    // Package name -> launch weight (0–100, see UserDataRepository.recordAppLaunch)
-    val appWeights: Map<String, Int> = emptyMap()
+    // Package name -> time-decayed launch count (see UserDataRepository.getAppFrecency)
+    val appFrecency: Map<String, Double> = emptyMap()
 )
 
 object SearchRanker {
@@ -18,20 +18,20 @@ object SearchRanker {
     const val FUZZY = 200
 
     // A favorite outranks one match tier, frecency at most one
-    private const val FAVORITE_BONUS = 300
-    private const val WEIGHT_MULTIPLIER = 2
+    const val FAVORITE_BONUS = 300
+    const val FRECENCY_PER_LAUNCH = 40
+    const val MAX_FRECENCY_BONUS = 200
 
     private val wordSeparator = Regex("[^\\p{L}\\p{N}]+")
 
-    fun score(item: SearchItem, request: SearchRequest, signals: RankingSignals): Int {
+    // Provider score (match tier for apps) plus favorite and frecency bonuses for apps
+    fun score(item: SearchItem, signals: RankingSignals): Int {
         var score = item.score
-        if (item.rankByMatch) {
-            score += (listOf(item.title) + item.keywords).maxOf { match(request, normalize(it)) }
-        }
         val action = item.action
         if (action is SearchAction.LaunchApp) {
             if (action.packageName in signals.favoriteApps) score += FAVORITE_BONUS
-            score += (signals.appWeights[action.packageName] ?: 0) * WEIGHT_MULTIPLIER
+            val frecency = signals.appFrecency[action.packageName] ?: 0.0
+            score += (frecency * FRECENCY_PER_LAUNCH).toInt().coerceAtMost(MAX_FRECENCY_BONUS)
         }
         return score
     }
