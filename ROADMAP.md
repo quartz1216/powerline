@@ -57,7 +57,7 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | G5 | **機能の再構築** — Apps / Calculator / Web / Share を Provider で作り直す（Recents / System は Provider にしない） | ⬜ Phase 5 |
 | G6 | **設定・バックアップを持たない** — 設定の永続化と JSON を削除 | 🟡 ほぼ完了（旧キーの起動時削除が残り） |
 | G7 | **品質とプライバシー** — キーボード操作、IME、アクセシビリティ、OEM 対策、説明責任 | 🟡 一部 |
-| G8 | **Don't Ask User** — システム権限画面以外で、設定・移行・バックアップ・同意を質問しない | 🟡 ほぼ完了（Welcome の簡素化が残り） |
+| G8 | **Don't Ask User** — システム権限画面以外で、設定・移行・バックアップ・同意を質問しない | ✅ 完了（Welcome は削除） |
 
 ### 非ゴール（V2 ではやらない）
 
@@ -80,9 +80,8 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 
 | ファイル | 現在の役割 | 残作業 |
 |---|---|---|
-| `MainActivity.kt` | LAUNCHER のみ。`StatusScreen` を表示。`onboarding_completed` が false なら `WelcomeActivity` へ | Welcome 振り分けを権限状態ベースに（Phase 6） |
+| `MainActivity.kt` | LAUNCHER のみ。常に `StatusScreen` を表示（Welcome は削除済み） | — |
 | `ui/StatusScreen.kt` | 2 ペイン（縦は縦積み、横は左右）。ロゴ + 状態 / Permissions チップ（Accessibility・Power option）/ Alt+Space が効かない場合の案内 / About | PRIVACY.md へのリンク（Phase 7） |
-| `WelcomeActivity.kt` | 3 ページ（Welcome / アプリの役割 / Alt+Space と権限） | 権限が有効ならスキップ、ページ削減（Phase 6） |
 | `services/StatusBarAccessibilityService.kt` | Alt+Space の検出（デバウンス付き）と `SearchOverlay` の表示切り替え。前面アプリが変わったら閉じる（IME は除外） | — |
 | `overlay/SearchOverlay.kt` | `TYPE_ACCESSIBILITY_OVERLAY` ウィンドウに `SearchScreen` を載せる。独自の Lifecycle / ViewModelStore / SavedState。Esc・Back・背景タップで閉じ、閉じるときは 150ms フェード | — |
 | `ui/SearchScreen.kt` / `ui/StandbyContent.kt` / `ui/StandbyGrid.kt` | 検索パネル。空クエリ時は待機状態（エンジンチップ、最近のアプリ最大 8、全アプリ）、入力時は結果リスト | Tab でのセクション移動（Phase 7） |
@@ -91,7 +90,7 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | `domain/SearchEngine.kt` | エイリアス一致なら Web のみ、それ以外は全プラグインを並列実行して `flatten()` | `SearchPipeline` に置き換え（Phase 4） |
 | `plugins/Plugin.kt` / `PluginManager.kt` / `plugins/impl/*` | V1 のプラグイン（AppLauncher / Calculator / Recents / Share / System / WebSearch）。設定画面と Advanced ゲートは削除済み | 全削除。Apps / Calculator / Web / Share のみ Provider で再実装し、Recents / System は廃止（Phase 5） |
 | `utils/ActionExecutor.kt` | `pluginId` から実行先を逆引き | `SearchAction` ベースに（Phase 4） |
-| `data/UserDataRepository.kt` | `history` / `favorite_apps` / `app_weights` / `onboarding_completed` のみ保持 | `onboarding_completed` の廃止（Phase 6） |
+| `data/UserDataRepository.kt` | `history` / `favorite_apps` / `app_weights` のみ保持 | 旧キーの起動時削除（Phase 6） |
 | `data/PowerlineDefaults.kt` | 固定値（背景タップで閉じる、Recents 5 件、待機状態の最近のアプリ 8 件、検索エンジン 7 種） | Recents 廃止に合わせて `MAX_RECENT_ITEMS` を削除（Phase 5） |
 | `ui/theme/Theme.kt` / `Color.kt` | Android 12+ は `dynamicLight/DarkColorScheme`、11 以下は #4CDC8F から生成したブランド配色 | — |
 
@@ -102,7 +101,6 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 - **履歴が結果型依存**: `ResultType` と `pluginId` に依存し、Recents が他プラグインの代わりに結果を組み立てている。
 - **favicon をネットワークから取得**: Web 結果とエンジンチップの favicon を `google.com/s2/favicons` から読み込んでいる。「検索時はネットワークアクセスしない」方針と食い違うため、Phase 5 で扱いを決める（第 8 章）。
 - **旧設定キーがディスクに残る**: V1 の SharedPreferences キーを削除していない（Phase 6）。
-- **Welcome が `onboarding_completed` 依存**: 権限が有効でも初回は案内を挟む（Phase 6）。
 - **リリース準備が未着手**: `README.md` / `PRIVACY.md` がない。`versionCode = 1` / `versionName = "1.0"`、`isMinifyEnabled = false`（Phase 7）。
 
 ---
@@ -123,7 +121,6 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | コンポーネント | V2 の役割 | Manifest | 状態 |
 |---|---|---|---|
 | `MainActivity` | 状態 / 権限 / About。設定は持たない | `LAUNCHER` のみ。`exported=true`、`singleTask` | ✅ |
-| `WelcomeActivity` | 権限が無効なときだけ表示する権限案内 | `exported=false` | 🟡 |
 | `StatusBarAccessibilityService` | Alt+Space のキーフィルタと検索オーバーレイのホスト | `canRetrieveWindowContent=false`、`flagRequestFilterKeyEvents` のみ | ✅ |
 | `SearchOverlay` | 検索サーフェス（Activity ではなくウィンドウ） | なし（サービスが `WindowManager` で追加） | ✅ |
 | `OverlayActivity` / `SettingsActivity` / `PurchaseActivity` | 廃止 | エントリ削除 | ✅ |
@@ -224,7 +221,7 @@ MainActivity
 
 - Provider の ON/OFF、履歴設定、バックアップ、テーマ、Overlay、Launcher の設定は持たない。
 - 旧 General / Overlay Settings / Appearance / Additional Settings / Powerline Functions は**復活させない**。
-- 「Powerline はホームアプリではなくなった」案内は Phase 3 で置いたが、状態画面の刷新（`3dae973`）で外した。案内は Welcome と README に置く。
+- 「Powerline はホームアプリではなくなった」案内は Phase 3 で置いたが、状態画面の刷新（`3dae973`）で外した。案内は README に置く（Welcome は削除済み）。
 
 ### 4.6 設定・データ・バックアップ
 
@@ -237,7 +234,7 @@ MainActivity
   - 待機状態: 最近のアプリ最大 8 件
   - 検索: すべての Provider を有効、履歴 ON
   - 検索エンジン: Google（既定）/ YouTube Music `ytm` / Maps `maps` / X `x` / YouTube `yt` / Wikipedia `wiki` / Play Store `play`
-- V1 の設定キー（`is_advanced`, `debug_mode`, `status_bar*`, `bottom_trigger*`, `hide_triggers_on_keyboard`, `material_you_enabled`, `app_theme`, `custom_accent_color`, `overlay_*`, `home_screen_text`, `max_recent_items`, `history_enabled`, `calculator_enabled`, `share_enabled`, `share_alias`, `enable_weight_search`, `enable_package_search`, `aliases`, `hidden_apps`, `custom_search_engines`）は**起動時に削除**する（Phase 6）。移行はしない。
+- V1 の設定キー（`is_advanced`, `debug_mode`, `status_bar*`, `bottom_trigger*`, `hide_triggers_on_keyboard`, `material_you_enabled`, `app_theme`, `custom_accent_color`, `overlay_*`, `home_screen_text`, `max_recent_items`, `history_enabled`, `calculator_enabled`, `share_enabled`, `share_alias`, `enable_weight_search`, `enable_package_search`, `aliases`, `hidden_apps`, `custom_search_engines`）と `onboarding_completed` は**起動時に削除**する（Phase 6）。移行はしない。
 
 ---
 
@@ -427,15 +424,14 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 - [x] 状態画面（Alt+Space の状態、権限、使い方、About）— Phase 3 で完了。
 - [x] Welcome からテーマ選択・ホーム設定・下部トリガー調整・広告同意・バックアップ確認を削除 — Phase 1–2 で完了。
 - [x] AdMob / UMP の残骸を削除 — Phase 2 で完了。
-- [ ] `WelcomeActivity` の振り分けを `onboarding_completed` から**アクセシビリティ権限の状態**に変える。権限が有効なら Welcome を挟まない。
-- [ ] Welcome を「コンセプト」「権限有効化 + プライバシー説明」の 2 ページに絞る（「ホームアプリではなくなった」案内はここに含める）。
-- [ ] `onboarding_completed` キーと `UserDataRepository` の該当 API を削除。
+- [x] `WelcomeActivity`（ランディング / チュートリアル）を削除。アプリアイコンからは常に状態画面を開く。
+- [x] `UserDataRepository` の `onboarding_completed` API を削除（ディスク上のキーは旧キー削除で消す）。
 - [ ] 第 4.6 節の V1 設定キーを起動時に削除する（ユーザーに確認しない）。
 - [ ] アプリ管理下の旧 JSON ファイルを起動時に削除する。
 
 **完了条件**
 
-- アクセシビリティ権限が有効なら、初回起動でも Welcome を挟まない。
+- 初回起動でも Welcome を挟まず、状態画面を開く。
 - `powerline_settings` に `history` / `favorite_apps` / `app_weights` 以外のキーが残らない。
 - システム権限画面以外に、ユーザーへ質問する画面がない。
 
@@ -544,7 +540,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 | 検索がサービス内のウィンドウになった | サービスが落ちると検索も使えない。メモリはサービスの寿命に引きずられる | オーバーレイを閉じたら ViewModel / Lifecycle を破棄する。kill 対策は上と同じ |
 | OEM のウィンドウ管理（デスクトップモード等） | 表示崩れ | `TYPE_ACCESSIBILITY_OVERLAY` で回避済み。HyperOS で継続確認 |
 | 設定を持たない | 好みに合わせられない | 固定デフォルトと割り切る |
-| ホームアプリではなくなる | 既存ユーザーのホームが空になる | Welcome と README で明示 |
+| ホームアプリではなくなる | 既存ユーザーのホームが空になる | README で明示 |
 | 検索コアの作り直しで regression | 主要機能が動かない | アダプタ経由で Provider 単位に移行し、都度手動確認 |
 | タッチ端末で使えない | ユーザー層が限定される | V2 はキーボード前提。タッチの導線は V2.1 で検討 |
 
@@ -579,7 +575,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 - [ ] 検索パイプライン（解析・並列・タイムアウト・ランキング・重複排除）が動作する。
 - [ ] Apps / Calculator / Web / Share が新 Provider で動作する（Recents / System の Provider は存在しない）。
 - [ ] V1 の設定キーと `onboarding_completed` がディスクに残らない。
-- [ ] アクセシビリティ権限が有効なら、初回起動でも Welcome を挟まない。
+- [x] 初回起動でも Welcome を挟まない。
 - [ ] システム権限画面以外に、ユーザーへ質問する画面がない。
 - [ ] 人間による手動テストマトリクスでクラッシュ / ANR がない。
 - [ ] `README.md` / `PRIVACY.md` があり、状態画面からリンクされている。
@@ -607,8 +603,8 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 
 | ファイル | V2 の変更 | 状態 |
 |---|---|---|
-| `MainActivity.kt` | 状態 / 権限 / About。Welcome 振り分けを権限ベースに | 🟡 |
-| `WelcomeActivity.kt` | 権限が無効なときだけ表示する 2 ページ構成に | 🟡 |
+| `MainActivity.kt` | 状態 / 権限 / About | ✅ |
+| `WelcomeActivity.kt` | 削除 | ✅ |
 | `services/StatusBarAccessibilityService.kt` | Alt+Space のキーフィルタ + オーバーレイのホスト | ✅ |
 | `overlay/SearchOverlay.kt` | 新規。検索ウィンドウ | ✅ |
 | `ui/StatusScreen.kt` | 新規。状態 / 権限 / About | ✅（PRIVACY リンクのみ残り） |
@@ -619,7 +615,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 | `plugins/Plugin.kt` / `PluginManager.kt` / `plugins/impl/*` | 削除し `search/` 以下に Apps / Calculator / Web / Share の Provider を新規実装。Recents / System は作り直さない | ⬜ |
 | `domain/models/SearchResult.kt` | 削除し `SearchItem` へ | ⬜ |
 | `utils/ActionExecutor.kt` | `SearchAction` ベースに | ⬜ |
-| `data/UserDataRepository.kt` | `onboarding_completed` を削除、旧キーの起動時削除 | ⬜ |
+| `data/UserDataRepository.kt` | `onboarding_completed` API を削除、旧キーの起動時削除 | 🟡 |
 | `data/PowerlineDefaults.kt` | 固定値の集約 | ✅ |
 | `AndroidManifest.xml` | HOME / ASSIST / QS / 広告 / 廃止 Activity を削除 | ✅ |
 | `res/xml/accessibility_service_config.xml` | キー検出のみに最小化 | ✅ |

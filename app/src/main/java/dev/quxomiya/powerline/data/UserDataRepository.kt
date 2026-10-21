@@ -33,16 +33,6 @@ class UserDataRepository(context: Context) {
         prefs.edit().putString("app_weights", json).apply()
     }
 
-    // --- Onboarding ---
-    // Temporary until the Welcome flow is reworked in Phase 6
-    fun getOnboardingCompleted(): Boolean {
-        return prefs.getBoolean("onboarding_completed", false)
-    }
-
-    fun setOnboardingCompleted(completed: Boolean) {
-        prefs.edit().putBoolean("onboarding_completed", completed).apply()
-    }
-
     // --- History ---
 
     private data class LegacyHistoryItem(

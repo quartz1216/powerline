@@ -27,11 +27,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".WelcomeActivity"
-            android:exported="false"
-            android:theme="@style/Theme.CommandLauncher" />
-
         <!-- Status Bar Accessibility Service -->
         <service
             android:name=".services.StatusBarAccessibilityService"
