@@ -32,12 +32,8 @@ class StandbyGrid(
         return (index + delta).coerceIn(0, size - 1)
     }
 
-    // Position in the LazyVerticalGrid, which also holds section headers and a divider
+    // Position in the LazyVerticalGrid, which also holds a divider after the recent row
     fun gridItemIndex(index: Int): Int {
-        return if (recentCount > 0) {
-            if (index < recentCount) index + 1 else index + 3
-        } else {
-            index + 1
-        }
+        return if (recentCount > 0 && index >= recentCount) index + 1 else index
     }
 }

@@ -33,7 +33,7 @@ import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.domain.models.CustomSearchEngine
 import com.quartz.powerline.ui.components.AppTile
 
-// Empty-query state of the overlay: feature chips, recent apps row, all apps by name
+// Empty-query state of the overlay: feature chips, recent apps row, divider, all apps by name
 @Composable
 fun StandbyContent(
     recentApps: List<AppInfo>,
@@ -62,9 +62,6 @@ fun StandbyContent(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             if (recentApps.isNotEmpty()) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    SectionHeader("Recent")
-                }
                 itemsIndexed(recentApps, key = { _, app -> "recent:${app.packageName}:${app.className}" }) { index, app ->
                     AppTile(
                         app = app,
@@ -81,9 +78,6 @@ fun StandbyContent(
                 }
             }
 
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                SectionHeader("All apps")
-            }
             itemsIndexed(allApps, key = { _, app -> "all:${app.packageName}:${app.className}" }) { index, app ->
                 AppTile(
                     app = app,
@@ -131,18 +125,6 @@ private fun FeatureChips(onChipClick: (CustomSearchEngine) -> Unit) {
             )
         }
     }
-}
-
-@Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 8.dp)
-    )
 }
 
 private fun faviconUrl(engine: CustomSearchEngine): String? {

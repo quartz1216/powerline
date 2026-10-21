@@ -37,9 +37,9 @@ class StandbyGridTest {
     }
 
     @Test
-    fun gridItemIndexSkipsHeadersAndDivider() {
-        assertEquals(1, grid.gridItemIndex(0))
-        assertEquals(6, grid.gridItemIndex(3))
-        assertEquals(1, StandbyGrid(0, 4, 5).gridItemIndex(0))
+    fun gridItemIndexSkipsDivider() {
+        assertEquals(0, grid.gridItemIndex(0))
+        assertEquals(4, grid.gridItemIndex(3))
+        assertEquals(0, StandbyGrid(0, 4, 5).gridItemIndex(0))
     }
 }

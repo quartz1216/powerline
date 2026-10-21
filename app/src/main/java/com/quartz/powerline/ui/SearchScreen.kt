@@ -43,8 +43,8 @@ import com.quartz.powerline.ui.components.ResultItem
 import com.quartz.powerline.ui.viewmodel.SearchViewModel
 
 private val PanelMaxWidth = 720.dp
-// Search field + chips + about six rows of app tiles (~100dp each)
-private val PanelMaxHeight = 760.dp
+// Search field + chips + recent row + three rows of all apps (the fourth just hidden)
+private val PanelMaxHeight = 560.dp
 private val AppTileMinWidth = 96.dp
 
 @Composable
