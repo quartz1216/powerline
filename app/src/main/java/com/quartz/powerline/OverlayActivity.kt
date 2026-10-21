@@ -21,6 +21,11 @@ import com.quartz.powerline.ui.viewmodel.MainViewModel
 import com.quartz.powerline.utils.ActionExecutor
 
 class OverlayActivity : ComponentActivity() {
+
+    companion object {
+        var isVisible = false
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -84,11 +89,27 @@ class OverlayActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        isVisible = true
         val viewModel = ViewModelProvider(
             this,
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[MainViewModel::class.java]
         applyWindowAttributes(viewModel)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        isVisible = false
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra("TOGGLE_OVERLAY", false)) {
+            if (isVisible) {
+                finish()
+            }
+        }
+        setIntent(intent)
     }
 
     private fun applyWindowAttributes(viewModel: MainViewModel) {

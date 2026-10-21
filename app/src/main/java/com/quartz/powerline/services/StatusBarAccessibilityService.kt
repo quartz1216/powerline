@@ -9,6 +9,7 @@ import android.graphics.PixelFormat
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -287,6 +288,23 @@ class StatusBarAccessibilityService : AccessibilityService(), SharedPreferences.
 
     override fun onInterrupt() {
         // No-op
+    }
+
+    override fun onKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_SPACE && event.isAltPressed) {
+            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                val intent = Intent(this, OverlayActivity::class.java)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                intent.putExtra("TOGGLE_OVERLAY", true)
+                startActivity(intent)
+                return true
+            }
+            // Consume UP event as well to prevent passing Space to other apps
+            if (event.action == KeyEvent.ACTION_UP) {
+                return true
+            }
+        }
+        return super.onKeyEvent(event)
     }
 
     override fun onDestroy() {
