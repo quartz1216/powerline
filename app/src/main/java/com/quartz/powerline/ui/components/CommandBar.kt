@@ -1,22 +1,23 @@
 package com.quartz.powerline.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -24,11 +25,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.TextFieldValue
 
-@OptIn(ExperimentalMaterial3Api::class)
+// Borderless search field used as the header of the overlay panel
 @Composable
 fun CommandBar(
     query: String,
@@ -37,6 +38,9 @@ fun CommandBar(
     onArrowDown: () -> Unit,
     onArrowUp: () -> Unit,
     modifier: Modifier = Modifier,
+    // Return true to consume the key (e.g. grid navigation while the query is empty)
+    onArrowLeft: () -> Boolean = { false },
+    onArrowRight: () -> Boolean = { false },
     focusKey: Any = Unit
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -45,9 +49,16 @@ fun CommandBar(
         focusRequester.requestFocus()
     }
 
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
+    // Keep the cursor at the end when the query is replaced from outside (e.g. a feature chip)
+    var fieldValue by remember { mutableStateOf(TextFieldValue(query, TextRange(query.length))) }
+    val value = if (fieldValue.text == query) fieldValue else TextFieldValue(query, TextRange(query.length))
+
+    TextField(
+        value = value,
+        onValueChange = {
+            fieldValue = it
+            if (it.text != query) onQueryChange(it.text)
+        },
         modifier = modifier
             .fillMaxWidth()
             .focusRequester(focusRequester)
@@ -62,6 +73,8 @@ fun CommandBar(
                             onArrowUp()
                             true
                         }
+                        Key.DirectionLeft -> onArrowLeft()
+                        Key.DirectionRight -> onArrowRight()
                         Key.Enter -> {
                             onEnter()
                             true
@@ -73,39 +86,31 @@ fun CommandBar(
                 }
             },
         placeholder = {
-            Text(
-                "Search apps, web, math...",
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
+            Text("Search apps, web, math...", style = MaterialTheme.typography.titleLarge)
+        },
+        textStyle = MaterialTheme.typography.titleLarge,
+        leadingIcon = {
+            Icon(
+                Icons.Default.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
-        textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
-        leadingIcon = {
-            IconButton(
-                onClick = {},
-                enabled = false,
-                modifier = Modifier.padding(end = 8.dp)
-            ) {
-                Icon(Icons.Default.Search, contentDescription = "Search")
-            }
-        },
         trailingIcon = {
-            IconButton(
-                onClick = { onQueryChange("") },
-                enabled = query.isNotEmpty(),
-                modifier = Modifier.padding(start = 8.dp)
-            ) {
-                Icon(Icons.Default.Close, contentDescription = "Clear")
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Default.Close, contentDescription = "Clear")
+                }
             }
         },
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
         keyboardActions = KeyboardActions(onGo = { onEnter() }),
-        colors = TextFieldDefaults.outlinedTextFieldColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline
-        ),
-        shape = MaterialTheme.shapes.extraLarge
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+        )
     )
 }

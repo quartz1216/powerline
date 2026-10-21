@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
@@ -129,7 +130,7 @@ fun ResultIcon(result: SearchResult, isSelected: Boolean = false) {
 
 
 @Composable
-fun AppIcon(drawable: Drawable) {
+fun AppIcon(drawable: Drawable, size: Dp = 40.dp) {
     AndroidView(
         factory = { context ->
             ImageView(context).apply {
@@ -140,6 +141,6 @@ fun AppIcon(drawable: Drawable) {
         update = { view ->
             view.setImageDrawable(drawable)
         },
-        modifier = Modifier.size(40.dp)
+        modifier = Modifier.size(size)
     )
 }

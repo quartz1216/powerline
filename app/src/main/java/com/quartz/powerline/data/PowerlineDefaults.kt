@@ -4,11 +4,10 @@ import com.quartz.powerline.domain.models.CustomSearchEngine
 
 // V2 keeps no user settings; these fixed values replace the old preferences.
 object PowerlineDefaults {
-    const val OVERLAY_DIM_AMOUNT = 0.5f
-    const val OVERLAY_BLUR_RADIUS = 16
     const val OVERLAY_CLOSE_ON_BACKGROUND_TAP = true
 
     const val MAX_RECENT_ITEMS = 5
+    const val MAX_STANDBY_RECENT_APPS = 8
 
     const val ENABLE_WEIGHT_SEARCH = true
     const val ENABLE_PACKAGE_SEARCH = true

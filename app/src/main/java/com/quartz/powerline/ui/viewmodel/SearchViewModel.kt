@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.quartz.powerline.data.UserDataRepository
 import com.quartz.powerline.domain.AppRepository
 import com.quartz.powerline.domain.SearchEngine
+import com.quartz.powerline.data.PowerlineDefaults
 import com.quartz.powerline.domain.models.AppInfo
+import com.quartz.powerline.domain.models.ResultType
 import com.quartz.powerline.domain.models.SearchResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -23,6 +25,10 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _visibleApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val visibleApps: StateFlow<List<AppInfo>> = _visibleApps.asStateFlow()
+
+    // Apps launched from Powerline, most recent first (shown in the standby state)
+    private val _recentApps = MutableStateFlow<List<AppInfo>>(emptyList())
+    val recentApps: StateFlow<List<AppInfo>> = _recentApps.asStateFlow()
 
     val pluginManager = com.quartz.powerline.plugins.PluginManager(userDataRepository, _visibleApps)
     private val searchEngine = SearchEngine(application, pluginManager)
@@ -46,6 +52,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             val apps = appRepository.getInstalledApps()
             _visibleApps.value = apps
+            refreshRecentApps()
             // Initial search (empty)
             performSearch(_query.value)
         }
@@ -62,8 +69,32 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     // Called when the overlay is re-shown: start from an empty query and re-request focus
     fun resetForOpen() {
         onQueryChange("")
+        refreshRecentApps()
         _openCount.value += 1
     }
+
+    private fun refreshRecentApps() {
+        val appsByPackage = _visibleApps.value.associateBy { it.packageName }
+        _recentApps.value = userDataRepository.getHistory()
+            .asSequence()
+            .filter { it.type == ResultType.APP }
+            .map { it.id }
+            .distinct()
+            .mapNotNull { appsByPackage[it] }
+            .take(PowerlineDefaults.MAX_STANDBY_RECENT_APPS)
+            .toList()
+    }
+
+    fun appResult(app: AppInfo): SearchResult = SearchResult(
+        id = app.packageName,
+        pluginId = "app_launcher",
+        title = app.label,
+        subtitle = app.packageName,
+        icon = app.icon,
+        type = ResultType.APP,
+        packageName = app.packageName,
+        className = app.className
+    )
 
     fun selectNext() {
         val current = _selectedIndex.value
