@@ -9,7 +9,7 @@ import com.quartz.powerline.data.UserDataRepository
 import com.quartz.powerline.ui.StatusScreen
 import com.quartz.powerline.ui.theme.CommandLauncherTheme
 
-// Launcher entry: status / permissions / About. Search lives in OverlayActivity (Alt+Space).
+// Launcher entry: status / permissions / About. Search is the Alt+Space overlay (SearchOverlay).
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

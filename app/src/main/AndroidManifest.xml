@@ -27,15 +27,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Overlay Activity (Transparent): search surface, opened only via Alt+Space -->
-        <activity
-            android:name=".OverlayActivity"
-            android:exported="false"
-            android:excludeFromRecents="true"
-            android:launchMode="singleInstance"
-            android:theme="@style/Theme.CommandLauncher.Overlay"
-            android:windowSoftInputMode="adjustResize|stateAlwaysVisible" />
-
         <activity
             android:name=".WelcomeActivity"
             android:exported="false"
