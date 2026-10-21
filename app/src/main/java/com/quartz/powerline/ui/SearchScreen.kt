@@ -1,6 +1,7 @@
 package com.quartz.powerline.ui
 
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -40,6 +41,7 @@ import com.quartz.powerline.domain.models.SearchResult
 import com.quartz.powerline.ui.components.AppActionMenu
 import com.quartz.powerline.ui.components.CommandBar
 import com.quartz.powerline.ui.components.ResultItem
+import com.quartz.powerline.ui.theme.PanelItemInset
 import com.quartz.powerline.ui.viewmodel.SearchViewModel
 
 private val PanelMaxWidth = 720.dp
@@ -88,8 +90,7 @@ fun SearchScreen(
         // Top of the panel sits where a max-height panel would be vertically centered,
         // so it stays put when the content (standby / results) changes height
         val panelTop = ((maxHeight - PanelMaxHeight) / 2).coerceAtLeast(48.dp)
-        // Grid content padding is 12dp on each side
-        val columns = ((panelWidth - 24.dp) / AppTileMinWidth).toInt().coerceIn(3, 8)
+        val columns = ((panelWidth - PanelItemInset * 2) / AppTileMinWidth).toInt().coerceIn(3, 8)
         // Recent apps fill exactly one row
         val recentApps = recentAppsAll.take(columns)
         val grid = remember(recentApps.size, allApps.size, columns) {
@@ -199,7 +200,8 @@ fun SearchScreen(
                         )
                         LazyColumn(
                             state = listState,
-                            contentPadding = PaddingValues(vertical = 8.dp)
+                            contentPadding = PaddingValues(PanelItemInset),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             itemsIndexed(results) { index, result ->
                                 ResultItem(

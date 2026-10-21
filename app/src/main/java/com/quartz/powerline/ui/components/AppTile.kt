@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.quartz.powerline.domain.models.AppInfo
+import com.quartz.powerline.ui.theme.PanelItemShape
 
 // Icon + label tile for the standby app grid
 @OptIn(ExperimentalFoundationApi::class)
@@ -35,7 +36,7 @@ fun AppTile(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
+            .clip(PanelItemShape)
             .background(containerColor)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 4.dp, vertical = 12.dp),

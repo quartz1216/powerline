@@ -33,6 +33,7 @@ import com.quartz.powerline.domain.models.AppInfo
 import com.quartz.powerline.domain.models.CustomSearchEngine
 import com.quartz.powerline.ui.components.AppTile
 import com.quartz.powerline.ui.components.faviconRequest
+import com.quartz.powerline.ui.theme.PanelItemInset
 
 // Empty-query state of the overlay: feature chips, recent apps row, divider, all apps by name
 @Composable
@@ -58,7 +59,7 @@ fun StandbyContent(
         LazyVerticalGrid(
             columns = GridCells.Fixed(grid.columns),
             state = gridState,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(PanelItemInset),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
