@@ -27,6 +27,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 
 // Borderless search field used as the header of the overlay panel
@@ -104,7 +105,12 @@ fun CommandBar(
             }
         },
         singleLine = true,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+        keyboardOptions = KeyboardOptions(
+            // IME_FLAG_FORCE_ASCII: Japanese IMEs open in direct (alphanumeric) input; the user can still switch
+            keyboardType = KeyboardType.Ascii,
+            autoCorrect = false,
+            imeAction = ImeAction.Go
+        ),
         keyboardActions = KeyboardActions(onGo = { onEnter() }),
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.Transparent,
