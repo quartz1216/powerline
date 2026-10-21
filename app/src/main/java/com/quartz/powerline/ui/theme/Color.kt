@@ -4,7 +4,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-// Material 3 tonal-spot schemes generated from the icon background color (#4CDC8F)
+// Fallback for Android 11 and below: Material 3 tonal-spot schemes generated from the icon background color (#4CDC8F)
 internal val BrandLightColorScheme = lightColorScheme(
     primary = Color(0xFF2B6A46),
     onPrimary = Color(0xFFFFFFFF),
