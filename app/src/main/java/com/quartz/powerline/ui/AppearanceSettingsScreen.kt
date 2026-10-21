@@ -36,7 +36,6 @@ fun AppearanceSettingsScreen(
     var showThemeDropdown by remember { mutableStateOf(false) }
 
     // Read overlay settings
-    val bottomTriggerEnabled by remember { mutableStateOf(viewModel.settingsRepository.getBottomTriggerEnabled()) }
     var dimAmount by remember { mutableStateOf(viewModel.settingsRepository.getOverlayDimAmount()) }
     var blurRadius by remember { mutableStateOf(viewModel.settingsRepository.getOverlayBlurRadius()) }
 
@@ -212,38 +211,36 @@ fun AppearanceSettingsScreen(
                     }
                 }
 
-                if (bottomTriggerEnabled) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("Overlay", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Overlay", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
 
-                    ListItem(
-                        headlineContent = { Text("Background Dim Amount: ${(dimAmount * 100).toInt()}%") },
-                        supportingContent = {
-                            Slider(
-                                value = dimAmount,
-                                onValueChange = { dimAmount = it },
-                                onValueChangeFinished = { viewModel.settingsRepository.setOverlayDimAmount(dimAmount) },
-                                valueRange = 0f..1f
-                            )
-                        },
-                        leadingContent = { Icon(Icons.Default.Opacity, contentDescription = null) }
-                    )
+                ListItem(
+                    headlineContent = { Text("Background Dim Amount: ${(dimAmount * 100).toInt()}%") },
+                    supportingContent = {
+                        Slider(
+                            value = dimAmount,
+                            onValueChange = { dimAmount = it },
+                            onValueChangeFinished = { viewModel.settingsRepository.setOverlayDimAmount(dimAmount) },
+                            valueRange = 0f..1f
+                        )
+                    },
+                    leadingContent = { Icon(Icons.Default.Opacity, contentDescription = null) }
+                )
 
-                    ListItem(
-                        headlineContent = { Text("Background Blur Amount: $blurRadius px") },
-                        supportingContent = {
-                            Slider(
-                                value = blurRadius.toFloat(),
-                                onValueChange = { blurRadius = it.toInt() },
-                                onValueChangeFinished = { viewModel.settingsRepository.setOverlayBlurRadius(blurRadius) },
-                                valueRange = 0f..50f,
-                                steps = 49
-                            )
-                        },
-                        leadingContent = { Icon(Icons.Default.BlurOn, contentDescription = null) }
-                    )
-                }
+                ListItem(
+                    headlineContent = { Text("Background Blur Amount: $blurRadius px") },
+                    supportingContent = {
+                        Slider(
+                            value = blurRadius.toFloat(),
+                            onValueChange = { blurRadius = it.toInt() },
+                            onValueChangeFinished = { viewModel.settingsRepository.setOverlayBlurRadius(blurRadius) },
+                            valueRange = 0f..50f,
+                            steps = 49
+                        )
+                    },
+                    leadingContent = { Icon(Icons.Default.BlurOn, contentDescription = null) }
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("Launcher", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)

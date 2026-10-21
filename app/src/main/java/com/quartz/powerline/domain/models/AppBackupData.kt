@@ -9,11 +9,6 @@ data class AppBackupData(
     val aliases: Map<String, String>,
     val maxRecentItems: Int,
     val history: List<HistoryItem>,
-    val statusBarTapEnabled: Boolean = false, // Deprecated / Reused as general toggle? No, clearer to keep for legacy import.
-    val statusBarTriggerWidthPercent: Int = 30, // Deprecated
-    val bottomTriggerEnabled: Boolean = false,
-    val bottomTriggerCenterGapPercent: Int = 40,
-    val bottomTriggerHeightDp: Int = 0, // 0 = Auto
     val overlayCloseOnBackgroundTap: Boolean? = true,
     val overlayDimAmount: Float? = 0.5f,
     val overlayBlurRadius: Int? = 0,
@@ -24,7 +19,6 @@ data class AppBackupData(
     val enableWeightSearch: Boolean? = true,
     val enablePackageSearch: Boolean? = true,
     val homeScreenText: String? = null,
-    val hideTriggersOnKeyboard: Boolean? = false,
     val customSearchEngines: List<CustomSearchEngine>? = emptyList(),
     val materialYouEnabled: Boolean? = true,
 

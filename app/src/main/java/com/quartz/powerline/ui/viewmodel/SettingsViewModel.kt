@@ -15,7 +15,6 @@ import kotlinx.coroutines.launch
 
 enum class SettingsNav {
     MAIN,
-    OVERLAY,
     ADDITIONAL,
     APPEARANCE, // Keeping for now if needed, but might be merged into Overlay
     PERMISSIONS, // Keeping for now
@@ -104,25 +103,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _currentNav.value = SettingsNav.PLUGIN
     }
 
-    fun openOverlaySettings() {
-        _currentNav.value = SettingsNav.OVERLAY
-    }
-
     fun openAdditionalSettings() {
         _currentNav.value = SettingsNav.ADDITIONAL
-    }
-
-    fun setDebugMode(enabled: Boolean) {
-        settingsRepository.setDebugMode(enabled)
     }
 
     fun navigateBack(): Boolean {
         return if (_currentNav.value != SettingsNav.MAIN) {
             _currentNav.value = SettingsNav.MAIN
             _selectedPluginId.value = null
-            // Also turn off debug mode when navigating back, just in case
-            // (though UI DisposableEffect should handle it)
-            setDebugMode(false)
             true
         } else {
             false

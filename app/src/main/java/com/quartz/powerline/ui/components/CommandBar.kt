@@ -36,11 +36,12 @@ fun CommandBar(
     onEnter: () -> Unit,
     onArrowDown: () -> Unit,
     onArrowUp: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    focusKey: Any = Unit
 ) {
     val focusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(focusKey) {
         focusRequester.requestFocus()
     }
 

@@ -54,6 +54,7 @@ fun LauncherScreen(
     val query by viewModel.query.collectAsState()
     val results by viewModel.results.collectAsState()
     val selectedIndex by viewModel.selectedIndex.collectAsState()
+    val openCount by viewModel.openCount.collectAsState()
     val listState = rememberLazyListState()
     var longPressedResult by remember { mutableStateOf<SearchResult?>(null) }
     val homeScreenText by viewModel.homeScreenText.collectAsState()
@@ -94,7 +95,8 @@ fun LauncherScreen(
                         }
                     },
                     onArrowDown = viewModel::selectNext,
-                    onArrowUp = viewModel::selectPrevious
+                    onArrowUp = viewModel::selectPrevious,
+                    focusKey = openCount
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))

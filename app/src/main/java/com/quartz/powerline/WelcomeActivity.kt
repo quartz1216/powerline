@@ -15,8 +15,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.*
@@ -62,6 +61,8 @@ class WelcomeActivity : ComponentActivity() {
     }
 }
 
+private const val WELCOME_PAGE_COUNT = 4
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WelcomeScreen(
@@ -70,7 +71,7 @@ fun WelcomeScreen(
     onFinish: () -> Unit
 ) {
     var initialPage by rememberSaveable { mutableStateOf(0) }
-    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { 6 })
+    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { WELCOME_PAGE_COUNT })
 
     // Update the saved initialPage whenever the page changes, so if the activity restarts,
     // we start from the last viewed page.
@@ -120,24 +121,6 @@ fun WelcomeScreen(
         }
     }
 
-    // Manage Debug Mode for Page 5 (Handle Adjustment)
-    // We only enable debug mode when we are ON page 4 (index 4) (0-indexed).
-    LaunchedEffect(pagerState.currentPage) {
-        if (pagerState.currentPage == 4) {
-            settingsRepository.setDebugMode(true)
-        } else {
-            // Ensure we turn it off if they swipe back or forward (though forward ends activity)
-            settingsRepository.setDebugMode(false)
-        }
-    }
-
-    // Clean up on exit
-    DisposableEffect(Unit) {
-        onDispose {
-            settingsRepository.setDebugMode(false)
-        }
-    }
-
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -158,29 +141,12 @@ fun WelcomeScreen(
                     1 -> AppRolePage(
                         onNext = { scope.launch { pagerState.animateScrollToPage(2) } }
                     )
-                    2 -> SetHomePage(
+                    2 -> AltSpacePage(
+                        isAccessibilityGranted = isAccessibilityGranted,
                         onSkip = { scope.launch { pagerState.animateScrollToPage(3) } },
                         onNext = { scope.launch { pagerState.animateScrollToPage(3) } }
                     )
-                    3 -> SetOverlayPage(
-                        isAccessibilityGranted = isAccessibilityGranted,
-                        onSkip = {
-                            // Disable features if skipped
-                            settingsRepository.setBottomTriggerEnabled(false)
-                            scope.launch { pagerState.animateScrollToPage(5) }
-                        },
-                        onNext = {
-                            // Enable features
-                            settingsRepository.setBottomTriggerEnabled(true)
-                            // Default config if needed
-                            scope.launch { pagerState.animateScrollToPage(4) }
-                        }
-                    )
-                    4 -> SetHandlePage(
-                        settingsRepository = settingsRepository,
-                        onNext = { scope.launch { pagerState.animateScrollToPage(5) } }
-                    )
-                    5 -> SupportPage(
+                    3 -> SupportPage(
                         consentManager = consentManager,
                         activity = activity,
                         onFinish = onFinish
@@ -195,7 +161,7 @@ fun WelcomeScreen(
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                repeat(6) { iteration ->
+                repeat(WELCOME_PAGE_COUNT) { iteration ->
                     val color = if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
                     Box(
                         modifier = Modifier
@@ -261,7 +227,7 @@ fun AppRolePage(onNext: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = "Powerline Launcher allows you to access apps, settings, and tools instantly from anywhere.\n\n" +
-                   "Just type what you need, or use the overlay trigger to launch your apps without leaving your current screen.",
+                   "Press Alt+Space and type what you need to launch your apps without leaving your current screen.",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Start
         )
@@ -273,54 +239,7 @@ fun AppRolePage(onNext: () -> Unit) {
 }
 
 @Composable
-fun SetHomePage(onSkip: () -> Unit, onNext: () -> Unit) {
-    val context = LocalContext.current
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(Icons.Default.Home, null, modifier = Modifier.size(80.dp))
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = "Set as Default Home",
-            style = MaterialTheme.typography.headlineMedium,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "To get the best experience, set Powerline Launcher as your default home app.",
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(48.dp))
-
-        Button(
-            onClick = {
-                val intent = Intent(Settings.ACTION_HOME_SETTINGS)
-                context.startActivity(intent)
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Change Home Settings")
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-             TextButton(onClick = onSkip) {
-                Text("Skip")
-            }
-            Button(onClick = onNext) {
-                Text("Next")
-            }
-        }
-    }
-}
-
-@Composable
-fun SetOverlayPage(
+fun AltSpacePage(
     isAccessibilityGranted: Boolean,
     onSkip: () -> Unit,
     onNext: () -> Unit
@@ -333,16 +252,17 @@ fun SetOverlayPage(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(Icons.Default.Layers, null, modifier = Modifier.size(80.dp))
+        Icon(Icons.Default.Keyboard, null, modifier = Modifier.size(80.dp))
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Enable Overlay",
+            text = "Alt+Space",
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Access the launcher from any app using corner triggers.",
+            text = "Press Alt+Space from any app to open Powerline.\n\n" +
+                   "Powerline uses the accessibility service only to detect this shortcut. It does not read screen content or record keystrokes.",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center
         )
@@ -370,62 +290,14 @@ fun SetOverlayPage(
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
              TextButton(onClick = onSkip) {
-                Text("Don't use Overlays")
+                Text("Skip")
             }
             Button(
                 onClick = onNext,
                 enabled = isAccessibilityGranted
             ) {
-                Text("Enable & Continue")
+                Text("Continue")
             }
-        }
-    }
-}
-
-@Composable
-fun SetHandlePage(
-    settingsRepository: SettingsRepository,
-    onNext: () -> Unit
-) {
-    var gapPercent by remember { mutableStateOf(settingsRepository.getBottomTriggerCenterGapPercent()) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(Icons.Default.Settings, null, modifier = Modifier.size(80.dp))
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = "Adjust Triggers",
-            style = MaterialTheme.typography.headlineMedium,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Use the slider to adjust the gap between the bottom triggers so they don't overlap with your navigation bar.\n\n(You should see red zones on the screen now)",
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text("Center Gap: $gapPercent%")
-        Slider(
-            value = gapPercent.toFloat(),
-            onValueChange = {
-                gapPercent = it.toInt()
-                settingsRepository.setBottomTriggerCenterGapPercent(gapPercent)
-            },
-            valueRange = 0f..90f,
-            steps = 17
-        )
-
-        Spacer(modifier = Modifier.height(48.dp))
-
-        Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
-            Text("Next")
         }
     }
 }

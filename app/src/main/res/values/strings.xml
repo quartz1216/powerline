@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">Powerline</string>
-    <string name="accessibility_service_description">Detects taps on the status bar to launch Powerline Launcher overlay.</string>
+    <string name="accessibility_service_description">Detects the Alt+Space shortcut to open Powerline. Powerline does not read screen content or record keystrokes.</string>
 </resources>

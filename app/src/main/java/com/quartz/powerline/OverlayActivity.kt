@@ -24,6 +24,7 @@ import com.quartz.powerline.utils.ActionExecutor
 class OverlayActivity : ComponentActivity() {
 
     companion object {
+        const val ACTION_TOGGLE_SEARCH = "com.quartz.powerline.action.TOGGLE_SEARCH"
         var isVisible = false
     }
 
@@ -118,12 +119,17 @@ class OverlayActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent.getBooleanExtra("TOGGLE_OVERLAY", false)) {
+        setIntent(intent)
+        if (intent.action == ACTION_TOGGLE_SEARCH) {
             if (isVisible) {
                 finish()
+            } else {
+                ViewModelProvider(
+                    this,
+                    ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+                )[MainViewModel::class.java].resetForOpen()
             }
         }
-        setIntent(intent)
     }
 
     private fun applyWindowAttributes(viewModel: MainViewModel) {

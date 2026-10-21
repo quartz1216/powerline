@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
 import com.quartz.powerline.ui.AdditionalSettingsSubpage
 import com.quartz.powerline.ui.AppearanceSettingsScreen
-import com.quartz.powerline.ui.OverlaySettingsSubpage
 import com.quartz.powerline.ui.PermissionsScreen
 import com.quartz.powerline.ui.PluginSettingsScreen
 import com.quartz.powerline.ui.SettingsScreen
@@ -74,12 +73,6 @@ class SettingsActivity : ComponentActivity() {
                                 SettingsScreen(
                                     viewModel = viewModel,
                                     onBack = { finish() }
-                                )
-                            }
-                            SettingsNav.OVERLAY -> {
-                                OverlaySettingsSubpage(
-                                    viewModel = viewModel,
-                                    onBack = { viewModel.navigateBack() }
                                 )
                             }
                             SettingsNav.ADDITIONAL -> {

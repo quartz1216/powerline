@@ -106,6 +106,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         performSearch(newQuery)
     }
 
+    private val _openCount = MutableStateFlow(0)
+    val openCount: StateFlow<Int> = _openCount.asStateFlow()
+
+    // Called when the overlay is re-shown: start from an empty query and re-request focus
+    fun resetForOpen() {
+        onQueryChange("")
+        _openCount.value += 1
+    }
+
     fun selectNext() {
         val current = _selectedIndex.value
         val max = _results.value.lastIndex
