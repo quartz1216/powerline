@@ -3,6 +3,7 @@ package dev.quxomiya.powerline.ui
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
 import androidx.compose.foundation.Image
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.services.StatusBarAccessibilityService
 
 // Two panes: Logo (title, icon, status) and Settings. Stacked in portrait, side by side in landscape.
@@ -160,6 +162,12 @@ private fun SettingsPane(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                TextButton(
+                    onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PowerlineDefaults.PRIVACY_POLICY_URL))) },
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Text("Privacy policy")
+                }
             }
         }
     }

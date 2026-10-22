@@ -6,6 +6,9 @@ import dev.quxomiya.powerline.search.SearchEngine
 object PowerlineDefaults {
     const val OVERLAY_CLOSE_ON_BACKGROUND_TAP = true
 
+    // Opened in the browser from the status screen's About section
+    const val PRIVACY_POLICY_URL = "https://github.com/quartz1216/powerline/blob/main/PRIVACY.md"
+
     const val MAX_STANDBY_RECENT_APPS = 8
 
     // App launches kept for the recent row and frecency
