@@ -122,6 +122,16 @@ class ProvidersTest {
         assertEquals(SearchAction.OpenUrl("https://www.google.com/search?q=laneige%20cream"), item.action)
     }
 
+    // The first engine is the default, alias or not
+    @Test
+    fun plainTextSearchesFirstEngine() {
+        val youtube = PowerlineDefaults.SEARCH_ENGINES.first { it.id == "youtube" }
+        val reordered = listOf(youtube) + PowerlineDefaults.SEARCH_ENGINES.filter { it != youtube }
+        val provider = WebProvider(MutableStateFlow(reordered.map { AvailableEngine(it) }))
+        val item = runBlocking { provider.search(parser.parse("laneige"), context) }.single()
+        assertEquals(SearchAction.OpenUrl("https://www.youtube.com/results?search_query=laneige"), item.action)
+    }
+
     @Test
     fun urlOpensDirectlyAboveSearch() {
         val items = web("example.com")

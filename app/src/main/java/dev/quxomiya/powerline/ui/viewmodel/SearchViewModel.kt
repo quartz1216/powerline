@@ -46,7 +46,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val _recentApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val recentApps: StateFlow<List<AppInfo>> = _recentApps.asStateFlow()
 
-    // Aliased search engines, then share targets, each only while its built-in is on
+    // Aliased search engines by name, then share targets, each only while its built-in is on
     private val aliasChips: StateFlow<List<AliasChip>> =
         combine(
             appIndex.availableEngines,
@@ -55,7 +55,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         ) { allEngines, allTargets, disabled ->
             val engines = if (BuiltIn.WEB in disabled) emptyList() else allEngines
             val targets = if (BuiltIn.SHARE in disabled) emptyList() else allTargets
-            engines.mapNotNull { available ->
+            engines.sortedBy { it.engine.name.lowercase() }.mapNotNull { available ->
                 val engine = available.engine
                 val alias = engine.alias?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
                 AliasChip("web:${engine.id}", engine.name, alias, available.icon, isShare = false)

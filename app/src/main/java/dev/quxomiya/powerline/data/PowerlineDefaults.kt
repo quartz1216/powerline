@@ -24,7 +24,7 @@ object PowerlineDefaults {
     const val MAX_RESULTS_PER_SECTION = 5
     const val MAX_TOTAL_RESULTS = 20
 
-    // The first engine without an alias is the default. Order is the chip order.
+    // The first engine is the default. Settings and chips list engines by name.
     val SEARCH_ENGINES: List<SearchEngine> = listOf(
         SearchEngine("google", "Google", null, "https://www.google.com/search?q=%s"),
         SearchEngine("youtube_music", "YouTube Music", "ytm", "https://music.youtube.com/search?q=%s"),

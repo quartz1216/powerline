@@ -60,7 +60,7 @@ class WebProvider(
                 vectorIcon = Icons.Default.Public
             )
         }
-        engines.value.firstOrNull { it.engine.alias == null }?.let { items += engineItem(it, text) }
+        engines.value.firstOrNull()?.let { items += engineItem(it, text) }
         return items
     }
 

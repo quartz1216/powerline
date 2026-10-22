@@ -21,9 +21,8 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -98,7 +97,8 @@ fun AdvancedSettings() {
     )
 }
 
-// Web search section: the engines. Aliased ones become the overlay's first chips.
+// Web search section: the engines by name, the default marked. Tapping one opens its dialog,
+// which also sets the default and deletes. Aliased ones become the overlay's first chips.
 @Composable
 fun WebSearchSettings() {
     val context = LocalContext.current
@@ -109,16 +109,12 @@ fun WebSearchSettings() {
     var editing by remember { mutableStateOf<Editing>(Editing.None) }
     var confirmReset by remember { mutableStateOf(false) }
 
-    val defaultIndex = engines.indexOfFirst { it.alias.isNullOrBlank() }
-    engines.forEachIndexed { index, engine ->
+    // Indexes into `engines`, whose first entry is the default
+    engines.indices.sortedBy { engines[it].name.lowercase() }.forEach { index ->
         EngineRow(
-            engine = engine,
-            isDefault = index == defaultIndex,
-            canMoveUp = index > 0,
-            canMoveDown = index < engines.lastIndex,
-            onClick = { editing = Editing.Existing(index) },
-            onMove = { offset -> repository.setEngines(engines.moved(index, offset)) },
-            onDelete = { repository.setEngines(engines.filterIndexed { i, _ -> i != index }) }
+            engine = engines[index],
+            isDefault = index == 0,
+            onClick = { editing = Editing.Existing(index) }
         )
     }
     ButtonRow {
@@ -128,12 +124,28 @@ fun WebSearchSettings() {
 
     if (editing != Editing.None) {
         val index = (editing as? Editing.Existing)?.index
+        val others = engines.filterIndexed { i, _ -> i != index }
         EngineEditDialog(
             initial = index?.let { engines.getOrNull(it) },
-            otherAliases = engines.filterIndexed { i, _ -> i != index }.map { it.alias } + targets.map { it.alias },
-            onSave = { engine ->
-                repository.setEngines(if (index == null) engines + engine else engines.replaced(index, engine))
+            isDefault = index == 0,
+            otherAliases = others.map { it.alias } + targets.map { it.alias },
+            onSave = { engine, makeDefault ->
+                repository.setEngines(
+                    when {
+                        // The default moves to the front
+                        makeDefault -> listOf(engine) + others
+                        index == null -> engines + engine
+                        else -> engines.replaced(index, engine)
+                    }
+                )
                 editing = Editing.None
+            },
+            // Deleting the default makes the next engine the default
+            onDelete = index?.let {
+                {
+                    repository.setEngines(others)
+                    editing = Editing.None
+                }
             },
             onDismiss = { editing = Editing.None }
         )
@@ -229,52 +241,30 @@ private fun AddButton(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun EngineRow(
-    engine: SearchEngine,
-    isDefault: Boolean,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    onClick: () -> Unit,
-    onMove: (Int) -> Unit,
-    onDelete: () -> Unit
-) {
-    Row(
+private fun EngineRow(engine: SearchEngine, isDefault: Boolean, onClick: () -> Unit) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClickLabel = "Edit ${engine.name}", onClick = onClick)
+            .heightIn(min = 48.dp)
             .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = when {
-                    !engine.alias.isNullOrBlank() -> "${engine.name}  ·  ${engine.alias}"
-                    isDefault -> "${engine.name}  ·  default"
-                    else -> engine.name
-                },
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                engine.url,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        IconButton(onClick = { onMove(-1) }, enabled = canMoveUp) {
-            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Move ${engine.name} up")
-        }
-        IconButton(onClick = { onMove(1) }, enabled = canMoveDown) {
-            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Move ${engine.name} down")
-        }
-        IconButton(onClick = onDelete) {
-            Icon(Icons.Default.Delete, contentDescription = "Delete ${engine.name}")
-        }
+        Text(
+            text = listOfNotNull(engine.name, engine.alias?.takeIf { it.isNotBlank() }, "default".takeIf { isDefault })
+                .joinToString("  ·  "),
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Text(
+            engine.url,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
-// The "Share text" result: always there, so it can be neither edited nor deleted
 @Composable
 private fun ShareDialogRow() {
     Column(
@@ -328,10 +318,15 @@ private fun ShareTargetRow(target: ShareTarget, onClick: () -> Unit, onDelete: (
 @Composable
 private fun EngineEditDialog(
     initial: SearchEngine?,
+    // The default stays checked: another engine has to be made the default instead
+    isDefault: Boolean,
     otherAliases: List<String?>,
-    onSave: (SearchEngine) -> Unit,
+    onSave: (engine: SearchEngine, makeDefault: Boolean) -> Unit,
+    // null for a new engine
+    onDelete: (() -> Unit)?,
     onDismiss: () -> Unit
 ) {
+    var makeDefault by remember { mutableStateOf(isDefault) }
     var name by remember { mutableStateOf(initial?.name.orEmpty()) }
     var alias by remember { mutableStateOf(initial?.alias.orEmpty()) }
     var url by remember { mutableStateOf(initial?.url ?: "https://") }
@@ -350,6 +345,21 @@ private fun EngineEditDialog(
                 DialogField("Name", name, { name = it }, nameError.takeIf { showErrors })
                 DialogField("Alias", alias, { alias = it }, aliasError.takeIf { showErrors })
                 DialogField("URL", url, { url = it }, urlError.takeIf { showErrors }, singleLine = false)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .toggleable(
+                            value = makeDefault,
+                            enabled = !isDefault,
+                            role = Role.Checkbox,
+                            onValueChange = { makeDefault = it }
+                        ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(checked = makeDefault, onCheckedChange = null, enabled = !isDefault)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Use as default", style = MaterialTheme.typography.bodyMedium)
+                }
             }
         },
         confirmButton = {
@@ -362,12 +372,22 @@ private fun EngineEditDialog(
                             name = name.trim(),
                             alias = alias.trim().ifEmpty { null },
                             url = url.trim()
-                        )
+                        ),
+                        makeDefault
                     )
                 }
             }) { Text("Save") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = {
+            Row {
+                if (onDelete != null) {
+                    TextButton(onClick = onDelete) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        }
     )
 }
 
@@ -514,11 +534,6 @@ private fun DialogField(
         singleLine = singleLine,
         modifier = Modifier.fillMaxWidth()
     )
-}
-
-private fun <T> List<T>.moved(index: Int, offset: Int): List<T> {
-    val target = (index + offset).coerceIn(0, lastIndex)
-    return toMutableList().apply { add(target, removeAt(index)) }
 }
 
 private fun <T> List<T>.replaced(index: Int, item: T): List<T> = toMutableList().apply { set(index, item) }

@@ -4,10 +4,11 @@ import android.graphics.drawable.Drawable
 
 // Search engine defined by a URL template alone, so built-in and user-added engines
 // work the same way. Android decides which app opens the URL.
+// The first engine of the list is the default, used for plain text; the rest have no order.
 data class SearchEngine(
     val id: String,
     val name: String,
-    // null for the default engine, which needs no prefix
+    // null when reached only as the default
     val alias: String?,
     // %s is replaced with the encoded query
     val url: String
