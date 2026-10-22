@@ -27,6 +27,7 @@ scripts/device-tests.sh             # instrumented / E2E (emulator or rooted dev
 - After a change, make sure at least `testDebugUnitTest` passes.
 - For changes touching UI or key handling, run `device-tests.sh` when possible. If you cannot, say so in the report.
 - Requires JDK 17 and Android SDK 34.
+- Alt+Space is only caught from a physical keyboard. Key events injected with `adb shell input keyevent` / `keycombination` do not open the overlay, so do not try them for testing. The overlay can be driven only by `device-tests.sh` (writes to `/dev/input`, so it needs an emulator or rooted device); otherwise ask the user to check it with a physical keyboard.
 
 ## Installing on a device
 
