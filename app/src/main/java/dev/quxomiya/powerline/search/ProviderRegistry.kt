@@ -7,12 +7,15 @@ import dev.quxomiya.powerline.search.providers.WebProvider
 
 // All providers are always on (V2 has no per-provider settings).
 // Recents and System are not providers; see ROADMAP §4.4.
-class ProviderRegistry(appIndex: AppIndex) {
-    val providers: List<SearchProvider> = listOf(
-        AppsProvider(appIndex.apps),
-        CalculatorProvider(),
-        WebProvider(appIndex.availableEngines),
-        ShareProvider()
+class ProviderRegistry(val providers: List<SearchProvider>) {
+
+    constructor(appIndex: AppIndex) : this(
+        listOf(
+            AppsProvider(appIndex.apps),
+            CalculatorProvider(),
+            WebProvider(appIndex.availableEngines),
+            ShareProvider()
+        )
     )
 
     // An alias query ("yt laneige") is a web search only

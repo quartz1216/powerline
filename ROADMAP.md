@@ -1,6 +1,6 @@
 # Powerline V2 Roadmap
 
-> **Status:** 進行中（Phase 1–3 と検索オーバーレイの刷新が完了。Phase 4–5 は実装済みで手動テスト待ち。Phase 6 から未着手）  
+> **Status:** 進行中（Phase 1–3 と検索オーバーレイの刷新が完了。Phase 4–5 は自動テストで完了。Phase 6 から未着手）  
 > **Baseline:** `main` @ `1c739ae`  
 > **作業ブランチ:** `v2/phase1-alt-space-trigger` → `v2/phase2-remove-monetization-settings` → `v2/phase3-status-screen` → `v2/phase4-search-pipeline`（Phase 5 も同じブランチ。積み上げ。`main` へは未マージ）  
 > **Target:** V2.0（内部ベータ → 公開）  
@@ -40,7 +40,7 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | 空クエリ時 | 検索欄のみ / Recents のリスト | **Spotlight 風の待機状態**（エンジンチップ・最近のアプリ・全アプリのタイル） |
 | 検索 | プラグインを並列実行して連結 | **正規化・ランキング・重複排除・タイムアウト**を行うパイプライン（Phase 4） |
 | 機能 | プラグインごとに実装が分散 | **SearchProvider + SearchAction で再構築**（Apps / Calculator / Web / Share の 4 つ。Recents / System は廃止）（Phase 5） |
-| テスト | 自動テストを追加 | **受け入れ判定は人間の手動テスト** |
+| テスト | 自動テストを追加 | **自動テストで受け入れ判定**（JVM ユニットテスト + エミュレーターでの計装 / E2E テスト） |
 
 ---
 
@@ -53,8 +53,8 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | G1 | **トリガーの統一** — Alt+Space に一本化し、画面下・ステータスバー・QS・アシスタント経由の起動を撤去 | ✅ 完了 |
 | G2 | **画面の役割反転** — `MainActivity` を状態 / 権限 / About にし、検索オーバーレイを唯一の検索サーフェスにする | ✅ 完了 |
 | G3 | **マネタイズ層の撤去** — `isAdvanced`、課金、AdMob / UMP を削除 | ✅ 完了 |
-| G4 | **検索コアの再構築** — クエリ解析、並列実行、タイムアウト、ランキング、重複排除 | 🟡 実装済み（手動テスト待ち） |
-| G5 | **機能の再構築** — Apps / Calculator / Web / Share を Provider で作り直す（Recents / System は Provider にしない） | ⬜ Phase 5 |
+| G4 | **検索コアの再構築** — クエリ解析、並列実行、タイムアウト、ランキング、重複排除 | ✅ 自動テスト通過 |
+| G5 | **機能の再構築** — Apps / Calculator / Web / Share を Provider で作り直す（Recents / System は Provider にしない） | ✅ 自動テスト通過 |
 | G6 | **設定・バックアップを持たない** — 設定の永続化と JSON を削除 | 🟡 ほぼ完了（旧キーの起動時削除が残り） |
 | G7 | **品質とプライバシー** — キーボード操作、IME、アクセシビリティ、OEM 対策、説明責任 | 🟡 一部 |
 | G8 | **Don't Ask User** — システム権限画面以外で、設定・移行・バックアップ・同意を質問しない | ✅ 完了（Welcome は削除） |
@@ -247,8 +247,8 @@ MainActivity
 | 2 | Advanced / 課金 / 広告 / 設定保存の撤去 | ✅ | `c54b28b` |
 | 3 | MainActivity = 状態 / 権限、Overlay = 検索 | ✅ | `01221ee`, `3dae973` |
 | 3.5 | 検索オーバーレイの刷新（ウィンドウ化・待機状態・Material You） | ✅ | `c097417` … `4dd288c` |
-| 4 | 検索コアの再構築 | 🟡 実装済み・手動テスト待ち | — |
-| 5 | 機能（Provider）の再構築 | 🟡 実装済み・手動テスト待ち | — |
+| 4 | 検索コアの再構築 | ✅ 自動テスト通過 | `3cd4201` |
+| 5 | 機能（Provider）の再構築 | ✅ 自動テスト通過 | `cef04eb` |
 | 6 | 初回起動と旧データの掃除 | 🟡 一部 | — |
 | 7 | 品質・プライバシー・リリース | 🟡 一部 | — |
 
@@ -357,7 +357,7 @@ MainActivity
 - 遅い Provider があっても他の結果が 300ms 以内に表示される。
 - 人間による手動テストで主要フローが動作する。
 
-**状態:** 実装済み。`assembleDebug` と既存ユニットテストは通過。実機での手動テストが残り（特に 1–2 文字の検索速度、入力中のちらつき、エイリアスチップ → 入力）。
+**状態:** 完了。`SearchPipelineTest`（タイムアウト・並列・例外・件数上限・重複排除・エイリアス）と、エミュレーターでの `SearchOnDeviceTest`（1–2 文字の検索が 100ms 以内、入力中に古い結果が出ない）、`OverlayE2ETest` で確認。
 
 **目安:** 4–5 日
 
@@ -426,7 +426,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 - 検索結果のセクション表示とキーボード操作が破綻しない。
 - 人間による手動テストで主要フローが動作する。
 
-**状態:** 実装済み。`assembleDebug` とユニットテスト（21 件）は通過。実機での手動テストが残り。
+**状態:** 完了。`ProvidersTest` / `QueryParserTest` / `SearchRankerTest` / `UserDataRepositoryTest` と、エミュレーターでの `SearchOnDeviceTest` / `OverlayE2ETest` で確認。
 
 **目安:** 4–5 日
 
@@ -516,7 +516,12 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 
 ## 6. テスト方針
 
-- **受け入れ判定は人間の手動テスト**で行う。開発中は `./gradlew :app:assembleDebug` と実機で確認する。
+- **受け入れ判定は自動テスト**で行う。
+  - JVM: `./gradlew :app:testDebugUnitTest`（検索コア・Provider・履歴。Robolectric）
+  - エミュレーター: `scripts/device-tests.sh`（実アプリ一覧での検索と速度、Alt+Space → 入力 → Enter / Esc の E2E）
+- Powerline は物理キーボードの Alt+Space にしか反応しない（`input keyevent` はアクセシビリティのキーフィルタを通らない）。E2E は `/dev/input` に `sendevent` で書き込むため、`adb root` と `chmod 666 /dev/input/event*` が必要（スクリプトが行う。できない端末では E2E はスキップ）。
+- `connectedDebugAndroidTest` は終了時にアプリをアンインストールする。続けて触るときは `./gradlew :app:installDebug` とアクセシビリティの再有効化が必要。
+- 自動化していない確認（実機・ソフトウェアキーボード・回転・マルチウィンドウなど）は Phase 7 の端末確認で行う。
 - リポジトリには `CalculatorTest` / `StandbyGridTest` / `SearchViewModelTest` / `PerformanceTest` の 4 ファイルが残っている（`StandbyGridTest` は Phase 3.5 で追加）。扱いは第 8 章 #7 で決める。
 
 ### 手動テストの主な項目
@@ -571,7 +576,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 | 4 | UI 言語 | **V2 は英語**。日本語は V2.1 | Phase 6 |
 | 5 | 配布方法 | まず **GitHub Releases / 内部ベータ**。Play はポリシー確認後 | Phase 7 |
 | 6 | favicon を外部（`google.com/s2/favicons`）から取得し続けるか | **決定済み**：同梱のベクターアイコンに置き換え、`INTERNET` 権限も削除 | — |
-| 7 | 残っているユニットテスト 4 ファイルの扱い | **決定済み**：残すが受け入れ判定には使わない。Phase 5 で壊れたものはなし（`CalculatorTest` はケース追加） | — |
+| 7 | 残っているユニットテスト 4 ファイルの扱い | **決定済み**：自動テストを受け入れ判定に使う方針に変更。既存 4 ファイルも残す | — |
 | 8 | ユーザー登録のエイリアス（設定は次の 2 項目のみ） | **後で実装**（V2.1 候補）。(1) **URL クエリー**: 名前・エイリアス・URL（`%s`）。エンジンは URL テンプレートだけで定義済みなので、登録 UI と保存を足せば済む。(2) **クイック共有**: エイリアス・共有先アプリ（`text/plain` の `SEND` を受け付けるアプリから選ぶ）。`cl 質問` で共有シートを出さずにそのアプリへ送る。V2 の「設定を持たない」（G6）の例外になるため、入れるときに方針を見直す | V2.1 |
 
 ---
