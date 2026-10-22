@@ -81,9 +81,17 @@ class UserDataRepositoryTest {
             .putBoolean("onboarding_completed", true)
             .putString("app_weights", "{}")
             .putBoolean("is_advanced", true)
+            .putString("search_engines", "[]")
+            .putString("share_targets", "[]")
+            .putBoolean("apps_enabled", false)
+            .putBoolean("calculator_enabled", false)
+            .putBoolean("share_enabled", false)
             .commit()
         UserDataRepository(context)
-        assertEquals(setOf("history", "favorite_apps"), prefs.all.keys)
+        assertEquals(
+            setOf("history", "favorite_apps", "search_engines", "share_targets", "apps_enabled", "calculator_enabled", "share_enabled"),
+            prefs.all.keys
+        )
         assertEquals(setOf("com.a"), UserDataRepository(context).getFavoriteApps())
     }
 

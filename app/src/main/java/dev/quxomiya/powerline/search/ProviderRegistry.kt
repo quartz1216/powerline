@@ -5,22 +5,26 @@ import dev.quxomiya.powerline.search.providers.CalculatorProvider
 import dev.quxomiya.powerline.search.providers.ShareProvider
 import dev.quxomiya.powerline.search.providers.WebProvider
 
-// All providers are always on (V2 has no per-provider settings).
+// All providers are registered; a built-in switched off in settings returns nothing (Share
+// still answers its aliases).
 // Recents and System are not providers; see ROADMAP §4.4.
 class ProviderRegistry(val providers: List<SearchProvider>) {
 
-    constructor(appIndex: AppIndex) : this(
+    constructor(appIndex: AppIndex, isEnabled: (BuiltIn) -> Boolean = { true }) : this(
         listOf(
-            AppsProvider(appIndex.apps),
-            CalculatorProvider(),
+            AppsProvider(appIndex.apps) { isEnabled(BuiltIn.APPS) },
+            CalculatorProvider { isEnabled(BuiltIn.CALCULATOR) },
             WebProvider(appIndex.availableEngines),
-            ShareProvider()
+            ShareProvider(appIndex.availableShareTargets) { isEnabled(BuiltIn.SHARE) }
         )
     )
 
-    // An alias query ("yt laneige") is a web search only
+    // An engine alias ("yt laneige") is a web search only; a share alias ("cl hello") a share only
     fun providersFor(request: SearchRequest): List<SearchProvider> = when (request.mode) {
         SearchMode.TEXT -> providers
-        SearchMode.ALIAS -> providers.filter { it.section == ResultSection.WEB }
+        SearchMode.ALIAS -> {
+            val section = if (request.shareTarget != null) ResultSection.SHARE else ResultSection.WEB
+            providers.filter { it.section == section }
+        }
     }
 }

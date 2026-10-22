@@ -32,7 +32,7 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | トリガー | 画面下の透明オーバーレイ、ステータスバー、QS、アシスタント、Alt+Space | **Alt+Space のみ** |
 | MainActivity | HOME + LAUNCHER。検索画面を表示 | **状態 / 権限 / About の案内画面**。LAUNCHER のみ |
 | SettingsActivity / OverlayActivity | 設定専用 Activity / 透明 Activity の検索画面 | **どちらも廃止** |
-| 設定 UI・設定の保存 | 多数の設定を SharedPreferences に保存 | **設定を持たない**。固定デフォルトで動作 |
+| 設定 UI・設定の保存 | 多数の設定を SharedPreferences に保存 | **設定を持たない**。固定デフォルトで動作。例外は状態画面の Built-in（Apps / Calculator / Share のオン・オフ）/ Web search / Share（第 8 章 #8） |
 | テーマ | Theme Selection / Material You トグル | **Material You 固定**（Android 12+ は壁紙色、11 以下はブランドカラー） |
 | 課金・広告 | Powerline Advanced / AdMob / UMP | **完全撤去** |
 | バックアップ | JSON export / import | **削除** |
@@ -223,7 +223,7 @@ MainActivity
 ### 4.6 設定・データ・バックアップ
 
 - **設定は保持しない。** 固定値は `PowerlineDefaults` に集約する。
-- **データは保持する。** `history`（アプリ起動のみ）/ `favorite_apps` は設定ではないため保持する（設定 UI なし、JSON バックアップなし）。`app_weights` は Phase 5 で履歴ベースの frecency に置き換えたため使わない（旧キーとして Phase 6 で削除）。alias / hidden apps / カスタム検索エンジンは扱わない。
+- **データは保持する。** `history`（アプリ起動のみ）/ `favorite_apps` は設定ではないため保持する（設定 UI なし、JSON バックアップなし）。`app_weights` は Phase 5 で履歴ベースの frecency に置き換えたため使わない（旧キーとして Phase 6 で削除）。hidden apps は扱わない。検索設定（`apps_enabled` / `calculator_enabled` / `share_enabled` / `search_engines` / `share_targets`）は `SearchSettingsRepository` に保存する（第 8 章 #8）。
 - **JSON は扱わない。** export / import / 復元 / 移行は削除済み。
 - 固定デフォルト:
   - テーマ: Material You（Android 12+ は dynamic color、11 以下はブランドカラー #4CDC8F）
@@ -578,7 +578,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 | 5 | 配布方法 | まず **GitHub Releases / 内部ベータ**。Play はポリシー確認後 | Phase 7 |
 | 6 | favicon を外部（`google.com/s2/favicons`）から取得し続けるか | **決定済み**：同梱のベクターアイコンに置き換え、`INTERNET` 権限も削除 | — |
 | 7 | 残っているユニットテスト 4 ファイルの扱い | **決定済み**：自動テストを受け入れ判定に使う方針に変更。既存 4 ファイルも残す | — |
-| 8 | ユーザー登録のエイリアス（設定は次の 2 項目のみ） | **後で実装**（V2.1 候補）。(1) **URL クエリー**: 名前・エイリアス・URL（`%s`）。エンジンは URL テンプレートだけで定義済みなので、登録 UI と保存を足せば済む。(2) **クイック共有**: エイリアス・共有先アプリ（`text/plain` の `SEND` を受け付けるアプリから選ぶ）。`cl 質問` で共有シートを出さずにそのアプリへ送る。V2 の「設定を持たない」（G6）の例外になるため、入れるときに方針を見直す | V2.1 |
+| 8 | ユーザー登録のエイリアス（設定は次の 2 項目のみ） | **実装済み**（状態画面の Web search / Share セクション。組み込みエンジンも編集・削除・並べ替えでき、「Restore defaults」で戻せる。チップは Web → 共有の順に 1 行）。当初案: (1) **URL クエリー**: 名前・エイリアス・URL（`%s`）。エンジンは URL テンプレートだけで定義済みなので、登録 UI と保存を足せば済む。(2) **クイック共有**: エイリアス・共有先アプリ（`text/plain` の `SEND` を受け付けるアプリから選ぶ）。`cl 質問` で共有シートを出さずにそのアプリへ送る。V2 の「設定を持たない」（G6）の例外になるため、入れるときに方針を見直す | V2.1 |
 
 ---
 

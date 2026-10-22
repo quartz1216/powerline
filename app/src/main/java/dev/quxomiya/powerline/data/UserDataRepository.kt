@@ -7,7 +7,8 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlin.math.pow
 
-// Stores user data only (launch history, favorites). Settings are fixed in PowerlineDefaults.
+// Stores user data (launch history, favorites). The search settings live in SearchSettingsRepository;
+// everything else is fixed in PowerlineDefaults.
 class UserDataRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
     private val gson = Gson()
@@ -82,6 +83,6 @@ class UserDataRepository(context: Context) {
     }
 
     private companion object {
-        val KEPT_KEYS = setOf("history", "favorite_apps")
+        val KEPT_KEYS = setOf("history", "favorite_apps") + SearchSettingsRepository.KEYS
     }
 }

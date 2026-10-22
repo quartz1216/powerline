@@ -1,5 +1,6 @@
 package dev.quxomiya.powerline.search
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
@@ -17,6 +18,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -27,21 +31,26 @@ data class IndexedApp(
     val searchKeys: List<String>
 )
 
-// Launchable apps (standby grid, AppsProvider) and the search engines usable on this device
-// (chips, WebProvider, alias parsing). Loaded once, then reloaded whenever a package is
-// installed, removed or changed.
+// Launchable apps (standby grid, AppsProvider), and the search engines and share targets with
+// their icons (chips, WebProvider, ShareProvider). Loaded once, then reloaded whenever a package
+// is installed, removed or changed; engines and share targets also whenever settings edit them.
 class AppIndex(
     private val context: Context,
     private val scope: CoroutineScope,
-    private val engines: List<SearchEngine> = PowerlineDefaults.SEARCH_ENGINES
+    private val engines: StateFlow<List<SearchEngine>> = MutableStateFlow(PowerlineDefaults.SEARCH_ENGINES),
+    private val shareTargets: StateFlow<List<ShareTarget>> = MutableStateFlow(emptyList())
 ) {
 
     private val _apps = MutableStateFlow<List<IndexedApp>>(emptyList())
     val apps: StateFlow<List<IndexedApp>> = _apps.asStateFlow()
 
     // Icons arrive with the first load
-    private val _engines = MutableStateFlow(engines.map { AvailableEngine(it) })
+    private val _engines = MutableStateFlow(engines.value.map { AvailableEngine(it) })
     val availableEngines: StateFlow<List<AvailableEngine>> = _engines.asStateFlow()
+
+    // Targets whose app is installed
+    private val _shareTargets = MutableStateFlow<List<AvailableShareTarget>>(emptyList())
+    val availableShareTargets: StateFlow<List<AvailableShareTarget>> = _shareTargets.asStateFlow()
 
     // Absent only in test environments; the index then never auto-reloads
     private val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
@@ -57,15 +66,24 @@ class AppIndex(
 
     init {
         launcherApps?.registerCallback(packageCallback, Handler(Looper.getMainLooper()))
+        // The first values are loaded by reload() below
+        scope.launch {
+            combine(engines, shareTargets) { e, t -> e to t }.drop(1).collectLatest { (e, t) -> loadChips(e, t) }
+        }
         reload()
     }
 
     fun reload() {
         loadJob?.cancel()
         loadJob = scope.launch {
-            _engines.value = loadEngines()
+            loadChips(engines.value, shareTargets.value)
             _apps.value = loadApps()
         }
+    }
+
+    private suspend fun loadChips(engines: List<SearchEngine>, shareTargets: List<ShareTarget>) {
+        _engines.value = loadEngines(engines)
+        _shareTargets.value = loadShareTargets(shareTargets)
     }
 
     fun close() {
@@ -92,12 +110,25 @@ class AppIndex(
             }
     }
 
-    private suspend fun loadEngines(): List<AvailableEngine> = withContext(Dispatchers.IO) {
+    private suspend fun loadEngines(engines: List<SearchEngine>): List<AvailableEngine> = withContext(Dispatchers.IO) {
         val browserIcon = handlerIcon("https://www.example.com/")
         engines.map { engine ->
             AvailableEngine(engine, handlerIcon(engine.url.replace("%s", "test")) ?: browserIcon)
         }
     }
+
+    private suspend fun loadShareTargets(targets: List<ShareTarget>): List<AvailableShareTarget> =
+        withContext(Dispatchers.IO) {
+            val pm = context.packageManager
+            targets.mapNotNull { target ->
+                try {
+                    AvailableShareTarget(target, pm.getActivityIcon(ComponentName(target.packageName, target.className)))
+                } catch (e: PackageManager.NameNotFoundException) {
+                    // Uninstalled since it was set up; kept in settings in case it comes back
+                    null
+                }
+            }
+        }
 
     // Icon of the app Android opens this URL with by default: an app that claims the link
     // (YouTube for youtube.com) or the default browser. null when the user would be asked

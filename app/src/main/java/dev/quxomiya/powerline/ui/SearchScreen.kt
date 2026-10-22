@@ -62,16 +62,15 @@ fun SearchScreen(
     val openCount by viewModel.openCount.collectAsState()
     val allApps by viewModel.visibleApps.collectAsState()
     val recentAppsAll by viewModel.recentApps.collectAsState()
-    val engines by viewModel.engines.collectAsState()
+    val chips by viewModel.chips.collectAsState()
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
     var longPressedResult by remember { mutableStateOf<SearchItem?>(null) }
 
     val isStandby = query.isEmpty()
     var standbyIndex by remember(openCount, isStandby) { mutableIntStateOf(0) }
-    // Selected engine chip in the standby state; null while the selection is in the app grid
+    // Selected chip in the standby state; null while the selection is in the app grid
     var chipIndex by remember(openCount, isStandby) { mutableStateOf<Int?>(null) }
-    val chipEngines = engines.filter { !it.engine.alias.isNullOrBlank() }
 
     LaunchedEffect(selectedIndex) {
         if (selectedIndex in results.indices) {
@@ -115,7 +114,7 @@ fun SearchScreen(
                     chipIndex = null
                     standbyIndex = target
                 }
-                from != null && chipEngines.isNotEmpty() -> chipIndex = 0
+                from != null && chips.isNotEmpty() -> chipIndex = 0
                 else -> (if (backward) grid.previousSection(null) else grid.nextSection(null))?.let { standbyIndex = it }
             }
         }
@@ -167,7 +166,7 @@ fun SearchScreen(
                             onEnter = {
                                 val chip = chipIndex
                                 if (isStandby && chip != null) {
-                                    chipEngines.getOrNull(chip)?.let { viewModel.onQueryChange("${it.engine.alias} ") }
+                                    chips.getOrNull(chip)?.let { viewModel.onQueryChange("${it.alias} ") }
                                 } else if (isStandby) {
                                     standbyAppAt(standbySelection)?.let { onResultClick(viewModel.appItem(it)) }
                                 } else if (results.isNotEmpty() && selectedIndex in results.indices) {
@@ -185,7 +184,7 @@ fun SearchScreen(
                                 } else if (chipIndex == null) {
                                     val moved = grid.moveVertical(standbySelection, -1)
                                     // Up from the top row reaches the chips
-                                    if (moved == standbySelection && chipEngines.isNotEmpty()) chipIndex = 0
+                                    if (moved == standbySelection && chips.isNotEmpty()) chipIndex = 0
                                     else standbyIndex = moved
                                 }
                             },
@@ -197,7 +196,7 @@ fun SearchScreen(
                             },
                             onArrowRight = {
                                 val chip = chipIndex
-                                if (isStandby && chip != null) chipIndex = minOf(chip + 1, chipEngines.lastIndex)
+                                if (isStandby && chip != null) chipIndex = minOf(chip + 1, chips.lastIndex)
                                 else if (isStandby) standbyIndex = grid.moveHorizontal(standbySelection, 1)
                                 isStandby
                             },
@@ -222,14 +221,14 @@ fun SearchScreen(
 
                     if (isStandby) {
                         StandbyContent(
-                            engines = chipEngines,
+                            chips = chips,
                             recentApps = recentApps,
                             allApps = allApps,
                             grid = grid,
                             selectedIndex = if (chipIndex == null) standbySelection else -1,
                             selectedChip = chipIndex,
                             gridState = gridState,
-                            onChipClick = { engine -> viewModel.onQueryChange("${engine.engine.alias} ") },
+                            onChipClick = { chip -> viewModel.onQueryChange("${chip.alias} ") },
                             onAppClick = { onResultClick(viewModel.appItem(it)) },
                             onAppLongClick = { longPressedResult = viewModel.appItem(it) }
                         )

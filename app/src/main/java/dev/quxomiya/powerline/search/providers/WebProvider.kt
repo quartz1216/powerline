@@ -14,7 +14,7 @@ import dev.quxomiya.powerline.search.SearchProvider
 import dev.quxomiya.powerline.search.SearchRequest
 import kotlinx.coroutines.flow.StateFlow
 
-// Direct URLs and the built-in search engines. Nothing is sent anywhere until an item is run,
+// Direct URLs and the search engines (Web search settings). Nothing is sent anywhere until an item is run,
 // which opens the URL in whatever app Android picks for it.
 class WebProvider(private val engines: StateFlow<List<AvailableEngine>>) : SearchProvider {
     override val id = "web"
@@ -31,8 +31,10 @@ class WebProvider(private val engines: StateFlow<List<AvailableEngine>>) : Searc
 
     override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {
         if (request.mode == SearchMode.ALIAS) {
-            val engine = engines.value.find { it.engine.id == request.engine?.id } ?: return emptyList()
+            val requested = request.engine ?: return emptyList()
             if (request.aliasQuery.isEmpty()) return emptyList()
+            // Without its icon until AppIndex has reloaded an engine just added in settings
+            val engine = engines.value.find { it.engine == requested } ?: AvailableEngine(requested)
             return listOf(engineItem(engine, request.aliasQuery))
         }
 

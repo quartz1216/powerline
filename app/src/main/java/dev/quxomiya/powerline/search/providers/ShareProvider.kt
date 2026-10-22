@@ -3,15 +3,22 @@ package dev.quxomiya.powerline.search.providers
 import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
+import dev.quxomiya.powerline.search.AvailableShareTarget
 import dev.quxomiya.powerline.search.ResultSection
 import dev.quxomiya.powerline.search.SearchAction
 import dev.quxomiya.powerline.search.SearchItem
 import dev.quxomiya.powerline.search.SearchMode
 import dev.quxomiya.powerline.search.SearchProvider
 import dev.quxomiya.powerline.search.SearchRequest
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
-// Sends the query text to the system share sheet
-class ShareProvider : SearchProvider {
+// Sends the query text to the system share sheet, or straight to an app after its share alias
+class ShareProvider(
+    private val shareTargets: StateFlow<List<AvailableShareTarget>> = MutableStateFlow(emptyList()),
+    // The Built-in switch: the plain-text "Share text" item only, not share aliases
+    private val textEnabled: () -> Boolean = { true }
+) : SearchProvider {
     override val id = "share"
     override val displayName = "Share"
     override val priority = 10
@@ -19,7 +26,25 @@ class ShareProvider : SearchProvider {
     override val section = ResultSection.SHARE
 
     override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {
-        if (request.mode != SearchMode.TEXT) return emptyList()
+        if (request.mode == SearchMode.ALIAS) {
+            val target = request.shareTarget ?: return emptyList()
+            if (request.aliasQuery.isEmpty()) return emptyList()
+            return listOf(
+                SearchItem(
+                    id = "share:${target.id}:${request.aliasQuery}",
+                    providerId = id,
+                    title = request.aliasQuery,
+                    subtitle = "Share to ${target.name}",
+                    // The target app's icon once AppIndex has loaded it
+                    icon = shareTargets.value.find { it.target == target }?.icon,
+                    section = section,
+                    score = 0,
+                    action = SearchAction.ShareText(request.aliasQuery, target),
+                    vectorIcon = icon
+                )
+            )
+        }
+        if (!textEnabled()) return emptyList()
         return listOf(
             SearchItem(
                 id = "share:${request.text}",

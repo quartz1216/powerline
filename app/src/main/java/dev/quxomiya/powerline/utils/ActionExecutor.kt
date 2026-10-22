@@ -10,6 +10,7 @@ import android.widget.Toast
 import dev.quxomiya.powerline.data.UserDataRepository
 import dev.quxomiya.powerline.search.SearchAction
 import dev.quxomiya.powerline.search.SearchItem
+import dev.quxomiya.powerline.search.ShareTarget
 
 object ActionExecutor {
 
@@ -22,7 +23,7 @@ object ActionExecutor {
             is SearchAction.LaunchApp -> launchApp(context, action)
             is SearchAction.OpenUrl -> openUrl(context, action.url)
             is SearchAction.CopyText -> copyText(context, action.text)
-            is SearchAction.ShareText -> shareText(context, action.text)
+            is SearchAction.ShareText -> shareText(context, action.text, action.target)
         }
         // Only app launches are history (recent row and frecency); see HistoryItem
         val action = item.action
@@ -70,10 +71,23 @@ object ActionExecutor {
         return true
     }
 
-    fun shareText(context: Context, text: String): Boolean {
+    // Straight to `target` when given; the share sheet when not, or when the target is gone
+    fun shareText(context: Context, text: String, target: ShareTarget? = null): Boolean {
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
             putExtra(Intent.EXTRA_TEXT, text)
             type = "text/plain"
+        }
+        if (target != null) {
+            try {
+                context.startActivity(
+                    Intent(sendIntent)
+                        .setComponent(ComponentName(target.packageName, target.className))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+                return true
+            } catch (e: Exception) {
+                Toast.makeText(context, "Cannot share to ${target.name}", Toast.LENGTH_SHORT).show()
+            }
         }
         context.startActivity(Intent.createChooser(sendIntent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         return true

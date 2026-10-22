@@ -27,6 +27,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.services.StatusBarAccessibilityService
+import dev.quxomiya.powerline.ui.settings.BuiltInSettings
+import dev.quxomiya.powerline.ui.settings.ShareSettings
+import dev.quxomiya.powerline.ui.settings.WebSearchSettings
 
 // Two panes: Logo (title, icon, status) and Settings. Stacked in portrait, side by side in landscape.
 @Composable
@@ -144,8 +147,17 @@ private fun SettingsPane(
                 }
             }
     
-            // Search settings will be added here
-            SettingsSection(title = "Functions") {}
+            SettingsSection(title = "Built-in") {
+                BuiltInSettings()
+            }
+
+            SettingsSection(title = "Web search") {
+                WebSearchSettings()
+            }
+
+            SettingsSection(title = "Share") {
+                ShareSettings()
+            }
     
             SettingsSection(title = "If Alt+Space doesn't work") {
                 Text(

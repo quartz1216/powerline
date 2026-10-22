@@ -9,8 +9,9 @@ data class SearchRequest(
     val normalizedQuery: String,
     val tokens: List<String>,
     val mode: SearchMode,
-    // Set in ALIAS mode
+    // In ALIAS mode, exactly one of these is set
     val engine: SearchEngine? = null,
+    val shareTarget: ShareTarget? = null,
     // In ALIAS mode, the part after the alias
     val aliasQuery: String = ""
 )

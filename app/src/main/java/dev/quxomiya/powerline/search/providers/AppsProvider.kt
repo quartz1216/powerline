@@ -13,8 +13,11 @@ import dev.quxomiya.powerline.search.SearchRanker
 import dev.quxomiya.powerline.search.SearchRequest
 import kotlinx.coroutines.flow.StateFlow
 
-// Installed apps matched by label, package name and built-in alias
-class AppsProvider(private val apps: StateFlow<List<IndexedApp>>) : SearchProvider {
+// Installed apps matched by label, package name and built-in alias. Off with the Built-in switch.
+class AppsProvider(
+    private val apps: StateFlow<List<IndexedApp>>,
+    private val enabled: () -> Boolean = { true }
+) : SearchProvider {
     override val id = ID
     override val displayName = "Apps"
     override val priority = 40
@@ -22,7 +25,7 @@ class AppsProvider(private val apps: StateFlow<List<IndexedApp>>) : SearchProvid
     override val section = ResultSection.APPS
 
     override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> =
-        apps.value.mapNotNull { indexed ->
+        if (!enabled()) emptyList() else apps.value.mapNotNull { indexed ->
             val match = indexed.searchKeys.maxOfOrNull { SearchRanker.match(request, it) } ?: 0
             if (match > 0) indexed.app.toSearchItem(score = match) else null
         }

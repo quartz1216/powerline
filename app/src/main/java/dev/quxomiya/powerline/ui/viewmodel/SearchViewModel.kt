@@ -3,11 +3,12 @@ package dev.quxomiya.powerline.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import dev.quxomiya.powerline.data.SearchSettingsRepository
 import dev.quxomiya.powerline.data.UserDataRepository
 import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.domain.models.AppInfo
 import dev.quxomiya.powerline.search.AppIndex
-import dev.quxomiya.powerline.search.AvailableEngine
+import dev.quxomiya.powerline.search.AliasChip
 import dev.quxomiya.powerline.search.ProviderRegistry
 import dev.quxomiya.powerline.search.QueryParser
 import dev.quxomiya.powerline.search.RankingSignals
@@ -19,8 +20,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -28,7 +32,8 @@ import kotlinx.coroutines.withContext
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
 
     val userDataRepository = UserDataRepository(application)
-    private val appIndex = AppIndex(application, viewModelScope)
+    private val searchSettings = SearchSettingsRepository.get(application)
+    private val appIndex = AppIndex(application, viewModelScope, searchSettings.engines, searchSettings.shareTargets)
 
     // Launchable apps by name (the standby "all apps" grid)
     private val _visibleApps = MutableStateFlow<List<AppInfo>>(emptyList())
@@ -38,13 +43,23 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val _recentApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val recentApps: StateFlow<List<AppInfo>> = _recentApps.asStateFlow()
 
-    // Search engines with their icons (standby chips)
-    val engines: StateFlow<List<AvailableEngine>> = appIndex.availableEngines
+    // Standby chips: aliased search engines, then share targets
+    val chips: StateFlow<List<AliasChip>> =
+        combine(appIndex.availableEngines, appIndex.availableShareTargets) { engines, targets ->
+            engines.mapNotNull { available ->
+                val engine = available.engine
+                val alias = engine.alias?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                AliasChip("web:${engine.id}", engine.name, alias, available.icon, isShare = false)
+            } + targets.map { available ->
+                val target = available.target
+                AliasChip("share:${target.id}", target.name, target.alias, available.icon, isShare = true)
+            }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val pipeline = SearchPipeline(
         context = application,
-        registry = ProviderRegistry(appIndex),
-        parser = QueryParser(PowerlineDefaults.SEARCH_ENGINES),
+        registry = ProviderRegistry(appIndex, searchSettings::isEnabled),
+        parser = QueryParser({ searchSettings.engines.value }, { searchSettings.shareTargets.value }),
         signals = {
             RankingSignals(
                 favoriteApps = userDataRepository.getFavoriteApps(),

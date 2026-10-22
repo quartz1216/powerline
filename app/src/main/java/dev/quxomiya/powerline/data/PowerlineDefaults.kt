@@ -2,7 +2,8 @@ package dev.quxomiya.powerline.data
 
 import dev.quxomiya.powerline.search.SearchEngine
 
-// V2 keeps no user settings; these fixed values replace the old preferences.
+// Fixed values in place of the old preferences. The only settings are the search settings
+// (SearchSettingsRepository: Calculator, and engines starting from SEARCH_ENGINES, share targets).
 object PowerlineDefaults {
     const val OVERLAY_CLOSE_ON_BACKGROUND_TAP = true
 

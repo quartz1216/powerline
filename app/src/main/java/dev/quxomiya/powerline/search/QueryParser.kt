@@ -2,7 +2,14 @@ package dev.quxomiya.powerline.search
 
 import java.text.Normalizer
 
-class QueryParser(private val engines: List<SearchEngine>) {
+// Engines and share targets are read on every parse, so edits in settings apply at once
+class QueryParser(
+    private val engines: () -> List<SearchEngine>,
+    private val shareTargets: () -> List<ShareTarget> = { emptyList() }
+) {
+
+    constructor(engines: List<SearchEngine>, shareTargets: List<ShareTarget> = emptyList()) :
+        this({ engines }, { shareTargets })
 
     private val whitespace = Regex("\\s+")
 
@@ -13,20 +20,25 @@ class QueryParser(private val engines: List<SearchEngine>) {
         val leading = folded.trimStart().replace(whitespace, " ")
         val text = leading.trimEnd()
         val normalized = text.lowercase()
+        val lowerLeading = leading.lowercase()
 
-        val engine = engines.firstOrNull { engine ->
-            val alias = engine.alias
-            !alias.isNullOrBlank() && leading.lowercase().startsWith("${alias.lowercase()} ")
-        }
+        fun matches(alias: String?) = !alias.isNullOrBlank() && lowerLeading.startsWith("${alias.lowercase()} ")
+
+        // The longest alias wins, so "ytm lofi" is never read as "yt" + "m lofi"
+        val engine = engines().filter { matches(it.alias) }.maxByOrNull { it.alias!!.length }
+        val shareTarget = shareTargets().filter { matches(it.alias) }.maxByOrNull { it.alias.length }
+            ?.takeIf { engine == null || it.alias.length > engine.alias!!.length }
+        val alias = shareTarget?.alias ?: engine?.alias
 
         return SearchRequest(
             rawQuery = rawQuery,
             text = text,
             normalizedQuery = normalized,
             tokens = if (normalized.isEmpty()) emptyList() else normalized.split(' '),
-            mode = if (engine != null) SearchMode.ALIAS else SearchMode.TEXT,
-            engine = engine,
-            aliasQuery = engine?.let { leading.substring(it.alias!!.length + 1).trim() } ?: ""
+            mode = if (alias != null) SearchMode.ALIAS else SearchMode.TEXT,
+            engine = engine.takeIf { shareTarget == null },
+            shareTarget = shareTarget,
+            aliasQuery = alias?.let { leading.substring(it.length + 1).trim() } ?: ""
         )
     }
 }

@@ -10,6 +10,7 @@ import dev.quxomiya.powerline.search.IndexedApp
 import dev.quxomiya.powerline.search.QueryParser
 import dev.quxomiya.powerline.search.SearchAction
 import dev.quxomiya.powerline.search.SearchRanker
+import dev.quxomiya.powerline.search.ShareTarget
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -60,6 +61,11 @@ class ProvidersTest {
     }
 
     @Test
+    fun appsSilentWhenSwitchedOff() {
+        assertEquals(0, runBlocking { AppsProvider(apps) { false }.search(parser.parse("chr"), context) }.size)
+    }
+
+    @Test
     fun appsNoMatch() {
         assertEquals(emptyList<String>(), appsSearch("zzz").map { it.title })
     }
@@ -73,6 +79,12 @@ class ProvidersTest {
         val item = calc("200*10%").single()
         assertEquals("20", item.title)
         assertEquals(SearchAction.CopyText("20"), item.action)
+    }
+
+    @Test
+    fun calculatorSilentWhenSwitchedOff() {
+        val items = runBlocking { CalculatorProvider { false }.search(parser.parse("1+2"), context) }
+        assertEquals(0, items.size)
     }
 
     @Test
@@ -152,6 +164,27 @@ class ProvidersTest {
     @Test
     fun shareSilentInAliasMode() {
         assertEquals(0, runBlocking { ShareProvider().search(parser.parse("yt x"), context) }.size)
+    }
+
+    // Switching Share off hides "Share text" but keeps share aliases
+    @Test
+    fun shareSwitchedOffKeepsAliases() {
+        val target = ShareTarget("claude", "Claude", "cl", "com.anthropic.claude", "com.anthropic.claude.Share")
+        val shareParser = QueryParser(PowerlineDefaults.SEARCH_ENGINES, listOf(target))
+        val provider = ShareProvider(textEnabled = { false })
+        assertEquals(0, runBlocking { provider.search(shareParser.parse("hello"), context) }.size)
+        assertEquals(1, runBlocking { provider.search(shareParser.parse("cl hello"), context) }.size)
+    }
+
+    @Test
+    fun shareAliasSendsToTarget() {
+        val target = ShareTarget("claude", "Claude", "cl", "com.anthropic.claude", "com.anthropic.claude.Share")
+        val shareParser = QueryParser(PowerlineDefaults.SEARCH_ENGINES, listOf(target))
+        val item = runBlocking { ShareProvider().search(shareParser.parse("cl Hello  World"), context) }.single()
+        assertEquals(SearchAction.ShareText("Hello World", target), item.action)
+        assertEquals("Share to Claude", item.subtitle)
+        assertEquals(0, runBlocking { ShareProvider().search(shareParser.parse("cl "), context) }.size)
+        assertEquals(0, runBlocking { WebProvider(engines).search(shareParser.parse("cl hi"), context) }.size)
     }
 
     private fun indexed(label: String, packageName: String, className: String, aliases: List<String> = emptyList()) =

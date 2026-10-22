@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.itemsIndexed as rowItemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -29,14 +30,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.quxomiya.powerline.domain.models.AppInfo
 import dev.quxomiya.powerline.ui.components.AppTile
-import dev.quxomiya.powerline.search.AvailableEngine
+import dev.quxomiya.powerline.search.AliasChip
 import dev.quxomiya.powerline.ui.components.AppIcon
 import dev.quxomiya.powerline.ui.theme.PanelItemInset
 
 // Empty-query state of the overlay: feature chips, recent apps row, divider, all apps by name
 @Composable
 fun StandbyContent(
-    engines: List<AvailableEngine>,
+    chips: List<AliasChip>,
     recentApps: List<AppInfo>,
     allApps: List<AppInfo>,
     grid: StandbyGrid,
@@ -44,13 +45,13 @@ fun StandbyContent(
     selectedIndex: Int,
     selectedChip: Int?,
     gridState: LazyGridState,
-    onChipClick: (AvailableEngine) -> Unit,
+    onChipClick: (AliasChip) -> Unit,
     onAppClick: (AppInfo) -> Unit,
     onAppLongClick: (AppInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        FeatureChips(engines = engines, selectedChip = selectedChip, onChipClick = onChipClick)
+        FeatureChips(chips = chips, selectedChip = selectedChip, onChipClick = onChipClick)
 
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -93,10 +94,9 @@ fun StandbyContent(
     }
 }
 
-// Shortcuts for the built-in search engine aliases; tapping one types "<alias> " into the field
+// Shortcuts for the search engine and share aliases; tapping one types "<alias> " into the field
 @Composable
-private fun FeatureChips(engines: List<AvailableEngine>, selectedChip: Int?, onChipClick: (AvailableEngine) -> Unit) {
-    val aliased = engines.filter { !it.engine.alias.isNullOrBlank() }
+private fun FeatureChips(chips: List<AliasChip>, selectedChip: Int?, onChipClick: (AliasChip) -> Unit) {
     val rowState = rememberLazyListState()
 
     LaunchedEffect(selectedChip) {
@@ -108,10 +108,10 @@ private fun FeatureChips(engines: List<AvailableEngine>, selectedChip: Int?, onC
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        rowItemsIndexed(aliased, key = { _, engine -> engine.engine.id }) { index, engine ->
+        rowItemsIndexed(chips, key = { _, chip -> chip.id }) { index, chip ->
             val isSelected = index == selectedChip
             AssistChip(
-                onClick = { onChipClick(engine) },
+                onClick = { onChipClick(chip) },
                 colors = if (isSelected) {
                     AssistChipDefaults.assistChipColors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -125,15 +125,15 @@ private fun FeatureChips(engines: List<AvailableEngine>, selectedChip: Int?, onC
                 } else {
                     AssistChipDefaults.assistChipBorder(enabled = true)
                 },
-                label = { Text(engine.engine.name) },
+                label = { Text(chip.name) },
                 leadingIcon = {
-                    // Icon of the app that opens the engine's URLs
-                    val appIcon = engine.icon
+                    // Icon of the app that opens the engine's URLs, or of the share target
+                    val appIcon = chip.icon
                     if (appIcon != null) {
                         AppIcon(drawable = appIcon, size = AssistChipDefaults.IconSize)
                     } else {
                         Icon(
-                            imageVector = Icons.Default.Search,
+                            imageVector = if (chip.isShare) Icons.Default.Share else Icons.Default.Search,
                             contentDescription = null,
                             modifier = Modifier.size(AssistChipDefaults.IconSize)
                         )
@@ -141,7 +141,7 @@ private fun FeatureChips(engines: List<AvailableEngine>, selectedChip: Int?, onC
                 },
                 trailingIcon = {
                     Text(
-                        text = engine.engine.alias.orEmpty(),
+                        text = chip.alias,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

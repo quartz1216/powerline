@@ -2,7 +2,7 @@ package dev.quxomiya.powerline.search
 
 import android.graphics.drawable.Drawable
 
-// Search engine defined by a URL template alone, so built-in and (later) user-added engines
+// Search engine defined by a URL template alone, so built-in and user-added engines
 // work the same way. Android decides which app opens the URL.
 data class SearchEngine(
     val id: String,

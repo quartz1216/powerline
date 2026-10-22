@@ -73,4 +73,37 @@ class QueryParserTest {
     fun textModeHasNoEngine() {
         assertNull(parser.parse("laneige").engine)
     }
+
+    // --- Share aliases ---
+
+    private val claude = ShareTarget("claude", "Claude", "cl", "com.anthropic.claude", "com.anthropic.claude.Share")
+    private val ytShare = ShareTarget("yts", "YT share", "yts", "com.example.yt", "com.example.yt.Share")
+    private val withShares = QueryParser(PowerlineDefaults.SEARCH_ENGINES, listOf(claude, ytShare))
+
+    @Test
+    fun shareAliasSelectsTarget() {
+        val request = withShares.parse("CL  hello there")
+        assertEquals(SearchMode.ALIAS, request.mode)
+        assertEquals(claude, request.shareTarget)
+        assertNull(request.engine)
+        assertEquals("hello there", request.aliasQuery)
+    }
+
+    // "yts x" is the share target, "yt x" still the engine
+    @Test
+    fun longerAliasWinsAcrossLists() {
+        assertEquals(ytShare, withShares.parse("yts x").shareTarget)
+        val engine = withShares.parse("yt x")
+        assertEquals("youtube", engine.engine?.id)
+        assertNull(engine.shareTarget)
+    }
+
+    @Test
+    fun aliasesAreReadOnEveryParse() {
+        var targets = emptyList<ShareTarget>()
+        val live = QueryParser({ PowerlineDefaults.SEARCH_ENGINES }, { targets })
+        assertEquals(SearchMode.TEXT, live.parse("cl hi").mode)
+        targets = listOf(claude)
+        assertEquals(claude, live.parse("cl hi").shareTarget)
+    }
 }
