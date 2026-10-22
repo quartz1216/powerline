@@ -109,7 +109,8 @@ private fun FeatureChips(chips: List<AliasChip>, selectedChip: Int?, onChipClick
 
     LazyRow(
         state = rowState,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        // No top padding: the search field above already leaves room
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         rowItemsIndexed(chips, key = { _, chip -> chip.id }) { index, chip ->
