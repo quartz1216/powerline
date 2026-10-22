@@ -60,8 +60,11 @@ fun SearchScreen(
     val results = uiState.items
     val selectedIndex = uiState.selectedIndex
     val openCount by viewModel.openCount.collectAsState()
-    val allApps by viewModel.visibleApps.collectAsState()
+    val homeEnabled by viewModel.homeEnabled.collectAsState()
+    val visibleApps by viewModel.visibleApps.collectAsState()
     val recentAppsAll by viewModel.recentApps.collectAsState()
+    // Home off empties the standby grid; keyboard navigation then sees no apps
+    val allApps = if (homeEnabled) visibleApps else emptyList()
     val chips by viewModel.chips.collectAsState()
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
@@ -96,7 +99,7 @@ fun SearchScreen(
         val panelTop = ((maxHeight - PanelMaxHeight) / 2).coerceAtLeast(48.dp)
         val columns = ((panelWidth - PanelItemInset * 2) / AppTileMinWidth).toInt().coerceIn(3, 8)
         // Recent apps fill exactly one row
-        val recentApps = recentAppsAll.take(columns)
+        val recentApps = if (homeEnabled) recentAppsAll.take(columns) else emptyList()
         val grid = remember(recentApps.size, allApps.size, columns) {
             StandbyGrid(recentApps.size, allApps.size, columns)
         }

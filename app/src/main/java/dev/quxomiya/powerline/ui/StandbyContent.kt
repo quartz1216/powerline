@@ -34,7 +34,8 @@ import dev.quxomiya.powerline.search.AliasChip
 import dev.quxomiya.powerline.ui.components.AppIcon
 import dev.quxomiya.powerline.ui.theme.PanelItemInset
 
-// Empty-query state of the overlay: feature chips, recent apps row, divider, all apps by name
+// Empty-query state of the overlay: feature chips, recent apps row, divider, all apps by name.
+// Chips and apps can each be empty (switched off in Built-in); then their part is left out.
 @Composable
 fun StandbyContent(
     chips: List<AliasChip>,
@@ -51,7 +52,10 @@ fun StandbyContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        FeatureChips(chips = chips, selectedChip = selectedChip, onChipClick = onChipClick)
+        if (chips.isNotEmpty()) {
+            FeatureChips(chips = chips, selectedChip = selectedChip, onChipClick = onChipClick)
+        }
+        if (grid.size == 0) return@Column
 
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),

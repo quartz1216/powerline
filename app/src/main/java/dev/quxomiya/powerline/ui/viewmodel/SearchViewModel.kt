@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -45,13 +46,15 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val _recentApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val recentApps: StateFlow<List<AppInfo>> = _recentApps.asStateFlow()
 
-    // Standby chips: aliased search engines, then share targets, each only while its built-in is on
+    // Standby chips: aliased search engines, then share targets, each only while its built-in is on.
+    // None at all with Chips off.
     val chips: StateFlow<List<AliasChip>> =
         combine(
             appIndex.availableEngines,
             appIndex.availableShareTargets,
             searchSettings.disabledBuiltIns
         ) { allEngines, allTargets, disabled ->
+            if (BuiltIn.CHIPS in disabled) return@combine emptyList()
             val engines = if (BuiltIn.WEB in disabled) emptyList() else allEngines
             val targets = if (BuiltIn.SHARE in disabled) emptyList() else allTargets
             engines.mapNotNull { available ->
@@ -63,6 +66,11 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                 AliasChip("share:${target.id}", target.name, target.alias, available.icon, isShare = true)
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    // The standby app grid (recent row and all apps), off with the Home switch
+    val homeEnabled: StateFlow<Boolean> = searchSettings.disabledBuiltIns
+        .map { BuiltIn.HOME !in it }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, searchSettings.isEnabled(BuiltIn.HOME))
 
     private val pipeline = SearchPipeline(
         context = application,
