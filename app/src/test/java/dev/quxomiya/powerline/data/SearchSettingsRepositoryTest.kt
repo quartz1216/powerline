@@ -67,6 +67,14 @@ class SearchSettingsRepositoryTest {
         assertFalse(SearchSettingsRepository(context).showPackageName.value)
     }
 
+    @Test
+    fun forceAsciiInputDefaultsOnAndRoundTrips() {
+        val repository = SearchSettingsRepository(context)
+        assertTrue(repository.forceAsciiInput.value)
+        repository.setForceAsciiInput(false)
+        assertFalse(SearchSettingsRepository(context).forceAsciiInput.value)
+    }
+
     // A write through another instance (settings vs. overlay) reaches this one
     @Test
     fun followsWritesFromAnotherInstance() {

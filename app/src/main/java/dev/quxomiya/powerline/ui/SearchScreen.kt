@@ -58,6 +58,7 @@ fun SearchScreen(
     val query by viewModel.query.collectAsState()
     val fieldText by viewModel.fieldText.collectAsState()
     val aliasChip by viewModel.aliasChip.collectAsState()
+    val forceAsciiInput by viewModel.forceAsciiInput.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val results = uiState.items
     val selectedIndex = uiState.selectedIndex
@@ -171,6 +172,7 @@ fun SearchScreen(
                             aliasChip = aliasChip,
                             onRemoveAliasChip = viewModel::removeAliasChip,
                             onClear = { viewModel.onQueryChange("") },
+                            forceAsciiInput = forceAsciiInput,
                             onEnter = {
                                 val chip = chipIndex
                                 if (isStandby && chip != null) {

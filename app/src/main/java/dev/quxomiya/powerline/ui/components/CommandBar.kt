@@ -65,6 +65,7 @@ fun CommandBar(
     // Backspace in the empty field while the alias chip shows
     onRemoveAliasChip: () -> Unit = {},
     onClear: () -> Unit = { onQueryChange("") },
+    forceAsciiInput: Boolean = true,
     focusKey: Any = Unit
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -162,8 +163,9 @@ fun CommandBar(
         },
         singleLine = true,
         keyboardOptions = KeyboardOptions(
-            // IME_FLAG_FORCE_ASCII: Japanese IMEs open in direct (alphanumeric) input; the user can still switch
-            keyboardType = KeyboardType.Ascii,
+            // IME_FLAG_FORCE_ASCII: Japanese IMEs open in direct (alphanumeric) input; the user can still switch.
+            // Off in Advanced: the IME opens in its own mode.
+            keyboardType = if (forceAsciiInput) KeyboardType.Ascii else KeyboardType.Text,
             autoCorrect = false,
             imeAction = ImeAction.Go
         ),

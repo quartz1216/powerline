@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 // The search settings: the built-in feature switches, the search engines and share targets
-// that become the overlay's alias chips, and the advanced display switch.
+// that become the overlay's alias chips, and the advanced switches.
 // Settings (MainActivity) and the overlay (accessibility service) share one process and one
 // instance, so an edit reaches the open overlay right away.
 class SearchSettingsRepository(context: Context) {
@@ -33,6 +33,10 @@ class SearchSettingsRepository(context: Context) {
     private val _showPackageName = MutableStateFlow(readShowPackageName())
     val showPackageName: StateFlow<Boolean> = _showPackageName.asStateFlow()
 
+    // Search field asks the IME for ASCII input (on by default)
+    private val _forceAsciiInput = MutableStateFlow(readForceAsciiInput())
+    val forceAsciiInput: StateFlow<Boolean> = _forceAsciiInput.asStateFlow()
+
     // Held here: SharedPreferences keeps its listeners only weakly
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         when (key) {
@@ -40,6 +44,7 @@ class SearchSettingsRepository(context: Context) {
             KEY_SHARE_TARGETS -> _shareTargets.value = readShareTargets()
             in BUILT_IN_KEYS -> _disabledBuiltIns.value = readDisabledBuiltIns()
             KEY_SHOW_PACKAGE_NAME -> _showPackageName.value = readShowPackageName()
+            KEY_FORCE_ASCII_INPUT -> _forceAsciiInput.value = readForceAsciiInput()
         }
     }
 
@@ -75,6 +80,13 @@ class SearchSettingsRepository(context: Context) {
 
     private fun readShowPackageName(): Boolean = prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, true)
 
+    fun setForceAsciiInput(force: Boolean) {
+        _forceAsciiInput.value = force
+        prefs.edit().putBoolean(KEY_FORCE_ASCII_INPUT, force).apply()
+    }
+
+    private fun readForceAsciiInput(): Boolean = prefs.getBoolean(KEY_FORCE_ASCII_INPUT, true)
+
     fun setShareTargets(targets: List<ShareTarget>) {
         _shareTargets.value = targets
         prefs.edit().putString(KEY_SHARE_TARGETS, gson.toJson(targets)).apply()
@@ -109,8 +121,9 @@ class SearchSettingsRepository(context: Context) {
         const val KEY_ENGINES = "search_engines"
         const val KEY_SHARE_TARGETS = "share_targets"
         const val KEY_SHOW_PACKAGE_NAME = "show_package_name"
+        const val KEY_FORCE_ASCII_INPUT = "force_ascii_input"
         private val BUILT_IN_KEYS = BuiltIn.entries.map { it.key }.toSet()
-        val KEYS = setOf(KEY_ENGINES, KEY_SHARE_TARGETS, KEY_SHOW_PACKAGE_NAME) + BUILT_IN_KEYS
+        val KEYS = setOf(KEY_ENGINES, KEY_SHARE_TARGETS, KEY_SHOW_PACKAGE_NAME, KEY_FORCE_ASCII_INPUT) + BUILT_IN_KEYS
 
         @Volatile
         private var instance: Pair<Context, SearchSettingsRepository>? = null

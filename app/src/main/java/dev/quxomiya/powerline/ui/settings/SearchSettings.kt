@@ -84,11 +84,17 @@ fun AdvancedSettings() {
     val context = LocalContext.current
     val repository = remember { SearchSettingsRepository.get(context) }
     val showPackageName by repository.showPackageName.collectAsState()
+    val forceAsciiInput by repository.forceAsciiInput.collectAsState()
 
     SwitchRow(
         title = "Show package name",
         checked = showPackageName,
         onCheckedChange = repository::setShowPackageName
+    )
+    SwitchRow(
+        title = "Open keyboard in ASCII input",
+        checked = forceAsciiInput,
+        onCheckedChange = repository::setForceAsciiInput
     )
 }
 

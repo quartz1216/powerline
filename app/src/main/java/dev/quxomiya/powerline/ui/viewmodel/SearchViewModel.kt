@@ -71,6 +71,9 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             if (BuiltIn.CHIPS in disabled) emptyList() else chips
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    // Advanced switch: the search field asks the IME for ASCII input
+    val forceAsciiInput: StateFlow<Boolean> = searchSettings.forceAsciiInput
+
     // The standby app grid (recent row and all apps), off with the Home switch
     val homeEnabled: StateFlow<Boolean> = searchSettings.disabledBuiltIns
         .map { BuiltIn.HOME !in it }

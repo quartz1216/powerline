@@ -28,7 +28,7 @@ Powerline keeps these in its private app storage:
 |---|---|---|
 | Launch history | Package name, launcher activity and time of the last 100 apps you opened from Powerline | "Recent apps" row and ranking of frequently used apps |
 | Favorite apps | Package names you marked as favorite | Ranking |
-| Search settings | Built-in switches, your search engines and share aliases, and whether app results show package names | Your choices on the status screen |
+| Search settings | Built-in switches, your search engines and share aliases, whether app results show package names, and whether the keyboard opens in ASCII input | Your choices on the status screen |
 
 Searches, calculator input, web queries and shared text are not saved.
 

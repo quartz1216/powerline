@@ -32,7 +32,7 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | トリガー | 画面下の透明オーバーレイ、ステータスバー、QS、アシスタント、Alt+Space | **Alt+Space のみ** |
 | MainActivity | HOME + LAUNCHER。検索画面を表示 | **状態 / 権限 / About の案内画面**。LAUNCHER のみ |
 | SettingsActivity / OverlayActivity | 設定専用 Activity / 透明 Activity の検索画面 | **どちらも廃止** |
-| 設定 UI・設定の保存 | 多数の設定を SharedPreferences に保存 | **設定を持たない**。固定デフォルトで動作。例外は状態画面の Built-in（Apps / Calculator / Web search / Share / Home / Chips のオン・オフ。Web search / Share をオフにすると結果・エイリアス・チップ・設定セクションが消える。Home は未入力時のアプリ一覧、Chips はエイリアスのチップ行）/ Web search / Share（第 8 章 #8。Share の先頭には固定の Share dialog）/ Advanced（Show package name: アプリ結果のパッケージ名表示のオン・オフ） |
+| 設定 UI・設定の保存 | 多数の設定を SharedPreferences に保存 | **設定を持たない**。固定デフォルトで動作。例外は状態画面の Built-in（Apps / Calculator / Web search / Share / Home / Chips のオン・オフ。Web search / Share をオフにすると結果・エイリアス・チップ・設定セクションが消える。Home は未入力時のアプリ一覧、Chips はエイリアスのチップ行）/ Web search / Share（第 8 章 #8。Share の先頭には固定の Share dialog）/ Advanced（Show package name: アプリ結果のパッケージ名表示のオン・オフ。Open keyboard in ASCII input: 検索欄で IME を英数入力で開くかのオン・オフ） |
 | テーマ | Theme Selection / Material You トグル | **Material You 固定**（Android 12+ は壁紙色、11 以下はブランドカラー） |
 | 課金・広告 | Powerline Advanced / AdMob / UMP | **完全撤去** |
 | バックアップ | JSON export / import | **削除** |
@@ -223,7 +223,7 @@ MainActivity
 ### 4.6 設定・データ・バックアップ
 
 - **設定は保持しない。** 固定値は `PowerlineDefaults` に集約する。
-- **データは保持する。** `history`（アプリ起動のみ）/ `favorite_apps` は設定ではないため保持する（設定 UI なし、JSON バックアップなし）。`app_weights` は Phase 5 で履歴ベースの frecency に置き換えたため使わない（旧キーとして Phase 6 で削除）。hidden apps は扱わない。検索設定（`apps_enabled` / `calculator_enabled` / `web_enabled` / `share_enabled` / `home_enabled` / `chips_enabled` / `search_engines` / `share_targets` / `show_package_name`）は `SearchSettingsRepository` に保存する（第 8 章 #8）。
+- **データは保持する。** `history`（アプリ起動のみ）/ `favorite_apps` は設定ではないため保持する（設定 UI なし、JSON バックアップなし）。`app_weights` は Phase 5 で履歴ベースの frecency に置き換えたため使わない（旧キーとして Phase 6 で削除）。hidden apps は扱わない。検索設定（`apps_enabled` / `calculator_enabled` / `web_enabled` / `share_enabled` / `home_enabled` / `chips_enabled` / `search_engines` / `share_targets` / `show_package_name` / `force_ascii_input`）は `SearchSettingsRepository` に保存する（第 8 章 #8）。
 - **JSON は扱わない。** export / import / 復元 / 移行は削除済み。
 - 固定デフォルト:
   - テーマ: Material You（Android 12+ は dynamic color、11 以下はブランドカラー #4CDC8F）
