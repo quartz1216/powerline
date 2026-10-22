@@ -41,4 +41,15 @@ class QueryParser(
             aliasQuery = alias?.let { leading.substring(it.length + 1).trim() } ?: ""
         )
     }
+
+    // An alias query split for the search field: the parsed request, and the raw text after the
+    // alias and its space (as typed, not normalized). Null when the query has no alias.
+    fun splitAlias(rawQuery: String): Pair<SearchRequest, String>? {
+        val request = parse(rawQuery)
+        if (request.mode != SearchMode.ALIAS) return null
+        // An alias has no spaces, so it ends at the first one (full-width included)
+        val trimmed = rawQuery.trimStart()
+        val gap = trimmed.indexOfFirst { it.isWhitespace() }
+        return request to trimmed.substring(gap + 1).trimStart()
+    }
 }

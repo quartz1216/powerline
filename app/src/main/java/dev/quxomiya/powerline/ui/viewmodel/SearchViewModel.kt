@@ -46,15 +46,13 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val _recentApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val recentApps: StateFlow<List<AppInfo>> = _recentApps.asStateFlow()
 
-    // Standby chips: aliased search engines, then share targets, each only while its built-in is on.
-    // None at all with Chips off.
-    val chips: StateFlow<List<AliasChip>> =
+    // Aliased search engines, then share targets, each only while its built-in is on
+    private val aliasChips: StateFlow<List<AliasChip>> =
         combine(
             appIndex.availableEngines,
             appIndex.availableShareTargets,
             searchSettings.disabledBuiltIns
         ) { allEngines, allTargets, disabled ->
-            if (BuiltIn.CHIPS in disabled) return@combine emptyList()
             val engines = if (BuiltIn.WEB in disabled) emptyList() else allEngines
             val targets = if (BuiltIn.SHARE in disabled) emptyList() else allTargets
             engines.mapNotNull { available ->
@@ -67,19 +65,27 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    // Standby chips: the alias chips, none at all with Chips off
+    val chips: StateFlow<List<AliasChip>> =
+        combine(aliasChips, searchSettings.disabledBuiltIns) { chips, disabled ->
+            if (BuiltIn.CHIPS in disabled) emptyList() else chips
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     // The standby app grid (recent row and all apps), off with the Home switch
     val homeEnabled: StateFlow<Boolean> = searchSettings.disabledBuiltIns
         .map { BuiltIn.HOME !in it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, searchSettings.isEnabled(BuiltIn.HOME))
 
+    // A switched-off built-in's aliases read as plain text
+    private val parser = QueryParser(
+        { if (searchSettings.isEnabled(BuiltIn.WEB)) searchSettings.engines.value else emptyList() },
+        { if (searchSettings.isEnabled(BuiltIn.SHARE)) searchSettings.shareTargets.value else emptyList() }
+    )
+
     private val pipeline = SearchPipeline(
         context = application,
         registry = ProviderRegistry(appIndex, searchSettings::isEnabled) { searchSettings.showPackageName.value },
-        // A switched-off built-in's aliases read as plain text
-        parser = QueryParser(
-            { if (searchSettings.isEnabled(BuiltIn.WEB)) searchSettings.engines.value else emptyList() },
-            { if (searchSettings.isEnabled(BuiltIn.SHARE)) searchSettings.shareTargets.value else emptyList() }
-        ),
+        parser = parser,
         signals = {
             RankingSignals(
                 favoriteApps = userDataRepository.getFavoriteApps(),
@@ -88,8 +94,17 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         }
     )
 
+    // The whole query the pipeline sees, alias included ("yt lofi")
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
+
+    // Once an alias is typed with its space, it shows as this chip in the search field and the
+    // field holds only the rest ("lofi")
+    private val _aliasChip = MutableStateFlow<AliasChip?>(null)
+    val aliasChip: StateFlow<AliasChip?> = _aliasChip.asStateFlow()
+
+    private val _fieldText = MutableStateFlow("")
+    val fieldText: StateFlow<String> = _fieldText.asStateFlow()
 
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
@@ -105,17 +120,46 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                 performSearch(_query.value, debounce = false)
             }
         }
-        // Redraw open results when a built-in or the package name switch changes
+        // Redraw open results when a built-in or the package name switch changes. Re-split too:
+        // the field's alias chip goes when its built-in is switched off.
         viewModelScope.launch {
             combine(searchSettings.disabledBuiltIns, searchSettings.showPackageName) { _, _ -> }
                 .drop(1)
-                .collect { performSearch(_query.value, debounce = false) }
+                .collect { setQuery(_query.value, debounce = false) }
         }
     }
 
-    fun onQueryChange(newQuery: String) {
-        _query.value = newQuery
-        performSearch(newQuery)
+    // A whole query: cleared, or "<alias> " from a standby chip
+    fun onQueryChange(newQuery: String) = setQuery(newQuery, debounce = true)
+
+    // An edit in the search field, which holds the text after the alias chip
+    fun onFieldChange(text: String) {
+        val chip = _aliasChip.value
+        setQuery(if (chip != null) "${chip.alias} $text" else text, debounce = true)
+    }
+
+    // Backspace in the empty field: the chip turns back into its alias text, minus the space
+    fun removeAliasChip() {
+        val chip = _aliasChip.value ?: return
+        setQuery(chip.alias, debounce = true)
+    }
+
+    private fun setQuery(newQuery: String, debounce: Boolean) {
+        val split = parser.splitAlias(newQuery)
+        val chip = split?.first?.let { request ->
+            val id = request.shareTarget?.let { "share:${it.id}" } ?: "web:${request.engine?.id}"
+            // Without its icon until AppIndex has reloaded an alias just added in settings
+            aliasChips.value.find { it.id == id }
+                ?: request.shareTarget?.let { AliasChip(id, it.name, it.alias, null, isShare = true) }
+                ?: request.engine?.let { AliasChip(id, it.name, it.alias.orEmpty(), null, isShare = false) }
+        }
+        val fieldText = if (chip != null) split.second else newQuery
+        // Stored as typed, the alias part normalized to the chip's alias
+        val query = if (chip != null) "${chip.alias} $fieldText" else newQuery
+        _aliasChip.value = chip
+        _fieldText.value = fieldText
+        _query.value = query
+        performSearch(query, debounce)
     }
 
     private val _openCount = MutableStateFlow(0)

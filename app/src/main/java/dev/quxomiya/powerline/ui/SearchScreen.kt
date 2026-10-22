@@ -56,6 +56,8 @@ fun SearchScreen(
     onInfoClick: () -> Unit
 ) {
     val query by viewModel.query.collectAsState()
+    val fieldText by viewModel.fieldText.collectAsState()
+    val aliasChip by viewModel.aliasChip.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val results = uiState.items
     val selectedIndex = uiState.selectedIndex
@@ -164,8 +166,11 @@ fun SearchScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         CommandBar(
-                            query = query,
-                            onQueryChange = viewModel::onQueryChange,
+                            query = fieldText,
+                            onQueryChange = viewModel::onFieldChange,
+                            aliasChip = aliasChip,
+                            onRemoveAliasChip = viewModel::removeAliasChip,
+                            onClear = { viewModel.onQueryChange("") },
                             onEnter = {
                                 val chip = chipIndex
                                 if (isStandby && chip != null) {

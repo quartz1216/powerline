@@ -17,6 +17,7 @@ data class AvailableShareTarget(
 )
 
 // A standby chip: an aliased search engine or a share target. Tapping it types "<alias> ".
+// Also the chip in the search field once an alias is typed with its space.
 data class AliasChip(
     val id: String,
     val name: String,

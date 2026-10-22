@@ -33,6 +33,23 @@ class QueryParserTest {
     }
 
     @Test
+    fun splitAliasKeepsTheRestAsTyped() {
+        val (request, rest) = parser.splitAlias("  YT  Lofi  Beats ")!!
+        assertEquals("youtube", request.engine?.id)
+        assertEquals("Lofi  Beats ", rest)
+        assertEquals("", parser.splitAlias("yt ")!!.second)
+        // Full-width alias and space
+        assertEquals("lofi", parser.splitAlias("ｙｔ　lofi")!!.second)
+    }
+
+    @Test
+    fun splitAliasNeedsTheSpace() {
+        assertNull(parser.splitAlias("yt"))
+        assertNull(parser.splitAlias("ytlofi"))
+        assertNull(parser.splitAlias("lofi"))
+    }
+
+    @Test
     fun aliasPrefixSelectsEngine() {
         val request = parser.parse("yt laneige")
         assertEquals(SearchMode.ALIAS, request.mode)

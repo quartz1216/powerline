@@ -1,14 +1,22 @@
 package dev.quxomiya.powerline.ui.components
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -18,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -30,12 +39,15 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
+import dev.quxomiya.powerline.search.AliasChip
 import kotlinx.coroutines.delay
 
 private const val FOCUS_ATTEMPTS = 5
 private const val FOCUS_RETRY_MS = 16L
 
-// Borderless search field used as the header of the overlay panel
+// Borderless search field used as the header of the overlay panel.
+// With an alias typed, the alias shows as a chip before the field, which holds the rest.
 @Composable
 fun CommandBar(
     query: String,
@@ -49,6 +61,10 @@ fun CommandBar(
     onArrowRight: () -> Boolean = { false },
     // Tab / Shift+Tab (backward = true): move between sections
     onTab: (backward: Boolean) -> Unit = {},
+    aliasChip: AliasChip? = null,
+    // Backspace in the empty field while the alias chip shows
+    onRemoveAliasChip: () -> Unit = {},
+    onClear: () -> Unit = { onQueryChange("") },
     focusKey: Any = Unit
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -100,6 +116,12 @@ fun CommandBar(
                             onTab(it.nativeKeyEvent.isShiftPressed)
                             true
                         }
+                        Key.Backspace -> if (aliasChip != null && value.text.isEmpty()) {
+                            onRemoveAliasChip()
+                            true
+                        } else {
+                            false
+                        }
                         else -> false
                     }
                 } else {
@@ -110,19 +132,30 @@ fun CommandBar(
                 }
             },
         placeholder = {
-            Text("Search apps, web, math...", style = MaterialTheme.typography.titleLarge)
+            Text(
+                when {
+                    aliasChip == null -> "Search apps, web, math..."
+                    aliasChip.isShare -> "Share to ${aliasChip.name}"
+                    else -> "Search ${aliasChip.name}"
+                },
+                style = MaterialTheme.typography.titleLarge
+            )
         },
         textStyle = MaterialTheme.typography.titleLarge,
         leadingIcon = {
-            Icon(
-                Icons.Default.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (aliasChip != null) {
+                FieldAliasChip(aliasChip, modifier = Modifier.padding(start = 12.dp, end = 4.dp))
+            } else {
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         },
         trailingIcon = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = { onQueryChange("") }) {
+            if (query.isNotEmpty() || aliasChip != null) {
+                IconButton(onClick = onClear) {
                     Icon(Icons.Default.Close, contentDescription = "Clear")
                 }
             }
@@ -142,4 +175,33 @@ fun CommandBar(
             unfocusedIndicatorColor = Color.Transparent
         )
     )
+}
+
+// The typed alias: the target's icon and name, like the standby chip but not clickable
+@Composable
+private fun FieldAliasChip(chip: AliasChip, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val icon = chip.icon
+            if (icon != null) {
+                AppIcon(drawable = icon, size = AssistChipDefaults.IconSize)
+            } else {
+                Icon(
+                    imageVector = if (chip.isShare) Icons.Default.Share else Icons.Default.Search,
+                    contentDescription = null,
+                    modifier = Modifier.size(AssistChipDefaults.IconSize)
+                )
+            }
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(chip.name, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        }
+    }
 }
