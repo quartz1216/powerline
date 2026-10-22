@@ -20,11 +20,9 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -180,11 +178,7 @@ fun ShareSettings() {
 
     ShareDialogRow()
     targets.forEachIndexed { index, target ->
-        ShareTargetRow(
-            target = target,
-            onClick = { editing = Editing.Existing(index) },
-            onDelete = { repository.setShareTargets(targets.filterIndexed { i, _ -> i != index }) }
-        )
+        ShareTargetRow(target = target, onClick = { editing = Editing.Existing(index) })
     }
     ButtonRow {
         AddButton("Add share target") { editing = Editing.New }
@@ -198,6 +192,12 @@ fun ShareSettings() {
             onSave = { target ->
                 repository.setShareTargets(if (index == null) targets + target else targets.replaced(index, target))
                 editing = Editing.None
+            },
+            onDelete = index?.let {
+                {
+                    repository.setShareTargets(targets.filterIndexed { i, _ -> i != index })
+                    editing = Editing.None
+                }
             },
             onDismiss = { editing = Editing.None }
         )
@@ -284,7 +284,7 @@ private fun ShareDialogRow() {
 }
 
 @Composable
-private fun ShareTargetRow(target: ShareTarget, onClick: () -> Unit, onDelete: () -> Unit) {
+private fun ShareTargetRow(target: ShareTarget, onClick: () -> Unit) {
     val context = LocalContext.current
     val app = remember(target.packageName) {
         try {
@@ -294,24 +294,20 @@ private fun ShareTargetRow(target: ShareTarget, onClick: () -> Unit, onDelete: (
             null
         }
     }
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClickLabel = "Edit ${target.name}", onClick = onClick)
+            .heightIn(min = 48.dp)
             .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text("${target.name}  ·  ${target.alias}", style = MaterialTheme.typography.bodyMedium)
-            Text(
-                app ?: "Not installed",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (app == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        IconButton(onClick = onDelete) {
-            Icon(Icons.Default.Delete, contentDescription = "Delete ${target.name}")
-        }
+        Text("${target.name}  ·  ${target.alias}", style = MaterialTheme.typography.bodyMedium)
+        Text(
+            app ?: "Not installed",
+            style = MaterialTheme.typography.bodySmall,
+            color = if (app == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -378,17 +374,21 @@ private fun EngineEditDialog(
                 }
             }) { Text("Save") }
         },
-        dismissButton = {
-            Row {
-                if (onDelete != null) {
-                    TextButton(onClick = onDelete) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
-                    }
-                }
-                TextButton(onClick = onDismiss) { Text("Cancel") }
+        dismissButton = { DismissButtons(onDelete, onDismiss) }
+    )
+}
+
+// Delete (existing entries only) and Cancel, for the engine and share target dialogs
+@Composable
+private fun DismissButtons(onDelete: (() -> Unit)?, onDismiss: () -> Unit) {
+    Row {
+        if (onDelete != null) {
+            TextButton(onClick = onDelete) {
+                Text("Delete", color = MaterialTheme.colorScheme.error)
             }
         }
-    )
+        TextButton(onClick = onDismiss) { Text("Cancel") }
+    }
 }
 
 // An app activity that accepts shared text
@@ -405,6 +405,8 @@ private fun ShareTargetEditDialog(
     initial: ShareTarget?,
     otherAliases: List<String?>,
     onSave: (ShareTarget) -> Unit,
+    // null for a new target
+    onDelete: (() -> Unit)?,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -486,7 +488,7 @@ private fun ShareTargetEditDialog(
                 }
             }) { Text("Save") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { DismissButtons(onDelete, onDismiss) }
     )
 }
 
