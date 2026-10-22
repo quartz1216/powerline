@@ -1,5 +1,7 @@
 package dev.quxomiya.powerline.ui.components
 
+import android.view.KeyEvent
+import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,10 +32,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
@@ -45,6 +49,15 @@ import kotlinx.coroutines.delay
 
 private const val FOCUS_ATTEMPTS = 5
 private const val FOCUS_RETRY_MS = 16L
+private const val SUBTYPE_SETTLE_MS = 500L
+private const val SUBTYPE_POLL_MS = 200L
+
+// Keys that switch a Japanese IME's input mode, when the IME lets them through to the field
+private val IME_MODE_KEYS = setOf(
+    KeyEvent.KEYCODE_ZENKAKU_HANKAKU, KeyEvent.KEYCODE_EISU, KeyEvent.KEYCODE_KANA,
+    KeyEvent.KEYCODE_KATAKANA_HIRAGANA, KeyEvent.KEYCODE_HENKAN, KeyEvent.KEYCODE_MUHENKAN,
+    KeyEvent.KEYCODE_LANGUAGE_SWITCH
+)
 
 // Borderless search field used as the header of the overlay panel.
 // With an alias typed, the alias shows as a chip before the field, which holds the rest.
@@ -83,6 +96,23 @@ fun CommandBar(
         }
     }
 
+    // IME_FLAG_FORCE_ASCII makes the IME open in alphanumeric input, but Gboard keeps honoring it
+    // after the user switches to Japanese, so no kana can be typed. Ask for it only at open, and
+    // drop it (Compose then restarts input) once the user changes the IME language or mode.
+    val context = LocalContext.current
+    var asciiRequested by remember(focusKey, forceAsciiInput) { mutableStateOf(forceAsciiInput) }
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(focusKey, asciiRequested, focused) {
+        if (!asciiRequested || !focused) return@LaunchedEffect
+        val imm = context.getSystemService(InputMethodManager::class.java) ?: return@LaunchedEffect
+        // The IME may move to an ASCII-capable subtype itself on the flag; take the baseline after
+        delay(SUBTYPE_SETTLE_MS)
+        val initial = imm.currentInputMethodSubtype
+        // Ctrl+Space and the like switch the subtype in the system, out of the field's sight
+        while (imm.currentInputMethodSubtype == initial) delay(SUBTYPE_POLL_MS)
+        asciiRequested = false
+    }
+
     // Keep the cursor at the end when the query is replaced from outside (e.g. a feature chip)
     var fieldValue by remember { mutableStateOf(TextFieldValue(query, TextRange(query.length))) }
     val value = if (fieldValue.text == query) fieldValue else TextFieldValue(query, TextRange(query.length))
@@ -96,7 +126,12 @@ fun CommandBar(
         modifier = modifier
             .fillMaxWidth()
             .focusRequester(focusRequester)
+            .onFocusChanged { focused = it.isFocused }
             .onPreviewKeyEvent {
+                if (asciiRequested && it.nativeKeyEvent.keyCode in IME_MODE_KEYS) {
+                    asciiRequested = false
+                    return@onPreviewKeyEvent false
+                }
                 if (it.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN) {
                     when (it.key) {
                         Key.DirectionDown -> {
@@ -163,9 +198,9 @@ fun CommandBar(
         },
         singleLine = true,
         keyboardOptions = KeyboardOptions(
-            // IME_FLAG_FORCE_ASCII: Japanese IMEs open in direct (alphanumeric) input; the user can still switch.
-            // Off in Advanced: the IME opens in its own mode.
-            keyboardType = if (forceAsciiInput) KeyboardType.Ascii else KeyboardType.Text,
+            // IME_FLAG_FORCE_ASCII until the user switches (see asciiRequested). Off in Advanced:
+            // the IME opens in its own mode.
+            keyboardType = if (asciiRequested) KeyboardType.Ascii else KeyboardType.Text,
             autoCorrect = false,
             imeAction = ImeAction.Go
         ),
