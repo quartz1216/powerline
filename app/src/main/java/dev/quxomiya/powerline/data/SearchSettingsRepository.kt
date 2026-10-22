@@ -12,8 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-// The search settings: the built-in feature switches, and the search engines and share targets
-// that become the overlay's alias chips.
+// The search settings: the built-in feature switches, the search engines and share targets
+// that become the overlay's alias chips, and the advanced display switch.
 // Settings (MainActivity) and the overlay (accessibility service) share one process and one
 // instance, so an edit reaches the open overlay right away.
 class SearchSettingsRepository(context: Context) {
@@ -29,12 +29,17 @@ class SearchSettingsRepository(context: Context) {
     private val _disabledBuiltIns = MutableStateFlow(readDisabledBuiltIns())
     val disabledBuiltIns: StateFlow<Set<BuiltIn>> = _disabledBuiltIns.asStateFlow()
 
+    // Package name under each app result (on by default)
+    private val _showPackageName = MutableStateFlow(readShowPackageName())
+    val showPackageName: StateFlow<Boolean> = _showPackageName.asStateFlow()
+
     // Held here: SharedPreferences keeps its listeners only weakly
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         when (key) {
             KEY_ENGINES -> _engines.value = readEngines()
             KEY_SHARE_TARGETS -> _shareTargets.value = readShareTargets()
             in BUILT_IN_KEYS -> _disabledBuiltIns.value = readDisabledBuiltIns()
+            KEY_SHOW_PACKAGE_NAME -> _showPackageName.value = readShowPackageName()
         }
     }
 
@@ -62,6 +67,13 @@ class SearchSettingsRepository(context: Context) {
 
     private fun readDisabledBuiltIns(): Set<BuiltIn> =
         BuiltIn.entries.filterTo(mutableSetOf()) { !prefs.getBoolean(it.key, true) }
+
+    fun setShowPackageName(show: Boolean) {
+        _showPackageName.value = show
+        prefs.edit().putBoolean(KEY_SHOW_PACKAGE_NAME, show).apply()
+    }
+
+    private fun readShowPackageName(): Boolean = prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, true)
 
     fun setShareTargets(targets: List<ShareTarget>) {
         _shareTargets.value = targets
@@ -96,8 +108,9 @@ class SearchSettingsRepository(context: Context) {
     companion object {
         const val KEY_ENGINES = "search_engines"
         const val KEY_SHARE_TARGETS = "share_targets"
+        const val KEY_SHOW_PACKAGE_NAME = "show_package_name"
         private val BUILT_IN_KEYS = BuiltIn.entries.map { it.key }.toSet()
-        val KEYS = setOf(KEY_ENGINES, KEY_SHARE_TARGETS) + BUILT_IN_KEYS
+        val KEYS = setOf(KEY_ENGINES, KEY_SHARE_TARGETS, KEY_SHOW_PACKAGE_NAME) + BUILT_IN_KEYS
 
         @Volatile
         private var instance: Pair<Context, SearchSettingsRepository>? = null

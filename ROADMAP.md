@@ -4,7 +4,7 @@
 > **Baseline:** `main` @ `1c739ae`  
 > **作業ブランチ:** `v2/phase1-alt-space-trigger` → `v2/phase2-remove-monetization-settings` → `v2/phase3-status-screen` → `v2/phase4-search-pipeline`（Phase 5 も同じブランチ。積み上げ。`main` へは未マージ）  
 > **Target:** V2.0（内部ベータ → 公開）  
-> **Last updated:** 2026-10-22
+> **Last updated:** 2026-10-23
 
 ---
 
@@ -32,7 +32,7 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | トリガー | 画面下の透明オーバーレイ、ステータスバー、QS、アシスタント、Alt+Space | **Alt+Space のみ** |
 | MainActivity | HOME + LAUNCHER。検索画面を表示 | **状態 / 権限 / About の案内画面**。LAUNCHER のみ |
 | SettingsActivity / OverlayActivity | 設定専用 Activity / 透明 Activity の検索画面 | **どちらも廃止** |
-| 設定 UI・設定の保存 | 多数の設定を SharedPreferences に保存 | **設定を持たない**。固定デフォルトで動作。例外は状態画面の Built-in（Apps / Calculator / Share のオン・オフ）/ Web search / Share（第 8 章 #8） |
+| 設定 UI・設定の保存 | 多数の設定を SharedPreferences に保存 | **設定を持たない**。固定デフォルトで動作。例外は状態画面の Built-in（Apps / Calculator / Share のオン・オフ）/ Web search / Share（第 8 章 #8）/ Advanced（Show package name: アプリ結果のパッケージ名表示のオン・オフ） |
 | テーマ | Theme Selection / Material You トグル | **Material You 固定**（Android 12+ は壁紙色、11 以下はブランドカラー） |
 | 課金・広告 | Powerline Advanced / AdMob / UMP | **完全撤去** |
 | バックアップ | JSON export / import | **削除** |
@@ -223,7 +223,7 @@ MainActivity
 ### 4.6 設定・データ・バックアップ
 
 - **設定は保持しない。** 固定値は `PowerlineDefaults` に集約する。
-- **データは保持する。** `history`（アプリ起動のみ）/ `favorite_apps` は設定ではないため保持する（設定 UI なし、JSON バックアップなし）。`app_weights` は Phase 5 で履歴ベースの frecency に置き換えたため使わない（旧キーとして Phase 6 で削除）。hidden apps は扱わない。検索設定（`apps_enabled` / `calculator_enabled` / `share_enabled` / `search_engines` / `share_targets`）は `SearchSettingsRepository` に保存する（第 8 章 #8）。
+- **データは保持する。** `history`（アプリ起動のみ）/ `favorite_apps` は設定ではないため保持する（設定 UI なし、JSON バックアップなし）。`app_weights` は Phase 5 で履歴ベースの frecency に置き換えたため使わない（旧キーとして Phase 6 で削除）。hidden apps は扱わない。検索設定（`apps_enabled` / `calculator_enabled` / `share_enabled` / `search_engines` / `share_targets` / `show_package_name`）は `SearchSettingsRepository` に保存する（第 8 章 #8）。
 - **JSON は扱わない。** export / import / 復元 / 移行は削除済み。
 - 固定デフォルト:
   - テーマ: Material You（Android 12+ は dynamic color、11 以下はブランドカラー #4CDC8F）

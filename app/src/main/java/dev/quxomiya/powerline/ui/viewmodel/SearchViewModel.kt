@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -58,7 +59,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
     private val pipeline = SearchPipeline(
         context = application,
-        registry = ProviderRegistry(appIndex, searchSettings::isEnabled),
+        registry = ProviderRegistry(appIndex, searchSettings::isEnabled) { searchSettings.showPackageName.value },
         parser = QueryParser({ searchSettings.engines.value }, { searchSettings.shareTargets.value }),
         signals = {
             RankingSignals(
@@ -84,6 +85,10 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                 refreshRecentApps()
                 performSearch(_query.value, debounce = false)
             }
+        }
+        // Redraw open results when the package name switch changes
+        viewModelScope.launch {
+            searchSettings.showPackageName.drop(1).collect { performSearch(_query.value, debounce = false) }
         }
     }
 
@@ -117,7 +122,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             .toList()
     }
 
-    fun appItem(app: AppInfo): SearchItem = app.toSearchItem()
+    fun appItem(app: AppInfo): SearchItem = app.toSearchItem(showPackageName = searchSettings.showPackageName.value)
 
     fun selectNext() {
         _uiState.update { state ->

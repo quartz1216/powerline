@@ -14,6 +14,7 @@ import dev.quxomiya.powerline.search.ShareTarget
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -62,7 +63,14 @@ class ProvidersTest {
 
     @Test
     fun appsSilentWhenSwitchedOff() {
-        assertEquals(0, runBlocking { AppsProvider(apps) { false }.search(parser.parse("chr"), context) }.size)
+        assertEquals(0, runBlocking { AppsProvider(apps, enabled = { false }).search(parser.parse("chr"), context) }.size)
+    }
+
+    @Test
+    fun appsPackageNameFollowsSwitch() {
+        assertEquals("com.android.chrome", appsSearch("chr").single().subtitle)
+        val hidden = runBlocking { AppsProvider(apps, showPackageName = { false }).search(parser.parse("chr"), context) }
+        assertNull(hidden.single().subtitle)
     }
 
     @Test

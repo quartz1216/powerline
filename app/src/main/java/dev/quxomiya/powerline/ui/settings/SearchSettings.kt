@@ -78,6 +78,20 @@ fun BuiltInSettings() {
     }
 }
 
+// Advanced section: display switches for power users
+@Composable
+fun AdvancedSettings() {
+    val context = LocalContext.current
+    val repository = remember { SearchSettingsRepository.get(context) }
+    val showPackageName by repository.showPackageName.collectAsState()
+
+    SwitchRow(
+        title = "Show package name",
+        checked = showPackageName,
+        onCheckedChange = repository::setShowPackageName
+    )
+}
+
 // Web search section: the engines. Aliased ones become the overlay's first chips.
 @Composable
 fun WebSearchSettings() {

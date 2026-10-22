@@ -10,9 +10,13 @@ import dev.quxomiya.powerline.search.providers.WebProvider
 // Recents and System are not providers; see ROADMAP §4.4.
 class ProviderRegistry(val providers: List<SearchProvider>) {
 
-    constructor(appIndex: AppIndex, isEnabled: (BuiltIn) -> Boolean = { true }) : this(
+    constructor(
+        appIndex: AppIndex,
+        isEnabled: (BuiltIn) -> Boolean = { true },
+        showPackageName: () -> Boolean = { true }
+    ) : this(
         listOf(
-            AppsProvider(appIndex.apps) { isEnabled(BuiltIn.APPS) },
+            AppsProvider(appIndex.apps, { isEnabled(BuiltIn.APPS) }, showPackageName),
             CalculatorProvider { isEnabled(BuiltIn.CALCULATOR) },
             WebProvider(appIndex.availableEngines),
             ShareProvider(appIndex.availableShareTargets) { isEnabled(BuiltIn.SHARE) }

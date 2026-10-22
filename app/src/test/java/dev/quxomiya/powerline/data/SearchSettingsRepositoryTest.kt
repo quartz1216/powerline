@@ -58,6 +58,15 @@ class SearchSettingsRepositoryTest {
         assertEquals(PowerlineDefaults.SEARCH_ENGINES, SearchSettingsRepository(context).engines.value)
     }
 
+    @Test
+    fun showPackageNameDefaultsOnAndRoundTrips() {
+        val repository = SearchSettingsRepository(context)
+        assertTrue(repository.showPackageName.value)
+        repository.setShowPackageName(false)
+        assertFalse(repository.showPackageName.value)
+        assertFalse(SearchSettingsRepository(context).showPackageName.value)
+    }
+
     // A write through another instance (settings vs. overlay) reaches this one
     @Test
     fun followsWritesFromAnotherInstance() {

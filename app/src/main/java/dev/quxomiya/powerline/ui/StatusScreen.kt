@@ -27,6 +27,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.services.StatusBarAccessibilityService
+import dev.quxomiya.powerline.ui.settings.AdvancedSettings
 import dev.quxomiya.powerline.ui.settings.BuiltInSettings
 import dev.quxomiya.powerline.ui.settings.ShareSettings
 import dev.quxomiya.powerline.ui.settings.WebSearchSettings
@@ -157,6 +158,10 @@ private fun SettingsPane(
 
             SettingsSection(title = "Share") {
                 ShareSettings()
+            }
+
+            SettingsSection(title = "Advanced") {
+                AdvancedSettings()
             }
     
             SettingsSection(title = "If Alt+Space doesn't work") {

@@ -34,7 +34,7 @@ Long-press an app for favorite, app info, share and app shortcuts.
 
 ## What Powerline keeps
 
-Only your launch history (the last 100 apps opened from Powerline) and favorite apps. There are no settings and no backup files. Powerline has no internet permission. Details in [PRIVACY.md](PRIVACY.md).
+Only your launch history (the last 100 apps opened from Powerline), favorite apps and the search settings on the status screen. There are no backup files. Powerline has no internet permission. Details in [PRIVACY.md](PRIVACY.md).
 
 ## Development
 

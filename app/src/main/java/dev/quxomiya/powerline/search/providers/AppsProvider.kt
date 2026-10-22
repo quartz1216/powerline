@@ -14,9 +14,11 @@ import dev.quxomiya.powerline.search.SearchRequest
 import kotlinx.coroutines.flow.StateFlow
 
 // Installed apps matched by label, package name and built-in alias. Off with the Built-in switch.
+// The package name subtitle follows the Advanced switch.
 class AppsProvider(
     private val apps: StateFlow<List<IndexedApp>>,
-    private val enabled: () -> Boolean = { true }
+    private val enabled: () -> Boolean = { true },
+    private val showPackageName: () -> Boolean = { true }
 ) : SearchProvider {
     override val id = ID
     override val displayName = "Apps"
@@ -24,22 +26,25 @@ class AppsProvider(
     override val icon = Icons.Default.Apps
     override val section = ResultSection.APPS
 
-    override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> =
-        if (!enabled()) emptyList() else apps.value.mapNotNull { indexed ->
+    override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {
+        if (!enabled()) return emptyList()
+        val showPackageName = showPackageName()
+        return apps.value.mapNotNull { indexed ->
             val match = indexed.searchKeys.maxOfOrNull { SearchRanker.match(request, it) } ?: 0
-            if (match > 0) indexed.app.toSearchItem(score = match) else null
+            if (match > 0) indexed.app.toSearchItem(score = match, showPackageName = showPackageName) else null
         }
+    }
 
     companion object {
         const val ID = "apps"
     }
 }
 
-fun AppInfo.toSearchItem(score: Int = 0) = SearchItem(
+fun AppInfo.toSearchItem(score: Int = 0, showPackageName: Boolean = true) = SearchItem(
     id = "app:$packageName:$className",
     providerId = AppsProvider.ID,
     title = label,
-    subtitle = packageName,
+    subtitle = if (showPackageName) packageName else null,
     icon = icon,
     section = ResultSection.APPS,
     score = score,

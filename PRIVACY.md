@@ -6,7 +6,7 @@ Powerline is a keyboard launcher for Android. Press Alt+Space on a physical keyb
 
 - Powerline does not have the `INTERNET` permission. It cannot send anything anywhere.
 - It does not read screen content and does not record keystrokes.
-- The only data it keeps is your Powerline launch history and favorite apps, stored on the device.
+- The only data it keeps is your Powerline launch history, favorite apps and search settings, stored on the device.
 - It shows no ads and contains no analytics or tracking SDKs.
 
 ## Accessibility service
@@ -28,8 +28,9 @@ Powerline keeps these in its private app storage:
 |---|---|---|
 | Launch history | Package name, launcher activity and time of the last 100 apps you opened from Powerline | "Recent apps" row and ranking of frequently used apps |
 | Favorite apps | Package names you marked as favorite | Ranking |
+| Search settings | Built-in switches, your search engines and share aliases, and whether app results show package names | Your choices on the status screen |
 
-Powerline has no settings to store. Searches, calculator input, web queries and shared text are not saved.
+Searches, calculator input, web queries and shared text are not saved.
 
 Android Auto Backup may include this data in your device backup (your Google account backup or a device-to-device transfer), as it does for most apps. Uninstalling Powerline deletes it.
 
