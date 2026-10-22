@@ -97,7 +97,7 @@ fun AdvancedSettings() {
     )
 }
 
-// Web search section: the engines by name, the default marked. Tapping one opens its dialog,
+// Web search section: the default engine, then the rest by name. Tapping one opens its dialog,
 // which also sets the default and deletes. Aliased ones become the overlay's first chips.
 @Composable
 fun WebSearchSettings() {
@@ -110,7 +110,7 @@ fun WebSearchSettings() {
     var confirmReset by remember { mutableStateOf(false) }
 
     // Indexes into `engines`, whose first entry is the default
-    engines.indices.sortedBy { engines[it].name.lowercase() }.forEach { index ->
+    engines.indices.sortedWith(compareBy({ it != 0 }, { engines[it].name.lowercase() })).forEach { index ->
         EngineRow(
             engine = engines[index],
             isDefault = index == 0,
