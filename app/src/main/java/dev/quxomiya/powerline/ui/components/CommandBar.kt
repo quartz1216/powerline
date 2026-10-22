@@ -134,7 +134,7 @@ fun CommandBar(
         placeholder = {
             Text(
                 when {
-                    aliasChip == null -> "Search apps, web, math..."
+                    aliasChip == null -> "Type to Search..."
                     aliasChip.isShare -> "Share to ${aliasChip.name}"
                     else -> "Search ${aliasChip.name}"
                 },

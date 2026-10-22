@@ -291,7 +291,7 @@ class OverlayE2ETest {
     private fun shell(command: String): String = device.executeShellCommand(command)
 
     private companion object {
-        const val PLACEHOLDER = "Search apps, web, math..."
+        const val PLACEHOLDER = "Type to Search..."
         const val TAG = "OverlayE2ETest"
         const val TIMEOUT = 3_000L
         const val SETTLE_MS = 300L
