@@ -26,6 +26,8 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import dev.quxomiya.powerline.data.PowerlineDefaults
+import dev.quxomiya.powerline.data.SearchSettingsRepository
+import dev.quxomiya.powerline.search.BuiltIn
 import dev.quxomiya.powerline.services.StatusBarAccessibilityService
 import dev.quxomiya.powerline.ui.settings.AdvancedSettings
 import dev.quxomiya.powerline.ui.settings.BuiltInSettings
@@ -121,6 +123,7 @@ private fun SettingsPane(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val disabledBuiltIns by remember { SearchSettingsRepository.get(context) }.disabledBuiltIns.collectAsState()
 
     Surface(
         modifier = modifier,
@@ -152,12 +155,17 @@ private fun SettingsPane(
                 BuiltInSettings()
             }
 
-            SettingsSection(title = "Web search") {
-                WebSearchSettings()
+            // Hidden while their built-in is off
+            if (BuiltIn.WEB !in disabledBuiltIns) {
+                SettingsSection(title = "Web search") {
+                    WebSearchSettings()
+                }
             }
 
-            SettingsSection(title = "Share") {
-                ShareSettings()
+            if (BuiltIn.SHARE !in disabledBuiltIns) {
+                SettingsSection(title = "Share") {
+                    ShareSettings()
+                }
             }
 
             SettingsSection(title = "Advanced") {

@@ -156,6 +156,14 @@ class ProvidersTest {
     }
 
     @Test
+    fun webSilentWhenSwitchedOff() {
+        val provider = WebProvider(engines) { false }
+        listOf("laneige", "example.com", "yt laneige").forEach { query ->
+            assertEquals("for '$query'", 0, runBlocking { provider.search(parser.parse(query), context) }.size)
+        }
+    }
+
+    @Test
     fun aliasQueryIsEncoded() {
         val item = web("wiki C++ & Java").single()
         assertEquals(SearchAction.OpenUrl("https://en.wikipedia.org/wiki/Special:Search?search=C%2B%2B%20%26%20Java"), item.action)
@@ -174,14 +182,14 @@ class ProvidersTest {
         assertEquals(0, runBlocking { ShareProvider().search(parser.parse("yt x"), context) }.size)
     }
 
-    // Switching Share off hides "Share text" but keeps share aliases
+    // Switching Share off hides "Share text" and share aliases alike
     @Test
-    fun shareSwitchedOffKeepsAliases() {
+    fun shareSilentWhenSwitchedOff() {
         val target = ShareTarget("claude", "Claude", "cl", "com.anthropic.claude", "com.anthropic.claude.Share")
         val shareParser = QueryParser(PowerlineDefaults.SEARCH_ENGINES, listOf(target))
-        val provider = ShareProvider(textEnabled = { false })
+        val provider = ShareProvider(enabled = { false })
         assertEquals(0, runBlocking { provider.search(shareParser.parse("hello"), context) }.size)
-        assertEquals(1, runBlocking { provider.search(shareParser.parse("cl hello"), context) }.size)
+        assertEquals(0, runBlocking { provider.search(shareParser.parse("cl hello"), context) }.size)
     }
 
     @Test

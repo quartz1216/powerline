@@ -149,7 +149,8 @@ fun WebSearchSettings() {
     }
 }
 
-// Share section: apps reached by alias. They follow the engine chips in the overlay.
+// Share section: the system share dialog (fixed), then apps reached by alias. Those follow the
+// engine chips in the overlay.
 @Composable
 fun ShareSettings() {
     val context = LocalContext.current
@@ -159,6 +160,7 @@ fun ShareSettings() {
 
     var editing by remember { mutableStateOf<Editing>(Editing.None) }
 
+    ShareDialogRow()
     targets.forEachIndexed { index, target ->
         ShareTargetRow(
             target = target,
@@ -263,6 +265,25 @@ private fun EngineRow(
         IconButton(onClick = onDelete) {
             Icon(Icons.Default.Delete, contentDescription = "Delete ${engine.name}")
         }
+    }
+}
+
+// The "Share text" result: always there, so it can be neither edited nor deleted
+@Composable
+private fun ShareDialogRow() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .padding(vertical = 4.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("Share dialog  ·  default", style = MaterialTheme.typography.bodyMedium)
+        Text(
+            "Android share sheet",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

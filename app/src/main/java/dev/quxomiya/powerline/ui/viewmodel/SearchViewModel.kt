@@ -9,6 +9,7 @@ import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.domain.models.AppInfo
 import dev.quxomiya.powerline.search.AppIndex
 import dev.quxomiya.powerline.search.AliasChip
+import dev.quxomiya.powerline.search.BuiltIn
 import dev.quxomiya.powerline.search.ProviderRegistry
 import dev.quxomiya.powerline.search.QueryParser
 import dev.quxomiya.powerline.search.RankingSignals
@@ -44,9 +45,15 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val _recentApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val recentApps: StateFlow<List<AppInfo>> = _recentApps.asStateFlow()
 
-    // Standby chips: aliased search engines, then share targets
+    // Standby chips: aliased search engines, then share targets, each only while its built-in is on
     val chips: StateFlow<List<AliasChip>> =
-        combine(appIndex.availableEngines, appIndex.availableShareTargets) { engines, targets ->
+        combine(
+            appIndex.availableEngines,
+            appIndex.availableShareTargets,
+            searchSettings.disabledBuiltIns
+        ) { allEngines, allTargets, disabled ->
+            val engines = if (BuiltIn.WEB in disabled) emptyList() else allEngines
+            val targets = if (BuiltIn.SHARE in disabled) emptyList() else allTargets
             engines.mapNotNull { available ->
                 val engine = available.engine
                 val alias = engine.alias?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
@@ -60,7 +67,11 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val pipeline = SearchPipeline(
         context = application,
         registry = ProviderRegistry(appIndex, searchSettings::isEnabled) { searchSettings.showPackageName.value },
-        parser = QueryParser({ searchSettings.engines.value }, { searchSettings.shareTargets.value }),
+        // A switched-off built-in's aliases read as plain text
+        parser = QueryParser(
+            { if (searchSettings.isEnabled(BuiltIn.WEB)) searchSettings.engines.value else emptyList() },
+            { if (searchSettings.isEnabled(BuiltIn.SHARE)) searchSettings.shareTargets.value else emptyList() }
+        ),
         signals = {
             RankingSignals(
                 favoriteApps = userDataRepository.getFavoriteApps(),
@@ -86,9 +97,11 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                 performSearch(_query.value, debounce = false)
             }
         }
-        // Redraw open results when the package name switch changes
+        // Redraw open results when a built-in or the package name switch changes
         viewModelScope.launch {
-            searchSettings.showPackageName.drop(1).collect { performSearch(_query.value, debounce = false) }
+            combine(searchSettings.disabledBuiltIns, searchSettings.showPackageName) { _, _ -> }
+                .drop(1)
+                .collect { performSearch(_query.value, debounce = false) }
         }
     }
 

@@ -5,8 +5,7 @@ import dev.quxomiya.powerline.search.providers.CalculatorProvider
 import dev.quxomiya.powerline.search.providers.ShareProvider
 import dev.quxomiya.powerline.search.providers.WebProvider
 
-// All providers are registered; a built-in switched off in settings returns nothing (Share
-// still answers its aliases).
+// All providers are registered; a built-in switched off in settings returns nothing.
 // Recents and System are not providers; see ROADMAP §4.4.
 class ProviderRegistry(val providers: List<SearchProvider>) {
 
@@ -18,7 +17,7 @@ class ProviderRegistry(val providers: List<SearchProvider>) {
         listOf(
             AppsProvider(appIndex.apps, { isEnabled(BuiltIn.APPS) }, showPackageName),
             CalculatorProvider { isEnabled(BuiltIn.CALCULATOR) },
-            WebProvider(appIndex.availableEngines),
+            WebProvider(appIndex.availableEngines) { isEnabled(BuiltIn.WEB) },
             ShareProvider(appIndex.availableShareTargets) { isEnabled(BuiltIn.SHARE) }
         )
     )

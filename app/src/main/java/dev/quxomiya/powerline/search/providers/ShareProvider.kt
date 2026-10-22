@@ -13,11 +13,11 @@ import dev.quxomiya.powerline.search.SearchRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-// Sends the query text to the system share sheet, or straight to an app after its share alias
+// Sends the query text to the system share sheet, or straight to an app after its share alias.
+// Off with the Built-in switch, aliases included.
 class ShareProvider(
     private val shareTargets: StateFlow<List<AvailableShareTarget>> = MutableStateFlow(emptyList()),
-    // The Built-in switch: the plain-text "Share text" item only, not share aliases
-    private val textEnabled: () -> Boolean = { true }
+    private val enabled: () -> Boolean = { true }
 ) : SearchProvider {
     override val id = "share"
     override val displayName = "Share"
@@ -26,6 +26,7 @@ class ShareProvider(
     override val section = ResultSection.SHARE
 
     override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {
+        if (!enabled()) return emptyList()
         if (request.mode == SearchMode.ALIAS) {
             val target = request.shareTarget ?: return emptyList()
             if (request.aliasQuery.isEmpty()) return emptyList()
@@ -44,7 +45,6 @@ class ShareProvider(
                 )
             )
         }
-        if (!textEnabled()) return emptyList()
         return listOf(
             SearchItem(
                 id = "share:${request.text}",
