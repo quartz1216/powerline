@@ -69,6 +69,9 @@ fun SearchScreen(
 
     val isStandby = query.isEmpty()
     var standbyIndex by remember(openCount, isStandby) { mutableIntStateOf(0) }
+    // Selected engine chip in the standby state; null while the selection is in the app grid
+    var chipIndex by remember(openCount, isStandby) { mutableStateOf<Int?>(null) }
+    val chipEngines = engines.filter { !it.engine.alias.isNullOrBlank() }
 
     LaunchedEffect(selectedIndex) {
         if (selectedIndex in results.indices) {
@@ -102,6 +105,20 @@ fun SearchScreen(
 
         fun standbyAppAt(index: Int) =
             if (index < recentApps.size) recentApps.getOrNull(index) else allApps.getOrNull(index - recentApps.size)
+
+        // Standby sections in Tab order: chips, recent apps, all apps (wrapping)
+        fun standbyTab(backward: Boolean) {
+            val from = if (chipIndex != null) null else standbySelection
+            val target = if (backward) grid.previousSection(from) else grid.nextSection(from)
+            when {
+                target != null -> {
+                    chipIndex = null
+                    standbyIndex = target
+                }
+                from != null && chipEngines.isNotEmpty() -> chipIndex = 0
+                else -> (if (backward) grid.previousSection(null) else grid.nextSection(null))?.let { standbyIndex = it }
+            }
+        }
 
         // Keep the keyboard-selected tile visible
         LaunchedEffect(standbySelection, grid) {
@@ -148,27 +165,46 @@ fun SearchScreen(
                             query = query,
                             onQueryChange = viewModel::onQueryChange,
                             onEnter = {
-                                if (isStandby) {
+                                val chip = chipIndex
+                                if (isStandby && chip != null) {
+                                    chipEngines.getOrNull(chip)?.let { viewModel.onQueryChange("${it.engine.alias} ") }
+                                } else if (isStandby) {
                                     standbyAppAt(standbySelection)?.let { onResultClick(viewModel.appItem(it)) }
                                 } else if (results.isNotEmpty() && selectedIndex in results.indices) {
                                     onResultClick(results[selectedIndex])
                                 }
                             },
                             onArrowDown = {
-                                if (isStandby) standbyIndex = grid.moveVertical(standbySelection, 1)
-                                else viewModel.selectNext()
+                                if (!isStandby) viewModel.selectNext()
+                                else if (chipIndex != null) chipIndex = null
+                                else standbyIndex = grid.moveVertical(standbySelection, 1)
                             },
                             onArrowUp = {
-                                if (isStandby) standbyIndex = grid.moveVertical(standbySelection, -1)
-                                else viewModel.selectPrevious()
+                                if (!isStandby) {
+                                    viewModel.selectPrevious()
+                                } else if (chipIndex == null) {
+                                    val moved = grid.moveVertical(standbySelection, -1)
+                                    // Up from the top row reaches the chips
+                                    if (moved == standbySelection && chipEngines.isNotEmpty()) chipIndex = 0
+                                    else standbyIndex = moved
+                                }
                             },
                             onArrowLeft = {
-                                if (isStandby) standbyIndex = grid.moveHorizontal(standbySelection, -1)
+                                val chip = chipIndex
+                                if (isStandby && chip != null) chipIndex = maxOf(chip - 1, 0)
+                                else if (isStandby) standbyIndex = grid.moveHorizontal(standbySelection, -1)
                                 isStandby
                             },
                             onArrowRight = {
-                                if (isStandby) standbyIndex = grid.moveHorizontal(standbySelection, 1)
+                                val chip = chipIndex
+                                if (isStandby && chip != null) chipIndex = minOf(chip + 1, chipEngines.lastIndex)
+                                else if (isStandby) standbyIndex = grid.moveHorizontal(standbySelection, 1)
                                 isStandby
+                            },
+                            onTab = { backward ->
+                                if (isStandby) standbyTab(backward)
+                                else if (backward) viewModel.selectPreviousSection()
+                                else viewModel.selectNextSection()
                             },
                             modifier = Modifier.weight(1f),
                             focusKey = openCount
@@ -186,11 +222,12 @@ fun SearchScreen(
 
                     if (isStandby) {
                         StandbyContent(
-                            engines = engines,
+                            engines = chipEngines,
                             recentApps = recentApps,
                             allApps = allApps,
                             grid = grid,
-                            selectedIndex = standbySelection,
+                            selectedIndex = if (chipIndex == null) standbySelection else -1,
+                            selectedChip = chipIndex,
                             gridState = gridState,
                             onChipClick = { engine -> viewModel.onQueryChange("${engine.engine.alias} ") },
                             onAppClick = { onResultClick(viewModel.appItem(it)) },

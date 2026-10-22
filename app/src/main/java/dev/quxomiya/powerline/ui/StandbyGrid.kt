@@ -32,6 +32,23 @@ class StandbyGrid(
         return (index + delta).coerceIn(0, size - 1)
     }
 
+    // First index of each section: the recent row, then all apps
+    private val sectionStarts: List<Int> = listOfNotNull(
+        0.takeIf { recentCount > 0 },
+        recentCount.takeIf { appCount > 0 }
+    )
+
+    // Tab: start of the section after the one holding `index`; null past the last (the chips come next)
+    fun nextSection(index: Int?): Int? =
+        if (index == null) sectionStarts.firstOrNull() else sectionStarts.firstOrNull { it > index }
+
+    // Shift+Tab: start of the section before; null before the first (the chips come next)
+    fun previousSection(index: Int?): Int? {
+        if (index == null) return sectionStarts.lastOrNull()
+        val current = sectionStarts.lastOrNull { it <= index } ?: return null
+        return sectionStarts.lastOrNull { it < current }
+    }
+
     // Position in the LazyVerticalGrid, which also holds a divider after the recent row
     fun gridItemIndex(index: Int): Int {
         return if (recentCount > 0 && index >= recentCount) index + 1 else index

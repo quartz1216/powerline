@@ -25,10 +25,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import kotlinx.coroutines.delay
+
+private const val FOCUS_ATTEMPTS = 5
+private const val FOCUS_RETRY_MS = 16L
 
 // Borderless search field used as the header of the overlay panel
 @Composable
@@ -42,12 +47,23 @@ fun CommandBar(
     // Return true to consume the key (e.g. grid navigation while the query is empty)
     onArrowLeft: () -> Boolean = { false },
     onArrowRight: () -> Boolean = { false },
+    // Tab / Shift+Tab (backward = true): move between sections
+    onTab: (backward: Boolean) -> Unit = {},
     focusKey: Any = Unit
 ) {
     val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
+    // Every open: take focus, then ask for the soft keyboard (a no-op while a physical one is in use).
+    // The overlay window may not have window focus on the first frame, so retry briefly.
     LaunchedEffect(focusKey) {
-        focusRequester.requestFocus()
+        repeat(FOCUS_ATTEMPTS) {
+            if (runCatching { focusRequester.requestFocus() }.isSuccess) {
+                keyboardController?.show()
+                return@LaunchedEffect
+            }
+            delay(FOCUS_RETRY_MS)
+        }
     }
 
     // Keep the cursor at the end when the query is replaced from outside (e.g. a feature chip)
@@ -80,10 +96,17 @@ fun CommandBar(
                             onEnter()
                             true
                         }
+                        Key.Tab -> {
+                            onTab(it.nativeKeyEvent.isShiftPressed)
+                            true
+                        }
                         else -> false
                     }
                 } else {
-                    false
+                    // Swallow the release of keys acted on at press time. An unhandled Enter release
+                    // bubbles up to the overlay's background clickable, which treats it as a click
+                    // and closes the overlay (seen after Enter on an engine chip).
+                    it.key == Key.Enter || it.key == Key.Tab || it.key == Key.DirectionDown || it.key == Key.DirectionUp
                 }
             },
         placeholder = {

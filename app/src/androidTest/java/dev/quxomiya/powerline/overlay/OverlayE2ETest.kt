@@ -139,6 +139,27 @@ class OverlayE2ETest {
         assertEquals(context.packageName, UserDataRepository(context).getHistory().firstOrNull()?.packageName)
     }
 
+    // apps → web → share → (wrap) apps; Enter then launches the top app
+    @Test
+    fun tabCyclesResultSections() {
+        type("powerline")
+        assertNotNull(device.wait(Until.findObject(By.text("Share text")), TIMEOUT))
+        repeat(3) { shell("input keyevent KEYCODE_TAB") }
+        shell("input keyevent KEYCODE_ENTER")
+        assertTrue(device.wait(Until.gone(panel), TIMEOUT))
+        assertEquals(context.packageName, UserDataRepository(context).getHistory().firstOrNull()?.packageName)
+    }
+
+    // Shift+Tab from the first grid section reaches the engine chips; Enter types the alias.
+    // The overlay must stay open: the Enter release once bubbled up to the background and closed it.
+    @Test
+    fun shiftTabSelectsEngineChip() {
+        shell("input keycombination KEYCODE_SHIFT_LEFT KEYCODE_TAB")
+        shell("input keyevent KEYCODE_ENTER")
+        type("lofi")
+        assertNotNull(device.wait(Until.findObject(By.text("Search YouTube Music")), TIMEOUT))
+    }
+
     @Test
     fun switchingAppsCloses() {
         shell("am start -a android.settings.SETTINGS")
@@ -151,7 +172,12 @@ class OverlayE2ETest {
         // The service may still be binding right after setup; retry a few times
         repeat(5) {
             pressAltSpace()
-            if (device.wait(Until.hasObject(panel), 1_500)) return
+            if (device.wait(Until.hasObject(panel), 1_500)) {
+                // Let the first frame settle and focus land in the search field before typing
+                device.waitForIdle()
+                Thread.sleep(SETTLE_MS)
+                return
+            }
             Thread.sleep(TOGGLE_GAP_MS)
         }
         throw AssertionError("Alt+Space did not open the overlay")
@@ -186,6 +212,7 @@ class OverlayE2ETest {
     private companion object {
         const val PLACEHOLDER = "Search apps, web, math..."
         const val TIMEOUT = 3_000L
+        const val SETTLE_MS = 300L
         // StatusBarAccessibilityService ignores toggles closer than 300ms
         const val TOGGLE_GAP_MS = 400L
         const val EV_KEY = 1

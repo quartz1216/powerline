@@ -1,5 +1,6 @@
 package dev.quxomiya.powerline.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,7 +13,8 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed as rowItemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AssistChip
@@ -22,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.quxomiya.powerline.domain.models.AppInfo
@@ -37,7 +40,9 @@ fun StandbyContent(
     recentApps: List<AppInfo>,
     allApps: List<AppInfo>,
     grid: StandbyGrid,
+    // -1 while a chip is selected
     selectedIndex: Int,
+    selectedChip: Int?,
     gridState: LazyGridState,
     onChipClick: (AvailableEngine) -> Unit,
     onAppClick: (AppInfo) -> Unit,
@@ -45,7 +50,7 @@ fun StandbyContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        FeatureChips(engines = engines, onChipClick = onChipClick)
+        FeatureChips(engines = engines, selectedChip = selectedChip, onChipClick = onChipClick)
 
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -90,16 +95,36 @@ fun StandbyContent(
 
 // Shortcuts for the built-in search engine aliases; tapping one types "<alias> " into the field
 @Composable
-private fun FeatureChips(engines: List<AvailableEngine>, onChipClick: (AvailableEngine) -> Unit) {
+private fun FeatureChips(engines: List<AvailableEngine>, selectedChip: Int?, onChipClick: (AvailableEngine) -> Unit) {
     val aliased = engines.filter { !it.engine.alias.isNullOrBlank() }
+    val rowState = rememberLazyListState()
+
+    LaunchedEffect(selectedChip) {
+        if (selectedChip != null) rowState.animateScrollToItem(selectedChip)
+    }
 
     LazyRow(
+        state = rowState,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(aliased, key = { it.engine.id }) { engine ->
+        rowItemsIndexed(aliased, key = { _, engine -> engine.engine.id }) { index, engine ->
+            val isSelected = index == selectedChip
             AssistChip(
                 onClick = { onChipClick(engine) },
+                colors = if (isSelected) {
+                    AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        labelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                } else {
+                    AssistChipDefaults.assistChipColors()
+                },
+                border = if (isSelected) {
+                    BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                } else {
+                    AssistChipDefaults.assistChipBorder(enabled = true)
+                },
                 label = { Text(engine.engine.name) },
                 leadingIcon = {
                     // Icon of the app that opens the engine's URLs

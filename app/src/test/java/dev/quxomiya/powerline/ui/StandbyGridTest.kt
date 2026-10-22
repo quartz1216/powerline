@@ -42,4 +42,27 @@ class StandbyGridTest {
         assertEquals(4, grid.gridItemIndex(3))
         assertEquals(0, StandbyGrid(0, 4, 5).gridItemIndex(0))
     }
+
+    @Test
+    fun tabWalksRecentThenAppsThenChips() {
+        // null = the chips row
+        assertEquals(0, grid.nextSection(null))
+        assertEquals(3, grid.nextSection(1))
+        assertEquals(null, grid.nextSection(9))
+    }
+
+    @Test
+    fun shiftTabWalksBackwards() {
+        assertEquals(3, grid.previousSection(null))
+        assertEquals(0, grid.previousSection(9))
+        assertEquals(null, grid.previousSection(2))
+    }
+
+    @Test
+    fun tabWithoutRecentRow() {
+        val noRecent = StandbyGrid(recentCount = 0, appCount = 4, columns = 5)
+        assertEquals(0, noRecent.nextSection(null))
+        assertEquals(null, noRecent.nextSection(2))
+        assertEquals(0, noRecent.previousSection(null))
+    }
 }

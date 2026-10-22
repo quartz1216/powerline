@@ -116,6 +116,14 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun selectNextSection() {
+        _uiState.update { it.copy(selectedIndex = it.nextSectionStart()) }
+    }
+
+    fun selectPreviousSection() {
+        _uiState.update { it.copy(selectedIndex = it.previousSectionStart()) }
+    }
+
     // Cancels the previous search right away, then waits out the debounce before searching
     private fun performSearch(query: String, debounce: Boolean = true) {
         searchJob?.cancel()
