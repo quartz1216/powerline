@@ -160,6 +160,54 @@ class OverlayE2ETest {
         assertNotNull(device.wait(Until.findObject(By.text("Search YouTube Music")), TIMEOUT))
     }
 
+    // ROADMAP Phase 7: the overlay shows within 200ms of Alt+Space. SearchOverlay logs the time
+    // from the key event to its first frame; UiAutomator's own idle waits would add ~1s here.
+    @Test
+    fun opensWithin200ms() {
+        val times = (1..5).map {
+            shell("input keyevent KEYCODE_ESCAPE")
+            assertTrue(device.wait(Until.gone(panel), TIMEOUT))
+            Thread.sleep(TOGGLE_GAP_MS)
+            shell("logcat -c")
+            pressAltSpace()
+            assertTrue(device.wait(Until.hasObject(panel), TIMEOUT))
+            val log = shell("logcat -d -s SearchOverlay:I")
+            Regex("""Shown (\d+) ms""").findAll(log).lastOrNull()?.groupValues?.get(1)?.toLong()
+                ?: throw AssertionError("no open-time log: $log")
+        }
+        val median = times.sorted()[times.size / 2]
+        android.util.Log.i(TAG, "open times $times ms, median $median ms")
+        assertTrue("median open time $median ms ($times)", median < 200)
+    }
+
+    // ROADMAP Phase 7: UI updates while typing fit in a 16ms frame. Measured as UI-thread work
+    // per frame (input handling to sync with the render thread) from gfxinfo framestats; total
+    // frame time on the emulator is dominated by injected-input latency and software rendering.
+    @Test
+    fun typingFramesFitIn16ms() {
+        shell("dumpsys gfxinfo ${context.packageName} reset")
+        for (c in "powerline chrome") {
+            shell(if (c == ' ') "input keyevent KEYCODE_SPACE" else "input text $c")
+            Thread.sleep(60)
+        }
+        Thread.sleep(500)
+        val uiMs = uiThreadFrameTimes(shell("dumpsys gfxinfo ${context.packageName} framestats")).sorted()
+        assertTrue("no frames", uiMs.isNotEmpty())
+        val p50 = uiMs[uiMs.size / 2]
+        val p90 = uiMs[(uiMs.size * 9 / 10).coerceAtMost(uiMs.lastIndex)]
+        android.util.Log.i(TAG, "typing UI-thread ms over ${uiMs.size} frames: p50=$p50 p90=$p90 max=${uiMs.last()}")
+        assertTrue("UI thread p50 $p50 ms, p90 $p90 ms", p50 <= 16.0)
+    }
+
+    // TalkBack stand-in: everything clickable in the overlay has something to read out
+    @Test
+    fun clickableElementsAreLabeled() {
+        assertAllClickablesLabeled("standby")
+        type("powerline")
+        assertNotNull(device.wait(Until.findObject(By.text("Share text")), TIMEOUT))
+        assertAllClickablesLabeled("results")
+    }
+
     @Test
     fun switchingAppsCloses() {
         shell("am start -a android.settings.SETTINGS")
@@ -167,6 +215,35 @@ class OverlayE2ETest {
     }
 
     // --- helpers ---
+
+    // SyncQueued - HandleInputStart for each complete frame in `dumpsys gfxinfo <pkg> framestats`
+    private fun uiThreadFrameTimes(framestats: String): List<Double> {
+        var header: List<String>? = null
+        val times = mutableListOf<Double>()
+        for (line in framestats.lines()) {
+            if (line.startsWith("Flags,")) {
+                header = line.trimEnd(',').split(',')
+                continue
+            }
+            val columns = header ?: continue
+            if (line.isEmpty() || !line[0].isDigit()) continue
+            val row = columns.zip(line.trimEnd(',').split(',').map { it.toLong() }).toMap()
+            if (row["Flags"] != 0L) continue
+            times += (row.getValue("SyncQueued") - row.getValue("HandleInputStart")) / 1_000_000.0
+        }
+        return times
+    }
+
+    private fun assertAllClickablesLabeled(state: String) {
+        val clickables = device.findObjects(By.pkg(context.packageName).clickable(true))
+        assertTrue("no clickables in $state", clickables.isNotEmpty())
+        // The full-screen background (tap to close) is the only unlabeled clickable allowed
+        val unlabeled = clickables.filterNot(::hasLabel).filter { it.visibleBounds.width() < device.displayWidth }
+        assertTrue("unlabeled clickables in $state: ${unlabeled.map { it.visibleBounds }}", unlabeled.isEmpty())
+    }
+
+    private fun hasLabel(node: androidx.test.uiautomator.UiObject2): Boolean =
+        !node.text.isNullOrBlank() || !node.contentDescription.isNullOrBlank() || node.children.any(::hasLabel)
 
     private fun openOverlay() {
         // The service may still be binding right after setup; retry a few times
@@ -188,11 +265,15 @@ class OverlayE2ETest {
     }
 
     // executeShellCommand runs no shell, so one sendevent per call
-    private fun pressAltSpace() {
+    // Returns System.nanoTime() right after Space went down (the overlay toggles on it)
+    private fun pressAltSpace(): Long {
+        var spaceDownAt = 0L
         for ((code, value) in listOf(KEY_LEFTALT to 1, KEY_SPACE to 1, KEY_SPACE to 0, KEY_LEFTALT to 0)) {
             shell("sendevent $keyboard $EV_KEY $code $value")
             shell("sendevent $keyboard 0 0 0")
+            if (code == KEY_SPACE && value == 1) spaceDownAt = System.nanoTime()
         }
+        return spaceDownAt
     }
 
     // First evdev node that reports KEY_SPACE and that the shell can write to
@@ -211,6 +292,7 @@ class OverlayE2ETest {
 
     private companion object {
         const val PLACEHOLDER = "Search apps, web, math..."
+        const val TAG = "OverlayE2ETest"
         const val TIMEOUT = 3_000L
         const val SETTLE_MS = 300L
         // StatusBarAccessibilityService ignores toggles closer than 300ms

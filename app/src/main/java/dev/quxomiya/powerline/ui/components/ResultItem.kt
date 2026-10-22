@@ -1,6 +1,7 @@
 package dev.quxomiya.powerline.ui.components
 
 import android.graphics.drawable.Drawable
+import android.view.View
 import android.widget.ImageView
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -114,6 +115,8 @@ fun AppIcon(drawable: Drawable, size: Dp = 40.dp) {
             ImageView(context).apply {
                 setImageDrawable(drawable)
                 scaleType = ImageView.ScaleType.FIT_CENTER
+                // Decorative: every icon sits next to the app or engine name, which TalkBack reads
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
             }
         },
         update = { view ->

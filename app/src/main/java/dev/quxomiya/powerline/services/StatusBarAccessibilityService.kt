@@ -37,7 +37,7 @@ class StatusBarAccessibilityService : AccessibilityService() {
                 val now = SystemClock.uptimeMillis()
                 if (now - lastToggleAt >= TOGGLE_DEBOUNCE_MS) {
                     lastToggleAt = now
-                    overlay?.toggle()
+                    overlay?.toggle(triggeredAt = event.eventTime)
                 }
             }
             // Consume DOWN/UP/repeat so Space is not passed to other apps

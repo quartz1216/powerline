@@ -6,7 +6,11 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Bundle
+import android.os.SystemClock
+import android.util.Log
 import android.view.KeyEvent
+import android.view.View
+import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.compose.foundation.background
@@ -59,11 +63,12 @@ class SearchOverlay(private val service: AccessibilityService) {
     val isShowing: Boolean
         get() = rootView != null
 
-    fun toggle() {
-        if (isShowing) hide() else show()
+    // triggeredAt: uptime of the key press that opened the overlay, for the open-time log
+    fun toggle(triggeredAt: Long = SystemClock.uptimeMillis()) {
+        if (isShowing) hide() else show(triggeredAt)
     }
 
-    fun show() {
+    fun show(triggeredAt: Long = SystemClock.uptimeMillis()) {
         if (isShowing) return
         viewModel.resetForOpen()
 
@@ -104,6 +109,7 @@ class SearchOverlay(private val service: AccessibilityService) {
         try {
             windowManager.addView(root, layoutParams())
             rootView = root
+            logOpenTime(root, triggeredAt)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -118,6 +124,17 @@ class SearchOverlay(private val service: AccessibilityService) {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    // Time from the key press to the first frame (ROADMAP Phase 7 target: 200ms); read by OverlayE2ETest
+    private fun logOpenTime(root: View, triggeredAt: Long) {
+        root.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                root.viewTreeObserver.removeOnPreDrawListener(this)
+                Log.i(TAG, "Shown ${SystemClock.uptimeMillis() - triggeredAt} ms after the key press")
+                return true
+            }
+        })
     }
 
     fun destroy() {
@@ -190,5 +207,9 @@ class SearchOverlay(private val service: AccessibilityService) {
             lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
             viewModelStore.clear()
         }
+    }
+
+    private companion object {
+        const val TAG = "SearchOverlay"
     }
 }

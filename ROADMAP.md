@@ -1,6 +1,6 @@
 # Powerline V2 Roadmap
 
-> **Status:** 進行中（Phase 1–3 と検索オーバーレイの刷新が完了。Phase 4–6 が完了。Phase 7 は進行中）  
+> **Status:** 進行中（Phase 1–6 が完了。Phase 7 は自動化できる項目が完了し、実機の端末確認・main へのマージ・配布が残り）  
 > **Baseline:** `main` @ `1c739ae`  
 > **作業ブランチ:** `v2/phase1-alt-space-trigger` → `v2/phase2-remove-monetization-settings` → `v2/phase3-status-screen` → `v2/phase4-search-pipeline`（Phase 5 も同じブランチ。積み上げ。`main` へは未マージ）  
 > **Target:** V2.0（内部ベータ → 公開）  
@@ -56,7 +56,7 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | G4 | **検索コアの再構築** — クエリ解析、並列実行、タイムアウト、ランキング、重複排除 | ✅ 自動テスト通過 |
 | G5 | **機能の再構築** — Apps / Calculator / Web / Share を Provider で作り直す（Recents / System は Provider にしない） | ✅ 自動テスト通過 |
 | G6 | **設定・バックアップを持たない** — 設定の永続化と JSON を削除 | ✅ |
-| G7 | **品質とプライバシー** — キーボード操作、IME、アクセシビリティ、OEM 対策、説明責任 | 🟡 一部 |
+| G7 | **品質とプライバシー** — キーボード操作、IME、アクセシビリティ、OEM 対策、説明責任 | 🟡 ほぼ完了（実機の端末確認が残り） |
 | G8 | **Don't Ask User** — システム権限画面以外で、設定・移行・バックアップ・同意を質問しない | ✅ 完了（Welcome は削除） |
 
 ### 非ゴール（V2 ではやらない）
@@ -249,7 +249,7 @@ MainActivity
 | 4 | 検索コアの再構築 | ✅ 自動テスト通過 | `3cd4201` |
 | 5 | 機能（Provider）の再構築 | ✅ 自動テスト通過 | `cef04eb` |
 | 6 | 初回起動と旧データの掃除 | ✅ | — |
-| 7 | 品質・プライバシー・リリース | 🟡 一部 | — |
+| 7 | 品質・プライバシー・リリース | 🟡 実機確認・マージ・配布が残り | — |
 
 ---
 
@@ -453,29 +453,30 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 
 ---
 
-### Phase 7 — 品質・プライバシー・リリース（一部）
+### Phase 7 — 品質・プライバシー・リリース（実機確認・マージ・配布が残り）
 
 **キーボード UX**
 
 - [x] ↑↓←→ で選択、Enter で実行、Esc / Back で閉じる。
 - [x] 閉じるときのフェードアウト。dim / blur は廃止。
 - [x] 画面回転でクラッシュしない（ハードウェアビットマップ対策）。
-- [ ] Tab / Shift+Tab でセクション移動（待機状態: チップ → 最近のアプリ → 全アプリ、入力時: 結果セクション）。
-- [ ] 開いたときに IME / フォーカスを確実に取る（`FocusRequester` + `SoftwareKeyboardController`）。
-- [ ] マルチウィンドウ・タブレット幅・HyperOS デスクトップモードでのレイアウト確認。
+- [x] Tab / Shift+Tab でセクション移動（待機状態: チップ → 最近のアプリ → 全アプリ、入力時: 結果セクション）。端で反対側へ戻る。待機状態のチップは ←→ で選び Enter でエイリアスを入力、↑ で最上段からチップへ。キーボードで選んだチップは primary の枠で示す。
+- [x] Enter の離し（KEY_UP）が背景の `clickable` に届いてオーバーレイが閉じる不具合を修正（チップで Enter を押すと閉じていた）。検索欄が押下時に処理したキーは離しも消費する。
+- [x] 開いたときに IME / フォーカスを確実に取る（`FocusRequester` + `SoftwareKeyboardController`）。最初のフレームでウィンドウフォーカスがない場合に備えて数回リトライする。
+- [ ] マルチウィンドウ・タブレット幅・HyperOS デスクトップモードでのレイアウト確認。（Android Desktop エミュレーター 2880×1800 では確認済み。HyperOS は実機が必要）
 
 **アクセシビリティ**
 
-- [ ] `contentDescription = null` の 12 か所を見直す（装飾なら null のまま、操作対象には説明を付ける）。
-- [ ] TalkBack で状態画面と検索結果が読めることを確認。
-- [ ] タッチターゲット 48dp 以上。
+- [x] `contentDescription = null` を見直す（現在 9 か所）。すべてテキストラベルの隣の装飾アイコンで null のまま。アプリアイコン（`AppIcon` の `ImageView`）は読み上げ対象から外した。
+- [ ] TalkBack で状態画面と検索結果が読めることを確認。（代わりに `OverlayE2ETest.clickableElementsAreLabeled` で、待機状態と結果のクリックできる要素がすべて読み上げ用のテキストを持つことを確認。実際の TalkBack 操作は未確認）
+- [x] タッチターゲット 48dp 以上。アプリタイルと結果行は 48dp を超え、チップと IconButton は Material の最小サイズ（48dp）が効いている。
 
 **パフォーマンス**
 
-- [ ] Alt+Space から表示まで 200ms 以内。
-- [ ] アプリ一覧のロードを初回のみにし、2 回目以降はキャッシュ。
-- [ ] 入力 1 文字あたりの UI 更新を 16ms 以内に保つ。
-- [ ] リリース APK サイズを測定（広告 SDK 削除後の削減量を記録）。
+- [x] Alt+Space から表示まで 200ms 以内。`SearchOverlay` がキーイベントの時刻から最初のフレームまでをログに出し、`OverlayE2ETest.opensWithin200ms` が判定する。エミュレーターで中央値 139ms（debug）、リリースビルドでは 62–73ms。
+- [x] アプリ一覧のロードを初回のみにし、2 回目以降はキャッシュ。`AppIndex` はサービスの生存中 `SearchViewModel` に保持され、パッケージ変更時だけ読み直す（Phase 5）。
+- [x] 入力 1 文字あたりの UI 更新を 16ms 以内に保つ。`gfxinfo framestats` の UI スレッド時間（HandleInputStart → SyncQueued）で判定（`OverlayE2ETest.typingFramesFitIn16ms`）。エミュレーターで p50 6.5ms / p90 11.9ms。フレーム全体の時間は注入入力の遅延とエミュレーターのソフトウェア描画が大半を占めるため使わない。
+- [x] リリース APK サイズを測定。V1（`main`、minify なし）14.85MB → V2（minify なし）10.50MB → V2（R8 + リソース縮小）1.41MB。
 
 **手動テストマトリクス（人間が実施）**
 
@@ -491,15 +492,16 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 
 **ドキュメント**
 
-- [ ] `README.md`: V2 のセットアップ（アクセシビリティ有効化、Power option、Alt+Space）、ホームアプリではなくなったこと、設定・JSON を保持しないこと。
-- [ ] `PRIVACY.md`: 画面内容を読まない、キーログを取らない、`INTERNET` 権限を持たない（通信しない）。
-- [ ] 状態画面の About から `PRIVACY.md` へリンク。
+- [x] `README.md`: V2 のセットアップ（アクセシビリティ有効化、Power option、Alt+Space）、ホームアプリではなくなったこと、設定・JSON を保持しないこと。キー操作と開発手順も記載。
+- [x] `PRIVACY.md`: 画面内容を読まない、キーログを取らない、`INTERNET` 権限を持たない（通信しない）。保存するデータ（履歴 / favorite）、Android Auto Backup、`QUERY_ALL_PACKAGES` の用途も記載。
+- [x] 状態画面の About から `PRIVACY.md` へリンク（`PowerlineDefaults.PRIVACY_POLICY_URL`、GitHub の `main` 上のファイル。`main` へマージするまではリンク切れ）。
 
 **リリース**
 
-- [ ] `versionCode = 2` / `versionName = "2.0.0"`。
-- [ ] 署名付きリリースビルド、`isMinifyEnabled` の検討。
-- [ ] `v2/phase3-status-screen` までを `main` へマージ（PR）。
+- [x] `versionCode = 2` / `versionName = "2.0.0"`。
+- [x] `isMinifyEnabled` / `isShrinkResources` を有効化。Gson が使う `HistoryItem` / `StoredHistoryItem` のフィールド名を `proguard-rules.pro` で保持。匿名 `TypeToken` は R8 でジェネリクス情報が消えて履歴が読めなくなったため、`TypeToken.getParameterized` に変更（リリースビルドをエミュレーターに入れて、履歴の保存・読み込み、計算、状態画面を確認）。
+- [ ] 署名付きリリースビルド。→ `keystore.properties`（git 管理外）があれば `release` を署名する設定を追加済み（一時的な鍵で動作確認済み）。リリース用の鍵の作成と保管は未着手。
+- [ ] V2 の作業ブランチ（現在は `v2/phase6-7-cleanup-release` まで積み上げ）を `main` へマージ（PR）。
 - [ ] 内部テスト → ベータ → 公開の順で配布。
 
 **完了条件**
@@ -517,7 +519,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 
 - **受け入れ判定は自動テスト**で行う。
   - JVM: `./gradlew :app:testDebugUnitTest`（検索コア・Provider・履歴。Robolectric）
-  - エミュレーター: `scripts/device-tests.sh`（実アプリ一覧での検索と速度、Alt+Space → 入力 → Enter / Esc の E2E）
+  - エミュレーター: `scripts/device-tests.sh`（実アプリ一覧での検索と速度、Alt+Space → 入力 → Enter / Esc / Tab の E2E、表示時間・入力中の UI スレッド時間・読み上げラベル）
 - Powerline は物理キーボードの Alt+Space にしか反応しない（`input keyevent` はアクセシビリティのキーフィルタを通らない）。E2E は `/dev/input` に `sendevent` で書き込むため、`adb root` と `chmod 666 /dev/input/event*` が必要（スクリプトが行う。できない端末では E2E はスキップ）。
 - `connectedDebugAndroidTest` は終了時にアプリをアンインストールする。続けて触るときは `./gradlew :app:installDebug` とアクセシビリティの再有効化が必要。
 - 自動化していない確認（実機・ソフトウェアキーボード・回転・マルチウィンドウなど）は Phase 7 の端末確認で行う。
@@ -598,7 +600,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 - [x] 初回起動でも Welcome を挟まない。
 - [x] システム権限画面以外に、ユーザーへ質問する画面がない。
 - [ ] 人間による手動テストマトリクスでクラッシュ / ANR がない。
-- [ ] `README.md` / `PRIVACY.md` があり、状態画面からリンクされている。
+- [x] `README.md` / `PRIVACY.md` があり、状態画面からリンクされている。
 - [ ] `versionCode = 2` / `versionName = "2.0.0"` の署名済み APK が生成できる。
 
 ---
@@ -611,11 +613,11 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 | M1 | Alt+Space 単一トリガー | 1–2 日 | ✅ |
 | M2 | Advanced / 課金 / 広告 / 設定保存の撤去 | 1–2 日 | ✅ |
 | M3 | 状態画面 + 検索オーバーレイの刷新 | 2–3 日 | ✅ |
-| M4 | 検索コア（パイプライン / ランキング） | 4–5 日 | 🟡 |
-| M5 | Provider 再実装（Apps / Calc / Web / Share） | 4–5 日 | 🟡 |
-| M6 | 初回起動と旧データの掃除 | 1 日 | 🟡 |
-| M7 | QA / プライバシー / リリース | 3–5 日 | 🟡 |
-| **残り** | | **約 2–3 週間**（個人開発の目安） | |
+| M4 | 検索コア（パイプライン / ランキング） | 4–5 日 | ✅ |
+| M5 | Provider 再実装（Apps / Calc / Web / Share） | 4–5 日 | ✅ |
+| M6 | 初回起動と旧データの掃除 | 1 日 | ✅ |
+| M7 | QA / プライバシー / リリース | 3–5 日 | 🟡 実機確認・鍵・マージ・配布が残り |
+| **残り** | | **実機確認と配布準備**（個人開発の目安で数日） | |
 
 ---
 
