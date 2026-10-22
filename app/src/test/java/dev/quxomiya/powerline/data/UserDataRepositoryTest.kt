@@ -74,6 +74,20 @@ class UserDataRepositoryTest {
     }
 
     @Test
+    fun legacyKeysRemovedUserDataKept() {
+        prefs.edit()
+            .putString("history", "[]")
+            .putStringSet("favorite_apps", setOf("com.a"))
+            .putBoolean("onboarding_completed", true)
+            .putString("app_weights", "{}")
+            .putBoolean("is_advanced", true)
+            .commit()
+        UserDataRepository(context)
+        assertEquals(setOf("history", "favorite_apps"), prefs.all.keys)
+        assertEquals(setOf("com.a"), UserDataRepository(context).getFavoriteApps())
+    }
+
+    @Test
     fun favoritesRoundTrip() {
         repository.setFavoriteApps(setOf("com.a", "com.b"))
         assertEquals(setOf("com.a", "com.b"), UserDataRepository(context).getFavoriteApps())

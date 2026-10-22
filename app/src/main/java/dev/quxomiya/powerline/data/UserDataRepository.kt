@@ -11,6 +11,18 @@ class UserDataRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
     private val gson = Gson()
 
+    init {
+        removeLegacyKeys()
+    }
+
+    // Anything but user data is a leftover setting from an earlier build (onboarding_completed,
+    // app_weights, ...). V1 itself was com.quartz.powerline, so its data never lives here.
+    private fun removeLegacyKeys() {
+        val stale = prefs.all.keys - KEPT_KEYS
+        if (stale.isEmpty()) return
+        prefs.edit().apply { stale.forEach(::remove) }.apply()
+    }
+
     // --- Favorite Apps ---
     fun getFavoriteApps(): Set<String> {
         return prefs.getStringSet("favorite_apps", emptySet()) ?: emptySet()
@@ -63,5 +75,9 @@ class UserDataRepository(context: Context) {
             frecency[item.packageName] = (frecency[item.packageName] ?: 0.0) + weight
         }
         return frecency
+    }
+
+    private companion object {
+        val KEPT_KEYS = setOf("history", "favorite_apps")
     }
 }

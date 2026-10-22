@@ -1,6 +1,6 @@
 # Powerline V2 Roadmap
 
-> **Status:** 進行中（Phase 1–3 と検索オーバーレイの刷新が完了。Phase 4–5 は自動テストで完了。Phase 6 から未着手）  
+> **Status:** 進行中（Phase 1–3 と検索オーバーレイの刷新が完了。Phase 4–6 が完了。Phase 7 は進行中）  
 > **Baseline:** `main` @ `1c739ae`  
 > **作業ブランチ:** `v2/phase1-alt-space-trigger` → `v2/phase2-remove-monetization-settings` → `v2/phase3-status-screen` → `v2/phase4-search-pipeline`（Phase 5 も同じブランチ。積み上げ。`main` へは未マージ）  
 > **Target:** V2.0（内部ベータ → 公開）  
@@ -55,7 +55,7 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | G3 | **マネタイズ層の撤去** — `isAdvanced`、課金、AdMob / UMP を削除 | ✅ 完了 |
 | G4 | **検索コアの再構築** — クエリ解析、並列実行、タイムアウト、ランキング、重複排除 | ✅ 自動テスト通過 |
 | G5 | **機能の再構築** — Apps / Calculator / Web / Share を Provider で作り直す（Recents / System は Provider にしない） | ✅ 自動テスト通過 |
-| G6 | **設定・バックアップを持たない** — 設定の永続化と JSON を削除 | 🟡 ほぼ完了（旧キーの起動時削除が残り） |
+| G6 | **設定・バックアップを持たない** — 設定の永続化と JSON を削除 | ✅ |
 | G7 | **品質とプライバシー** — キーボード操作、IME、アクセシビリティ、OEM 対策、説明責任 | 🟡 一部 |
 | G8 | **Don't Ask User** — システム権限画面以外で、設定・移行・バックアップ・同意を質問しない | ✅ 完了（Welcome は削除） |
 
@@ -91,13 +91,12 @@ Powerline を「ホーム画面ランチャー」から、**Alt+Space でどこ�
 | `search/AppIndex.kt` | 起動可能なアプリの一覧と正規化済みの検索キー（ラベル / パッケージ / 組み込みエイリアス）。`LauncherApps.Callback` でインストール・削除・更新のたびに読み直す。待機状態と Apps で共有 | — |
 | `search/providers/*` | `AppsProvider` / `CalculatorProvider` / `WebProvider` / `ShareProvider` | — |
 | `utils/ActionExecutor.kt` | `SearchAction` の `when` で実行。アプリ起動が成功したら履歴に記録 | — |
-| `data/UserDataRepository.kt` | `history`（アプリ起動のみ）/ `favorite_apps` を保持。frecency は履歴から計算 | 旧キーの起動時削除（Phase 6） |
+| `data/UserDataRepository.kt` | `history`（アプリ起動のみ）/ `favorite_apps` を保持。frecency は履歴から計算。生成時にそれ以外のキーを削除 | — |
 | `data/PowerlineDefaults.kt` | 固定値（背景タップで閉じる、待機状態の最近のアプリ 8 件、履歴 100 件・半減期 7 日、検索パイプラインの各値、検索エンジン 7 種、アプリの組み込みエイリアス） | — |
 | `ui/theme/Theme.kt` / `Color.kt` | Android 12+ は `dynamicLight/DarkColorScheme`、11 以下は #4CDC8F から生成したブランド配色 | — |
 
 ### 3.2 現状の課題
 
-- **旧設定キーがディスクに残る**: V1 の SharedPreferences キーを削除していない（Phase 6）。
 - **リリース準備が未着手**: `README.md` / `PRIVACY.md` がない。`versionCode = 1` / `versionName = "1.0"`、`isMinifyEnabled = false`（Phase 7）。
 
 ---
@@ -249,7 +248,7 @@ MainActivity
 | 3.5 | 検索オーバーレイの刷新（ウィンドウ化・待機状態・Material You） | ✅ | `c097417` … `4dd288c` |
 | 4 | 検索コアの再構築 | ✅ 自動テスト通過 | `3cd4201` |
 | 5 | 機能（Provider）の再構築 | ✅ 自動テスト通過 | `cef04eb` |
-| 6 | 初回起動と旧データの掃除 | 🟡 一部 | — |
+| 6 | 初回起動と旧データの掃除 | ✅ | — |
 | 7 | 品質・プライバシー・リリース | 🟡 一部 | — |
 
 ---
@@ -432,7 +431,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 
 ---
 
-### Phase 6 — 初回起動と旧データの掃除（一部）
+### Phase 6 — 初回起動と旧データの掃除 ✅
 
 **目的:** 初回起動で余計な案内を挟まず、V1 の残骸をディスクからも消す。状態画面は Phase 3 で完成済み。
 
@@ -441,8 +440,8 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 - [x] AdMob / UMP の残骸を削除 — Phase 2 で完了。
 - [x] `WelcomeActivity`（ランディング / チュートリアル）を削除。アプリアイコンからは常に状態画面を開く。
 - [x] `UserDataRepository` の `onboarding_completed` API を削除（ディスク上のキーは旧キー削除で消す）。
-- [ ] 第 4.6 節の V1 設定キーを起動時に削除する（ユーザーに確認しない）。
-- [ ] アプリ管理下の旧 JSON ファイルを起動時に削除する。
+- [x] 第 4.6 節の V1 設定キーを起動時に削除する（ユーザーに確認しない）。→ `UserDataRepository` の生成時に `powerline_settings` から `history` / `favorite_apps` 以外のキーを消す（キー名の列挙ではなく許可リスト）。実際には V1 は `com.quartz.powerline` で、V2（`dev.quxomiya.powerline`）とはストレージが別のため、V1 のキーはここに存在しない。消えるのはパッケージ名変更後の開発ビルドが残した `onboarding_completed` / `app_weights` など。
+- [x] アプリ管理下の旧 JSON ファイルを起動時に削除する。→ 対象なし。V1 の JSON エクスポートはユーザーが選んだ場所（SAF）に書いており、アプリ管理下にファイルはない。
 
 **完了条件**
 
@@ -593,11 +592,11 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 - [x] `isAdvanced` / 課金 UI / AdMob / UMP が存在しない。
 - [x] JSON バックアップ / 復元 / 移行のコード・ファイル・UI が存在しない。
 - [x] 検索オーバーレイが Alt+Space からのみ開き、待機状態と結果リストがキーボードで操作できる。
-- [ ] 検索パイプライン（解析・並列・タイムアウト・ランキング・重複排除）が動作する。
-- [ ] Apps / Calculator / Web / Share が新 Provider で動作する（Recents / System の Provider は存在しない）。
-- [ ] V1 の設定キーと `onboarding_completed` がディスクに残らない。
+- [x] 検索パイプライン（解析・並列・タイムアウト・ランキング・重複排除）が動作する。
+- [x] Apps / Calculator / Web / Share が新 Provider で動作する（Recents / System の Provider は存在しない）。
+- [x] V1 の設定キーと `onboarding_completed` がディスクに残らない。
 - [x] 初回起動でも Welcome を挟まない。
-- [ ] システム権限画面以外に、ユーザーへ質問する画面がない。
+- [x] システム権限画面以外に、ユーザーへ質問する画面がない。
 - [ ] 人間による手動テストマトリクスでクラッシュ / ANR がない。
 - [ ] `README.md` / `PRIVACY.md` があり、状態画面からリンクされている。
 - [ ] `versionCode = 2` / `versionName = "2.0.0"` の署名済み APK が生成できる。
@@ -636,7 +635,7 @@ Recents は Provider にしない（第 4.4 節）。履歴は待機状態の「
 | `plugins/Plugin.kt` / `PluginManager.kt` / `plugins/impl/*` | 削除し `search/` 以下に Apps / Calculator / Web / Share の Provider を新規実装。Recents / System は作り直さない | ✅ |
 | `domain/models/SearchResult.kt` | 削除し `SearchItem` へ | ✅ |
 | `utils/ActionExecutor.kt` | `SearchAction` ベースに | ✅ |
-| `data/UserDataRepository.kt` | `onboarding_completed` API を削除、旧キーの起動時削除 | 🟡 |
+| `data/UserDataRepository.kt` | `onboarding_completed` API を削除、旧キーの起動時削除 | ✅ |
 | `data/PowerlineDefaults.kt` | 固定値の集約 | ✅ |
 | `AndroidManifest.xml` | HOME / ASSIST / QS / 広告 / 廃止 Activity を削除 | ✅ |
 | `res/xml/accessibility_service_config.xml` | キー検出のみに最小化 | ✅ |
