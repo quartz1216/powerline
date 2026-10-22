@@ -2,6 +2,7 @@ package dev.quxomiya.powerline.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlin.math.pow
@@ -48,7 +49,9 @@ class UserDataRepository(context: Context) {
     fun getHistory(): List<HistoryItem> {
         val json = prefs.getString("history", "[]")
         return try {
-            val typeToken = object : TypeToken<List<StoredHistoryItem>>() {}.type
+            // Built explicitly rather than from an anonymous TypeToken subclass, whose generic
+            // signature R8 strips in release builds
+            val typeToken = TypeToken.getParameterized(List::class.java, StoredHistoryItem::class.java).type
             val stored: List<StoredHistoryItem> = gson.fromJson(json, typeToken) ?: emptyList()
             stored.mapNotNull { item ->
                 val packageName = item.packageName
@@ -57,6 +60,7 @@ class UserDataRepository(context: Context) {
                 HistoryItem(packageName, item.className, item.timestamp)
             }
         } catch (e: Exception) {
+            Log.w("UserDataRepository", "Unreadable history", e)
             emptyList()
         }
     }
