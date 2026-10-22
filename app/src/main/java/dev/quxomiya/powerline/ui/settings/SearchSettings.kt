@@ -5,8 +5,8 @@ import android.graphics.drawable.Drawable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +20,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -34,10 +36,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,6 +51,8 @@ import dev.quxomiya.powerline.data.SearchSettingsValidator
 import dev.quxomiya.powerline.search.BuiltIn
 import dev.quxomiya.powerline.search.SearchEngine
 import dev.quxomiya.powerline.search.ShareTarget
+import dev.quxomiya.powerline.search.engineIcon
+import dev.quxomiya.powerline.search.shareTargetIcon
 import dev.quxomiya.powerline.ui.components.AppIcon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -242,45 +248,30 @@ private fun AddButton(label: String, onClick: () -> Unit) {
 
 @Composable
 private fun EngineRow(engine: SearchEngine, isDefault: Boolean, onClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClickLabel = "Edit ${engine.name}", onClick = onClick)
-            .heightIn(min = 48.dp)
-            .padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = listOfNotNull(engine.name, engine.alias?.takeIf { it.isNotBlank() }, "default".takeIf { isDefault })
-                .joinToString("  ·  "),
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            engine.url,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+    val context = LocalContext.current
+    val icon by produceState<Drawable?>(null, engine.url) {
+        value = withContext(Dispatchers.IO) { context.engineIcon(engine) }
     }
+    EntryRow(
+        icon = icon,
+        fallbackIcon = Icons.Default.Search,
+        title = listOfNotNull(engine.name, engine.alias?.takeIf { it.isNotBlank() }, "default".takeIf { isDefault })
+            .joinToString("  ·  "),
+        subtitle = engine.url,
+        onClickLabel = "Edit ${engine.name}",
+        onClick = onClick
+    )
 }
 
+// The "Share text" result: always there, so it can be neither edited nor deleted
 @Composable
 private fun ShareDialogRow() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text("Share dialog  ·  default", style = MaterialTheme.typography.bodyMedium)
-        Text(
-            "Android share sheet",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
+    EntryRow(
+        icon = null,
+        fallbackIcon = Icons.Default.Share,
+        title = "Share dialog  ·  default",
+        subtitle = "Android share sheet"
+    )
 }
 
 @Composable
@@ -294,20 +285,61 @@ private fun ShareTargetRow(target: ShareTarget, onClick: () -> Unit) {
             null
         }
     }
-    Column(
+    val icon by produceState<Drawable?>(null, target.packageName, target.className) {
+        value = withContext(Dispatchers.IO) { context.shareTargetIcon(target) }
+    }
+    EntryRow(
+        icon = icon,
+        fallbackIcon = Icons.Default.Share,
+        title = "${target.name}  ·  ${target.alias}",
+        subtitle = app ?: "Not installed",
+        subtitleIsError = app == null,
+        onClickLabel = "Edit ${target.name}",
+        onClick = onClick
+    )
+}
+
+// An engine or share target: its app's icon (the vector icon until loaded, or when there is
+// none), the name line and a detail line. Clickable when it has a dialog.
+@Composable
+private fun EntryRow(
+    icon: Drawable?,
+    fallbackIcon: ImageVector,
+    title: String,
+    subtitle: String,
+    subtitleIsError: Boolean = false,
+    onClickLabel: String? = null,
+    onClick: (() -> Unit)? = null
+) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClickLabel = "Edit ${target.name}", onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClickLabel = onClickLabel, onClick = onClick) else Modifier)
             .heightIn(min = 48.dp)
             .padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.Center
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("${target.name}  ·  ${target.alias}", style = MaterialTheme.typography.bodyMedium)
-        Text(
-            app ?: "Not installed",
-            style = MaterialTheme.typography.bodySmall,
-            color = if (app == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        if (icon != null) {
+            AppIcon(drawable = icon, size = 24.dp)
+        } else {
+            Icon(
+                fallbackIcon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Column {
+            Text(title, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (subtitleIsError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 

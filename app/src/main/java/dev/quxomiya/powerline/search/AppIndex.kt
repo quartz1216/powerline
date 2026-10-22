@@ -111,40 +111,47 @@ class AppIndex(
     }
 
     private suspend fun loadEngines(engines: List<SearchEngine>): List<AvailableEngine> = withContext(Dispatchers.IO) {
-        val browserIcon = handlerIcon("https://www.example.com/")
-        engines.map { engine ->
-            AvailableEngine(engine, handlerIcon(engine.url.replace("%s", "test")) ?: browserIcon)
-        }
+        val browserIcon = context.urlHandlerIcon(BROWSER_PROBE_URL)
+        engines.map { engine -> AvailableEngine(engine, context.engineIcon(engine, browserIcon)) }
     }
 
     private suspend fun loadShareTargets(targets: List<ShareTarget>): List<AvailableShareTarget> =
         withContext(Dispatchers.IO) {
-            val pm = context.packageManager
             targets.mapNotNull { target ->
-                try {
-                    AvailableShareTarget(target, pm.getActivityIcon(ComponentName(target.packageName, target.className)))
-                } catch (e: PackageManager.NameNotFoundException) {
-                    // Uninstalled since it was set up; kept in settings in case it comes back
-                    null
-                }
+                // Uninstalled since it was set up: kept in settings in case it comes back
+                context.shareTargetIcon(target)?.let { AvailableShareTarget(target, it) }
             }
         }
+}
 
-    // Icon of the app Android opens this URL with by default: an app that claims the link
-    // (YouTube for youtube.com) or the default browser. null when the user would be asked
-    // to choose (no default set).
-    private fun handlerIcon(url: String): Drawable? {
-        val pm = context.packageManager
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
-        return try {
-            val handler = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) ?: return null
-            // When there is no default, resolveActivity returns the chooser, which is not
-            // among the actual handlers
-            val handlers = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
-            if (handlers.none { it.activityInfo.packageName == handler.activityInfo.packageName }) return null
-            handler.loadIcon(pm)
-        } catch (e: Exception) {
-            null
-        }
+private const val BROWSER_PROBE_URL = "https://www.example.com/"
+
+// Icon of the app that opens this engine's URLs, else of the default browser (`browserIcon`,
+// passed in when looking up many engines at once). Also the icon in the Web search settings.
+fun Context.engineIcon(engine: SearchEngine, browserIcon: Drawable? = urlHandlerIcon(BROWSER_PROBE_URL)): Drawable? =
+    urlHandlerIcon(engine.url.replace("%s", "test")) ?: browserIcon
+
+// Icon of the target's share activity; null once its app is uninstalled
+fun Context.shareTargetIcon(target: ShareTarget): Drawable? = try {
+    packageManager.getActivityIcon(ComponentName(target.packageName, target.className))
+} catch (e: PackageManager.NameNotFoundException) {
+    null
+}
+
+// Icon of the app Android opens this URL with by default: an app that claims the link
+// (YouTube for youtube.com) or the default browser. null when the user would be asked
+// to choose (no default set).
+private fun Context.urlHandlerIcon(url: String): Drawable? {
+    val pm = packageManager
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
+    return try {
+        val handler = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) ?: return null
+        // When there is no default, resolveActivity returns the chooser, which is not
+        // among the actual handlers
+        val handlers = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        if (handlers.none { it.activityInfo.packageName == handler.activityInfo.packageName }) return null
+        handler.loadIcon(pm)
+    } catch (e: Exception) {
+        null
     }
 }
