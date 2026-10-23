@@ -49,3 +49,11 @@
 - The only data it keeps is your Powerline launch history and search settings, stored on the device.
 - It shows no ads and contains no analytics or tracking SDKs.
 - See [PRIVACY.md](PRIVACY.md) for details.
+
+## Contributing
+Powerline is an open project. Forks and pull requests are welcome; for bugs and ideas, open an [issue](https://github.com/quartz1216/powerline/issues).
+
+## License
+Copyright 2026 quxomiya
+
+Licensed under the [Apache License, Version 2.0](LICENSE). The name "Powerline" and its logo are not covered by the license: if you publish a fork, please give it a different name and icon.
