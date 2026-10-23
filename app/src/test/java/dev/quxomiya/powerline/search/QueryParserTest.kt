@@ -2,7 +2,9 @@ package dev.quxomiya.powerline.search
 
 import dev.quxomiya.powerline.data.PowerlineDefaults
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class QueryParserTest {
@@ -15,7 +17,7 @@ class QueryParserTest {
         assertEquals("Google Maps", request.text)
         assertEquals("google maps", request.normalizedQuery)
         assertEquals(listOf("google", "maps"), request.tokens)
-        assertEquals(SearchMode.TEXT, request.mode)
+        assertFalse(request.isAlias)
     }
 
     @Test
@@ -52,7 +54,7 @@ class QueryParserTest {
     @Test
     fun aliasPrefixSelectsEngine() {
         val request = parser.parse("yt laneige")
-        assertEquals(SearchMode.ALIAS, request.mode)
+        assertTrue(request.isAlias)
         assertEquals("youtube", request.engine?.id)
         assertEquals("laneige", request.aliasQuery)
     }
@@ -68,14 +70,14 @@ class QueryParserTest {
     @Test
     fun aliasWithTrailingSpaceOnly() {
         val request = parser.parse("yt ")
-        assertEquals(SearchMode.ALIAS, request.mode)
+        assertTrue(request.isAlias)
         assertEquals("", request.aliasQuery)
     }
 
     @Test
     fun aliasWithoutSpaceIsText() {
-        assertEquals(SearchMode.TEXT, parser.parse("yt").mode)
-        assertEquals(SearchMode.TEXT, parser.parse("ytmusic").mode)
+        assertFalse(parser.parse("yt").isAlias)
+        assertFalse(parser.parse("ytmusic").isAlias)
     }
 
     // "ytm" must not be read as "yt" + "m..."
@@ -100,7 +102,7 @@ class QueryParserTest {
     @Test
     fun shareAliasSelectsTarget() {
         val request = withShares.parse("CL  hello there")
-        assertEquals(SearchMode.ALIAS, request.mode)
+        assertTrue(request.isAlias)
         assertEquals(claude, request.shareTarget)
         assertNull(request.engine)
         assertEquals("hello there", request.aliasQuery)
@@ -119,7 +121,7 @@ class QueryParserTest {
     fun aliasesAreReadOnEveryParse() {
         var targets = emptyList<ShareTarget>()
         val live = QueryParser({ PowerlineDefaults.SEARCH_ENGINES }, { targets })
-        assertEquals(SearchMode.TEXT, live.parse("cl hi").mode)
+        assertFalse(live.parse("cl hi").isAlias)
         targets = listOf(claude)
         assertEquals(claude, live.parse("cl hi").shareTarget)
     }

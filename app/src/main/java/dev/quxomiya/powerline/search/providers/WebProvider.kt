@@ -6,7 +6,6 @@ import dev.quxomiya.powerline.search.AvailableEngine
 import dev.quxomiya.powerline.search.ResultSection
 import dev.quxomiya.powerline.search.SearchAction
 import dev.quxomiya.powerline.search.SearchItem
-import dev.quxomiya.powerline.search.SearchMode
 import dev.quxomiya.powerline.search.SearchProvider
 import dev.quxomiya.powerline.search.SearchRequest
 import dev.quxomiya.powerline.ui.theme.PowerlineIcons
@@ -30,7 +29,7 @@ class WebProvider(
 
     override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {
         if (!enabled()) return emptyList()
-        if (request.mode == SearchMode.ALIAS) {
+        if (request.isAlias) {
             val requested = request.engine ?: return emptyList()
             if (request.aliasQuery.isEmpty()) return emptyList()
             // Without its icon until AppIndex has reloaded an engine just added in settings

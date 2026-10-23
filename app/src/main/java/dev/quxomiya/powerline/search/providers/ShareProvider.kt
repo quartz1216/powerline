@@ -7,7 +7,6 @@ import dev.quxomiya.powerline.search.AvailableShareTarget
 import dev.quxomiya.powerline.search.ResultSection
 import dev.quxomiya.powerline.search.SearchAction
 import dev.quxomiya.powerline.search.SearchItem
-import dev.quxomiya.powerline.search.SearchMode
 import dev.quxomiya.powerline.search.SearchProvider
 import dev.quxomiya.powerline.search.SearchRequest
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +25,7 @@ class ShareProvider(
 
     override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {
         if (!enabled()) return emptyList()
-        if (request.mode == SearchMode.ALIAS) {
+        if (request.isAlias) {
             val target = request.shareTarget ?: return emptyList()
             if (request.aliasQuery.isEmpty()) return emptyList()
             return listOf(

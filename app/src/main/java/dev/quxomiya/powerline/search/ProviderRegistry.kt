@@ -23,11 +23,9 @@ class ProviderRegistry(val providers: List<SearchProvider>) {
     )
 
     // An engine alias ("yt laneige") is a web search only; a share alias ("cl hello") a share only
-    fun providersFor(request: SearchRequest): List<SearchProvider> = when (request.mode) {
-        SearchMode.TEXT -> providers
-        SearchMode.ALIAS -> {
-            val section = if (request.shareTarget != null) ResultSection.SHARE else ResultSection.WEB
-            providers.filter { it.section == section }
-        }
+    fun providersFor(request: SearchRequest): List<SearchProvider> = when {
+        request.shareTarget != null -> providers.filter { it.section == ResultSection.SHARE }
+        request.engine != null -> providers.filter { it.section == ResultSection.WEB }
+        else -> providers
     }
 }

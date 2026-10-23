@@ -34,7 +34,6 @@ class QueryParser(
             text = text,
             normalizedQuery = normalized,
             tokens = if (normalized.isEmpty()) emptyList() else normalized.split(' '),
-            mode = if (alias != null) SearchMode.ALIAS else SearchMode.TEXT,
             engine = engine.takeIf { shareTarget == null },
             shareTarget = shareTarget,
             aliasQuery = alias?.let { leading.substring(it.length + 1).trim() } ?: ""
@@ -45,7 +44,7 @@ class QueryParser(
     // alias and its space (as typed, not normalized). Null when the query has no alias.
     fun splitAlias(rawQuery: String): Pair<SearchRequest, String>? {
         val request = parse(rawQuery)
-        if (request.mode != SearchMode.ALIAS) return null
+        if (!request.isAlias) return null
         // An alias has no spaces, so it ends at the first one (full-width included)
         val trimmed = rawQuery.trimStart()
         val gap = trimmed.indexOfFirst { it.isWhitespace() }
