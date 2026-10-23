@@ -52,8 +52,10 @@
 - It shows no ads and contains no analytics or tracking SDKs.
 - 詳しくは PRIVACY.mdをご覧ください｡
 
-## コントリビュート
-Powerline はオープンなプロジェクトです｡Fork や Pull Request を歓迎します｡不具合や要望は [Issues](https://github.com/quartz1216/powerline/issues) へどうぞ｡
+## 開発
+- このアプリのコードは [Claude Code](https://claude.com/claude-code) で作られています｡
+- Powerline はオープンなプロジェクトです｡Fork や Pull Request を歓迎します｡AI を使って作ったものでも OK です｡
+- 不具合や要望は [Issues](https://github.com/quartz1216/powerline/issues) へどうぞ｡
 
 ## ライセンス
 Copyright 2026 quxomiya
