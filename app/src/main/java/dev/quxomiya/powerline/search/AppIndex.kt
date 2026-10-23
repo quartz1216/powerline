@@ -17,6 +17,7 @@ import dev.quxomiya.powerline.domain.models.AppInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,8 +42,9 @@ data class IndexedApp(
 }
 
 // Launchable apps (standby grid, AppsProvider), and the search engines and share targets with
-// their icons (chips, WebProvider, ShareProvider). Loaded once, then reloaded whenever a package
-// is installed, removed or changed; engines and share targets also whenever settings edit them.
+// their icons (chips, WebProvider, ShareProvider). Loaded once, then reloaded once package events
+// settle (an app store updating many apps reloads once); engines and share targets also whenever
+// settings edit them.
 class AppIndex(
     private val context: Context,
     private val scope: CoroutineScope,
@@ -66,11 +68,13 @@ class AppIndex(
     private var loadJob: Job? = null
 
     private val packageCallback = object : LauncherApps.Callback() {
-        override fun onPackageRemoved(packageName: String, user: UserHandle) = reload()
-        override fun onPackageAdded(packageName: String, user: UserHandle) = reload()
-        override fun onPackageChanged(packageName: String, user: UserHandle) = reload()
-        override fun onPackagesAvailable(packageNames: Array<String>, user: UserHandle, replacing: Boolean) = reload()
-        override fun onPackagesUnavailable(packageNames: Array<String>, user: UserHandle, replacing: Boolean) = reload()
+        override fun onPackageRemoved(packageName: String, user: UserHandle) = reloadAfterPackageEvents()
+        override fun onPackageAdded(packageName: String, user: UserHandle) = reloadAfterPackageEvents()
+        override fun onPackageChanged(packageName: String, user: UserHandle) = reloadAfterPackageEvents()
+        override fun onPackagesAvailable(packageNames: Array<String>, user: UserHandle, replacing: Boolean) =
+            reloadAfterPackageEvents()
+        override fun onPackagesUnavailable(packageNames: Array<String>, user: UserHandle, replacing: Boolean) =
+            reloadAfterPackageEvents()
     }
 
     init {
@@ -82,9 +86,13 @@ class AppIndex(
         reload()
     }
 
-    fun reload() {
+    // Each event restarts the wait, so a burst of events ends in one reload
+    private fun reloadAfterPackageEvents() = reload(delayMs = PACKAGE_EVENT_SETTLE_MS)
+
+    private fun reload(delayMs: Long = 0) {
         loadJob?.cancel()
         loadJob = scope.launch {
+            delay(delayMs)
             val start = SystemClock.uptimeMillis()
             loadChips(engines.value, shareTargets.value)
             _apps.value = loadApps()
@@ -133,6 +141,7 @@ class AppIndex(
 }
 
 private const val TAG = "AppIndex"
+private const val PACKAGE_EVENT_SETTLE_MS = 500L
 private const val BROWSER_PROBE_URL = "https://www.example.com/"
 
 // Icon of the app that opens this engine's URLs, else of the default browser (`browserIcon`,
