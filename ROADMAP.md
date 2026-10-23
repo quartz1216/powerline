@@ -1,6 +1,6 @@
 # Powerline Cleanup & Optimization Roadmap
 
-> **Status:** Phases 0–2 done; Phase 3 in progress
+> **Status:** Phases 0–3 done; Phase 4 in progress
 > **Baseline:** `v2/phase6-7-cleanup-release` @ `4b6aa57` (V2 feature-complete, not yet merged to `main`)
 > **Target:** V2.1 — same features, less code, faster overlay
 > **Last updated:** 2026-10-23
@@ -151,14 +151,16 @@ This roadmap makes the app **smaller, simpler and faster without changing what t
 
 ### Phase 3 — Search and index performance
 
-- [ ] Precompute word lists and initials in `IndexedApp`; `SearchRanker.match` takes the precomputed form.
-- [ ] Keep favorites and frecency in memory (updated on launch / toggle); stop parsing history JSON per search.
-- [ ] Debounce `LauncherApps.Callback` reloads (e.g. 500 ms), and update only the changed package where possible.
-- [ ] Reload engine / share target icons only when engines or targets change, or when a package that could handle them changes.
-- [ ] Try `LauncherApps.getActivityList` instead of `queryIntentActivities` for the app list (badged icons for work profiles come for free); keep it only if it is faster.
-- [ ] Check whether the per-provider `async` + timeout in `SearchPipeline` still earns its cost with four in-memory providers. Simplify only if timings show the providers finish in well under a millisecond, and record the decision in §7.
+- [x] Precompute word lists and initials once per key (`MatchKey`, built in `IndexedApp.of`). Benchmark ~655 → ~277 µs per query.
+- [x] Keep history and favorites in memory (`UserDataRepository` reads prefs once, then keeps in step with writes). ~277 → ~254 µs.
+- [x] Reload `AppIndex` once package events settle (500 ms after the last one). 10 events → 1 reload. A full reload takes ~20 ms on a warm process, so per-package updates were not worth their code.
+- [x] Load apps before the chip icons, and load each engine app's icon once per reload (most engines open in the browser). Chip icons still reload with package events: the default browser or a link-handling app may be what changed.
+- [ ] ~~Try `LauncherApps.getActivityList`~~ Not done: the launcher query takes ≤ 1 ms; labels and icons (~50 ms together, cold) cost the same either way.
+- [x] Checked the pipeline overhead: the four providers alone take ~100 µs per query over 1000 apps, the whole pipeline ~245 µs. The difference is mostly the thread hops for the per-provider timeouts. Kept (§7 #3): 0.25 ms is far below a frame, and the timeouts still guard against a provider that blocks. Building sort keys once per item did not move the number and was reverted.
 
-**Done when:** the Phase 0 benchmark improves; reload count during an update burst drops to about 1.
+Finding for Phase 4: on a fresh process, `AppIndex` finishes its IO work in ~50 ms, but resuming on the main thread waits ~130 ms more while the main thread draws the overlay for the first time (Compose code not yet compiled). That is why "AppIndex first load" barely moved, and it is what the Baseline Profile targets.
+
+**Done when:** the Phase 0 benchmark improves; reload count during an update burst drops to about 1. ✅ ~680 → ~245 µs per query; 10 → 1 reloads.
 
 ### Phase 4 — Overlay open and rendering
 
@@ -196,15 +198,15 @@ Reference device: Android Desktop emulator (`sdk_gdesktop_x86_64`, Android 17, 2
 
 | Metric | Baseline | After P1 | After P2 | After P3 | After P4 |
 |---|---|---|---|---|---|
-| Release APK size | 1,458 KB | 1,457 KB | 1,429 KB | | |
-| Main Kotlin lines (`app/src/main`) | 4,095 | 4,078 | 4,241 | | |
-| `MainActivity` cold start | 252 ms | 219 ms | 218 ms | | |
-| Overlay first open (key → first frame) | 74 ms | 86 ms | 68 ms | | |
-| `AppIndex` first load (apps appear in the grid) | 216 ms | 189 ms | 198 ms | | |
-| Overlay later opens | 47 ms | 41 ms | 40 ms | | |
-| Search, 1000 apps (µs / query, JVM) | ~680 | ~660 | ~655 | | |
-| `AppIndex` reloads, 10 package events | 10 | 10 | 9 | | |
-| Idle memory (PSS, overlay closed) | 28,715 KB | 28,145 KB | 28,094 KB | | |
+| Release APK size | 1,458 KB | 1,457 KB | 1,429 KB | 1,429 KB | |
+| Main Kotlin lines (`app/src/main`) | 4,095 | 4,078 | 4,241 | 4,286 | |
+| `MainActivity` cold start | 252 ms | 219 ms | 218 ms | 217 ms | |
+| Overlay first open (key → first frame) | 74 ms | 86 ms | 68 ms | 84 ms | |
+| `AppIndex` first load (apps appear in the grid) | 216 ms | 189 ms | 198 ms | 183 ms | |
+| Overlay later opens | 47 ms | 41 ms | 40 ms | 49 ms | |
+| Search, 1000 apps (µs / query, JVM) | ~680 | ~660 | ~655 | ~245 | |
+| `AppIndex` reloads, 10 package events | 10 | 10 | 9 | 1 | |
+| Idle memory (PSS, overlay closed) | 28,715 KB | 28,145 KB | 28,094 KB | 28,071 KB | |
 
 Timings on the emulator vary by about ±15% between runs; Phases 1 and 2 changed no code on these paths, so their differences are noise. Main Kotlin lines went up in Phase 2: the split settings files each carry their own imports, and `StoredJson`, `StandbySelection` and `PowerlineIcons` are new.
 
@@ -228,6 +230,6 @@ The open-time targets in §1 (first < 200 ms, later < 80 ms) are already met. Wh
 |---|---|---|
 | 1 | ~~`isLoading`: remove, or show a subtle loading state?~~ | **Removed** in Phase 1 |
 | 2 | ~~Keep the `className == null` fallback for history entries?~~ | **Decided 2026-10-23:** no. Powerline is in closed testing, so nothing is kept for compatibility with earlier builds. |
-| 3 | Simplify `SearchPipeline` timeouts after Phase 3 timings? | Keep |
+| 3 | ~~Simplify `SearchPipeline` timeouts after Phase 3 timings?~~ | **Kept** (Phase 3): the overhead is ~0.15 ms per query |
 | 4 | ~~Android Auto Backup included launch history and favorites. Keep, or exclude?~~ | **Decided 2026-10-23:** back up only the search settings (Built-in switches, Web search entries, Share entries, Advanced). History and favorites moved to `powerline_user_data`, which is not backed up. Done. |
 | 5 | Do Phase 5 (toolchain) in this roadmap or separately? | Separately |
