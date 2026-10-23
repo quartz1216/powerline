@@ -185,8 +185,5 @@ class ProvidersTest {
     }
 
     private fun indexed(label: String, packageName: String, className: String, aliases: List<String> = emptyList()) =
-        IndexedApp(
-            AppInfo(label, packageName, ColorDrawable(), "$packageName.$className"),
-            (listOf(label, packageName.substringAfter('.')) + aliases).map(SearchRanker::normalize)
-        )
+        IndexedApp.of(AppInfo(label, packageName, ColorDrawable(), "$packageName.$className"), aliases)
 }

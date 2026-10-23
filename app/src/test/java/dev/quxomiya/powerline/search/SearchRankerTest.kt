@@ -15,7 +15,7 @@ class SearchRankerTest {
     private val parser = QueryParser(PowerlineDefaults.SEARCH_ENGINES)
 
     private fun match(query: String, target: String) =
-        SearchRanker.match(parser.parse(query), SearchRanker.normalize(target))
+        SearchRanker.match(parser.parse(query), MatchKey.of(target)!!)
 
     @Test
     fun matchTiers() {

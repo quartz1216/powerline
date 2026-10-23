@@ -26,12 +26,19 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// A launchable app with its search keys normalized once at load time
+// A launchable app with its search keys prepared once at load time
 data class IndexedApp(
     val app: AppInfo,
-    // Label, package name minus its first segment, built-in aliases (SearchRanker.normalize'd)
-    val searchKeys: List<String>
-)
+    // Label, package name minus its first segment, built-in aliases
+    val searchKeys: List<MatchKey>
+) {
+    companion object {
+        fun of(app: AppInfo, aliases: List<String> = emptyList()) = IndexedApp(
+            app,
+            (listOf(app.label, app.packageName.substringAfter('.')) + aliases).mapNotNull(MatchKey::of)
+        )
+    }
+}
 
 // Launchable apps (standby grid, AppsProvider), and the search engines and share targets with
 // their icons (chips, WebProvider, ShareProvider). Loaded once, then reloaded whenever a package
@@ -108,11 +115,7 @@ class AppIndex(
                 )
             }
             .sortedBy { it.label.lowercase() }
-            .map { app ->
-                val keys = listOf(app.label, app.packageName.substringAfter('.')) +
-                    PowerlineDefaults.APP_ALIASES[app.packageName].orEmpty()
-                IndexedApp(app, keys.map(SearchRanker::normalize).filter { it.isNotEmpty() })
-            }
+            .map { app -> IndexedApp.of(app, PowerlineDefaults.APP_ALIASES[app.packageName].orEmpty()) }
     }
 
     private suspend fun loadEngines(engines: List<SearchEngine>): List<AvailableEngine> = withContext(Dispatchers.IO) {

@@ -78,10 +78,7 @@ class SearchBenchmarkTest {
             .filter { it.isNotEmpty() }
             .joinToString(" ")
         val packageName = "com.example.${label.lowercase().replace(' ', '.')}"
-        IndexedApp(
-            AppInfo(label, packageName, ColorDrawable(), "$packageName.Main"),
-            listOf(label, packageName.substringAfter('.')).map(SearchRanker::normalize)
-        )
+        IndexedApp.of(AppInfo(label, packageName, ColorDrawable(), "$packageName.Main"))
     }
 
     private companion object {
