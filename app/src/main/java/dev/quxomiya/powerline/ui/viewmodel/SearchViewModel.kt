@@ -215,7 +215,6 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             _uiState.value = SearchUiState()
             return
         }
-        _uiState.update { it.copy(isLoading = true) }
         // Runs on Main like the cancel above, so a cancelled search can never publish its results
         searchJob = viewModelScope.launch {
             if (debounce) delay(PowerlineDefaults.SEARCH_DEBOUNCE_MS)

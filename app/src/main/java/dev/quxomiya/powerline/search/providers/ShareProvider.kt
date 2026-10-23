@@ -20,9 +20,8 @@ class ShareProvider(
     private val enabled: () -> Boolean = { true }
 ) : SearchProvider {
     override val id = "share"
-    override val displayName = "Share"
     override val priority = 10
-    override val icon = Icons.Default.Share
+    private val icon = Icons.Default.Share
     override val section = ResultSection.SHARE
 
     override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {

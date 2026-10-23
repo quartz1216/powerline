@@ -36,7 +36,6 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import dev.quxomiya.powerline.MainActivity
 import dev.quxomiya.powerline.R
-import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.ui.SearchScreen
 import dev.quxomiya.powerline.ui.theme.CommandLauncherTheme
 import dev.quxomiya.powerline.ui.viewmodel.SearchViewModel
@@ -83,7 +82,7 @@ class SearchOverlay(private val service: AccessibilityService) {
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
                             ) {
-                                if (PowerlineDefaults.OVERLAY_CLOSE_ON_BACKGROUND_TAP) hide()
+                                hide()
                             }
                     ) {
                         SearchScreen(

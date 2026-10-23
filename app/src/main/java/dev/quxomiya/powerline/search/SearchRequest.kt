@@ -1,8 +1,6 @@
 package dev.quxomiya.powerline.search
 
 data class SearchRequest(
-    // As typed, for the search field
-    val rawQuery: String,
     // Width-folded (NFKC) with whitespace collapsed; case kept for display and sharing
     val text: String,
     // `text` lowercased; what matching compares against

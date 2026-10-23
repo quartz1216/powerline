@@ -1,8 +1,6 @@
 package dev.quxomiya.powerline.search
 
 import android.content.Context
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.test.core.app.ApplicationProvider
 import dev.quxomiya.powerline.data.PowerlineDefaults
 import kotlinx.coroutines.delay
@@ -186,9 +184,6 @@ class SearchPipelineTest {
         override val priority: Int = 0,
         private val items: suspend FakeProvider.(SearchRequest) -> List<SearchItem> = { emptyList() }
     ) : SearchProvider {
-        override val displayName = id
-        override val icon = Icons.Default.Search
-
         @Volatile
         var calls = 0
 

@@ -147,7 +147,7 @@ class SearchOnDeviceTest {
             instrumentation.runOnMainSync { viewModel.onQueryChange(typed.substring(0, end)) }
             Thread.sleep(15) // faster than the 40ms debounce
         }
-        withTimeout(2_000) { viewModel.uiState.first { !it.isLoading && it.items.isNotEmpty() } }
+        withTimeout(2_000) { viewModel.uiState.first { it.items.isNotEmpty() } }
         Thread.sleep(300)
         collector.cancel()
 

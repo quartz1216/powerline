@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Search
 import dev.quxomiya.powerline.search.AvailableEngine
 import dev.quxomiya.powerline.search.ResultSection
 import dev.quxomiya.powerline.search.SearchAction
@@ -21,9 +20,7 @@ class WebProvider(
     private val enabled: () -> Boolean = { true }
 ) : SearchProvider {
     override val id = "web"
-    override val displayName = "Web"
     override val priority = 20
-    override val icon = Icons.Default.Search
     override val section = ResultSection.WEB
 
     // example.com, https://example.com/path, sub.example.co.jp:8080?q=1

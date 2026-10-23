@@ -1,8 +1,6 @@
 package dev.quxomiya.powerline.search.providers
 
 import android.content.Context
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
 import dev.quxomiya.powerline.domain.models.AppInfo
 import dev.quxomiya.powerline.search.IndexedApp
 import dev.quxomiya.powerline.search.ResultSection
@@ -21,9 +19,7 @@ class AppsProvider(
     private val showPackageName: () -> Boolean = { true }
 ) : SearchProvider {
     override val id = ID
-    override val displayName = "Apps"
     override val priority = 40
-    override val icon = Icons.Default.Apps
     override val section = ResultSection.APPS
 
     override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {

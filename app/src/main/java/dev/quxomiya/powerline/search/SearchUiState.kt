@@ -7,8 +7,7 @@ data class SectionResults(
 
 data class SearchUiState(
     val sections: List<SectionResults> = emptyList(),
-    val selectedIndex: Int = 0,
-    val isLoading: Boolean = false
+    val selectedIndex: Int = 0
 ) {
     // Sections flattened in display order; selectedIndex points into this list
     val items: List<SearchItem> = sections.flatMap { it.items }

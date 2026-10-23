@@ -14,9 +14,8 @@ import dev.quxomiya.powerline.search.SearchRequest
 // Arithmetic on the query; running the item copies the result. Off with the Built-in switch.
 class CalculatorProvider(private val enabled: () -> Boolean = { true }) : SearchProvider {
     override val id = "calculator"
-    override val displayName = "Calculator"
     override val priority = 30
-    override val icon = Icons.Default.Calculate
+    private val icon = Icons.Default.Calculate
     override val section = ResultSection.CALCULATOR
 
     override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {

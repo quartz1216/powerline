@@ -5,8 +5,6 @@ import dev.quxomiya.powerline.search.SearchEngine
 // Fixed values in place of the old preferences. The only settings are the search settings
 // (SearchSettingsRepository: Calculator, and engines starting from SEARCH_ENGINES, share targets).
 object PowerlineDefaults {
-    const val OVERLAY_CLOSE_ON_BACKGROUND_TAP = true
-
     // Opened in the browser from the status screen's About section
     const val PRIVACY_POLICY_URL = "https://github.com/quartz1216/powerline/blob/main/PRIVACY.md"
 

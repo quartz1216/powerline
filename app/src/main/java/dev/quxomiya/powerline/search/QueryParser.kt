@@ -31,7 +31,6 @@ class QueryParser(
         val alias = shareTarget?.alias ?: engine?.alias
 
         return SearchRequest(
-            rawQuery = rawQuery,
             text = text,
             normalizedQuery = normalized,
             tokens = if (normalized.isEmpty()) emptyList() else normalized.split(' '),
