@@ -88,7 +88,7 @@ index_time() { adb logcat -d -s AppIndex:I | sed -n 's/.*apps in \([0-9]*\) ms.*
 frame_times() {
     adb shell dumpsys gfxinfo "$PKG" framestats | tr -d '\r' | awk -F, '
         /^Flags,/ { for (i = 1; i <= NF; i++) col[$i] = i; next }
-        col["Flags"] && $1 == "0" && $col["SyncQueued"] > 0 {
+        col["Flags"] && $1 % 2 == 0 && int($1 / 8) % 2 == 0 && $col["SyncQueued"] > 0 {
             printf "%.1f\n", ($col["SyncQueued"] - $col["HandleInputStart"]) / 1000000
         }'
 }

@@ -2,6 +2,8 @@ package dev.quxomiya.powerline.overlay
 
 import android.app.UiAutomation
 import android.content.Context
+import android.os.Build
+import android.os.ParcelFileDescriptor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -23,19 +25,20 @@ import org.junit.runner.RunWith
 // Alt+Space → type → Enter / Esc on the real overlay window.
 //
 // Powerline only reacts to keys from a physical keyboard: `input keyevent` is not seen by the
-// accessibility key filter. The test writes Alt+Space straight to the keyboard's evdev node,
-// which needs the node to be writable by the shell:
-//
-//   adb root && adb shell "chmod 666 /dev/input/event*"
-//
-// (scripts/device-tests.sh does this.) Without it every test here is skipped.
+// accessibility key filter. Alt+Space comes from either
+//  - a keyboard's evdev node, written with sendevent. The shell can write the nodes on an
+//    emulator or rooted device after `adb root && adb shell "chmod 666 /dev/input/event*"`
+//    (scripts/device-tests.sh does this), or
+//  - a virtual USB keyboard made with the `hid` tool through /dev/uhid, which the shell user can
+//    open on production builds where SELinux keeps it from writing evdev nodes (Android 12+).
+// Without either, every test here is skipped.
 @RunWith(AndroidJUnit4::class)
 class OverlayE2ETest {
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context: Context = instrumentation.targetContext
     private lateinit var device: UiDevice
-    private lateinit var keyboard: String
+    private var keyboard: Keyboard? = null
 
     private val searchField = By.text(PLACEHOLDER)
     private val panel = By.desc("Powerline status")
@@ -47,8 +50,8 @@ class OverlayE2ETest {
         Configurator.getInstance().uiAutomationFlags = UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES
         device = UiDevice.getInstance(instrumentation)
 
-        keyboard = findKeyboard() ?: ""
-        assumeTrue("No writable keyboard under /dev/input; run: adb root && adb shell \"chmod 666 /dev/input/event*\"", keyboard.isNotEmpty())
+        keyboard = evdevKeyboard() ?: hidKeyboard()
+        assumeTrue("No writable keyboard node and no hid tool; see the comment on OverlayE2ETest", keyboard != null)
 
         // `am instrument` restarts the app process, which unbinds the service; re-enable it
         val component = "${context.packageName}/${PowerlineAccessibilityService::class.java.name}"
@@ -64,9 +67,10 @@ class OverlayE2ETest {
 
     @After
     fun tearDown() {
-        if (keyboard.isEmpty()) return
+        val keyboard = keyboard ?: return
         if (device.hasObject(panel)) shell("input keyevent KEYCODE_ESCAPE")
         device.pressHome()
+        keyboard.close()
     }
 
     @Test
@@ -118,7 +122,8 @@ class OverlayE2ETest {
     @Test
     fun enterLaunchesTopAppAndRecordsHistory() {
         type("powerline")
-        assertNotNull(device.wait(Until.findObject(By.text(context.packageName)), TIMEOUT))
+        // The app result's title; its package name line depends on a setting
+        assertNotNull(device.wait(Until.findObject(By.text("Powerline")), TIMEOUT))
         shell("input keyevent KEYCODE_ENTER")
         assertTrue("overlay still open", device.wait(Until.gone(panel), TIMEOUT))
         // Powerline's own launcher activity is the status screen
@@ -229,7 +234,9 @@ class OverlayE2ETest {
             val columns = header ?: continue
             if (line.isEmpty() || !line[0].isDigit()) continue
             val row = columns.zip(line.trimEnd(',').split(',').map { it.toLong() }).toMap()
-            if (row["Flags"] != 0L) continue
+            // Skip frames after a window layout change (1) or skipped frames (8); other bits are
+            // vendor flags (HyperOS sets 0x60 on every frame)
+            if ((row.getValue("Flags") and FRAME_FLAGS_EXCLUDED) != 0L) continue
             times += (row.getValue("SyncQueued") - row.getValue("HandleInputStart")) / 1_000_000.0
         }
         return times
@@ -265,31 +272,95 @@ class OverlayE2ETest {
         shell("input text ${text.replace(" ", "%s")}")
     }
 
-    // executeShellCommand runs no shell, so one sendevent per call
-    // Returns System.nanoTime() right after Space went down (the overlay toggles on it)
-    private fun pressAltSpace(): Long {
-        var spaceDownAt = 0L
-        for ((code, value) in listOf(KEY_LEFTALT to 1, KEY_SPACE to 1, KEY_SPACE to 0, KEY_LEFTALT to 0)) {
-            shell("sendevent $keyboard $EV_KEY $code $value")
-            shell("sendevent $keyboard 0 0 0")
-            if (code == KEY_SPACE && value == 1) spaceDownAt = System.nanoTime()
+    private fun pressAltSpace() {
+        keyboard!!.altSpace()
+    }
+
+    private interface Keyboard {
+        fun altSpace()
+        fun close() {}
+    }
+
+    // A keyboard's evdev node; executeShellCommand runs no shell, so one sendevent per call
+    private inner class EvdevKeyboard(private val node: String) : Keyboard {
+        override fun altSpace() {
+            for ((code, value) in listOf(KEY_LEFTALT to 1, KEY_SPACE to 1, KEY_SPACE to 0, KEY_LEFTALT to 0)) {
+                shell("sendevent $node $EV_KEY $code $value")
+                shell("sendevent $node 0 0 0")
+            }
         }
-        return spaceDownAt
+    }
+
+    // A virtual USB keyboard (HID boot protocol) that lives while `hid -` reads our commands.
+    // Each report is the modifier byte, a reserved byte and up to six pressed keys.
+    private inner class HidKeyboard : Keyboard {
+        private val pipes = uiAutomation().executeShellCommandRw("hid -")
+        private val commands = ParcelFileDescriptor.AutoCloseOutputStream(pipes[1])
+
+        init {
+            send("""{"id":1,"command":"register","name":"Powerline test keyboard","vid":6353,"pid":1,"bus":"usb","descriptor":$HID_KEYBOARD_DESCRIPTOR}""")
+            // Until the input system has added the device
+            Thread.sleep(HID_REGISTER_MS)
+        }
+
+        override fun altSpace() {
+            report(HID_LEFT_ALT)
+            report(HID_LEFT_ALT, HID_SPACE)
+            report(HID_LEFT_ALT)
+            report()
+        }
+
+        private fun report(modifiers: Int = 0, key: Int = 0) {
+            send("""{"id":1,"command":"report","report":[$modifiers,0,$key,0,0,0,0,0]}""")
+            Thread.sleep(HID_REPORT_GAP_MS)
+        }
+
+        private fun send(command: String) {
+            commands.write("$command\n".toByteArray())
+            commands.flush()
+        }
+
+        // Ends `hid`, which removes the device
+        override fun close() {
+            commands.close()
+            ParcelFileDescriptor.AutoCloseInputStream(pipes[0]).use { it.readBytes() }
+        }
     }
 
     // First evdev node that reports KEY_SPACE and that the shell can write to
-    private fun findKeyboard(): String? {
+    private fun evdevKeyboard(): Keyboard? {
         val nodes = shell("getevent -p").split("add device").drop(1)
         return nodes
             .filter { "0039" in it } // KEY_SPACE in the key list
             .mapNotNull { Regex("""\d+: (/dev/input/event\d+)""").find(it)?.groupValues?.get(1) }
-            // A lone SYN_REPORT is harmless; it fails when the node is not writable
-            .firstOrNull { shell("sendevent $it 0 0 0").isBlank() }
+            // A lone SYN_REPORT is harmless; sendevent says on stderr when the node is not writable
+            .firstOrNull { shellErrors("sendevent $it 0 0 0").isBlank() }
+            ?.let(::EvdevKeyboard)
     }
+
+    private fun hidKeyboard(): Keyboard? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && shell("which hid").isNotBlank()) HidKeyboard() else null
 
     // Through UiDevice so the connection keeps FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES;
     // instrumentation.uiAutomation would connect with default flags and stop the service
     private fun shell(command: String): String = device.executeShellCommand(command)
+
+    // The connection UiDevice uses: asking with the same flags returns it rather than a new one
+    private fun uiAutomation(): UiAutomation =
+        instrumentation.getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
+
+    // stderr of a command, which executeShellCommand drops. Before Android 13 there is no way to
+    // read it, so the command counts as having succeeded.
+    private fun shellErrors(command: String): String {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            shell(command)
+            return ""
+        }
+        val (output, input, errors) = uiAutomation().executeShellCommandRwe(command)
+        ParcelFileDescriptor.AutoCloseOutputStream(input).close()
+        ParcelFileDescriptor.AutoCloseInputStream(output).use { it.readBytes() }
+        return ParcelFileDescriptor.AutoCloseInputStream(errors).use { it.readBytes().decodeToString() }
+    }
 
     private companion object {
         const val PLACEHOLDER = "Type to Search..."
@@ -298,8 +369,18 @@ class OverlayE2ETest {
         const val SETTLE_MS = 300L
         // PowerlineAccessibilityService ignores toggles closer than 300ms
         const val TOGGLE_GAP_MS = 400L
+        const val FRAME_FLAGS_EXCLUDED = 0x9L
         const val EV_KEY = 1
         const val KEY_LEFTALT = 56
         const val KEY_SPACE = 57
+
+        // HID boot keyboard: modifier bits, a reserved byte, LED output report, six key slots
+        const val HID_KEYBOARD_DESCRIPTOR = "[5,1,9,6,161,1,5,7,25,224,41,231,21,0,37,1,117,1,149,8,129,2," +
+            "149,1,117,8,129,1,149,5,117,1,5,8,25,1,41,5,145,2,149,1,117,3,145,1,149,6,117,8,21,0,37,101," +
+            "5,7,25,0,41,101,129,0,192]"
+        const val HID_LEFT_ALT = 0x04
+        const val HID_SPACE = 0x2C
+        const val HID_REGISTER_MS = 1_500L
+        const val HID_REPORT_GAP_MS = 20L
     }
 }
