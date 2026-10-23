@@ -9,7 +9,7 @@ import androidx.test.uiautomator.Configurator
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import dev.quxomiya.powerline.data.UserDataRepository
-import dev.quxomiya.powerline.services.StatusBarAccessibilityService
+import dev.quxomiya.powerline.services.PowerlineAccessibilityService
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -51,7 +51,7 @@ class OverlayE2ETest {
         assumeTrue("No writable keyboard under /dev/input; run: adb root && adb shell \"chmod 666 /dev/input/event*\"", keyboard.isNotEmpty())
 
         // `am instrument` restarts the app process, which unbinds the service; re-enable it
-        val component = "${context.packageName}/${StatusBarAccessibilityService::class.java.name}"
+        val component = "${context.packageName}/${PowerlineAccessibilityService::class.java.name}"
         shell("settings --user current delete secure enabled_accessibility_services")
         shell("settings --user current put secure enabled_accessibility_services $component")
         shell("settings --user current put secure accessibility_enabled 1")
@@ -295,7 +295,7 @@ class OverlayE2ETest {
         const val TAG = "OverlayE2ETest"
         const val TIMEOUT = 3_000L
         const val SETTLE_MS = 300L
-        // StatusBarAccessibilityService ignores toggles closer than 300ms
+        // PowerlineAccessibilityService ignores toggles closer than 300ms
         const val TOGGLE_GAP_MS = 400L
         const val EV_KEY = 1
         const val KEY_LEFTALT = 56

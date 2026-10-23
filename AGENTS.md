@@ -36,7 +36,7 @@ scripts/device-tests.sh             # instrumented / E2E (emulator or rooted dev
 - After installing, enable the accessibility service over ADB. Do not ask the user to do it by hand.
 
 ```sh
-adb shell settings put secure enabled_accessibility_services dev.quxomiya.powerline/dev.quxomiya.powerline.services.StatusBarAccessibilityService
+adb shell settings put secure enabled_accessibility_services dev.quxomiya.powerline/dev.quxomiya.powerline.services.PowerlineAccessibilityService
 adb shell settings put secure accessibility_enabled 1
 ```
 

@@ -28,7 +28,6 @@ This roadmap makes the app **smaller, simpler and faster without changing what t
 
 - New features, new settings, or changes to existing settings (AGENTS.md: no settings beyond README / this file)
 - Changing the stored format of `history`, `favorite_apps`, `search_engines` or `share_targets` in a way that loses existing data
-- Renaming `StatusBarAccessibilityService` or moving its package. Android stores the enabled service by component name, so a rename turns the service off and the user would have to enable it again.
 - Using the accessibility service for anything beyond Alt+Space (AGENTS.md)
 - UI redesign
 
@@ -57,6 +56,7 @@ This roadmap makes the app **smaller, simpler and faster without changing what t
 | `search/SearchProvider.kt` `displayName`, `icon` | Not read through the interface | Remove from the interface (providers may keep a private icon) |
 | `data/PowerlineDefaults.kt` `OVERLAY_CLOSE_ON_BACKGROUND_TAP` | Always `true`; a V1 preference turned into a constant | Inline |
 | `overlay/SearchOverlay.kt` | `e.printStackTrace()` on add / remove view | `Log.w` with a tag, like the rest of the app |
+| `services/StatusBarAccessibilityService` | Named after the V1 status bar trigger | ✅ Renamed to `PowerlineAccessibilityService` (closed testing only, so testers re-enabling the service is acceptable) |
 | `ui/theme` `CommandLauncherTheme`, style `Theme.CommandLauncher` | Pre-Powerline name | Rename to `PowerlineTheme` / `Theme.Powerline` (safe: not stored anywhere) |
 
 ### 3.2 Unused or replaceable dependencies (`app/build.gradle.kts`)
@@ -184,7 +184,6 @@ Only if Phases 1–4 are done. This is the largest change, and it is where the V
 | Keeping the overlay view between opens breaks focus / IME / ASCII input | `OverlayE2ETest` plus a manual check with Gboard and Google Japanese Input |
 | Prewarming in `onServiceConnected` raises idle memory | Measure idle memory before / after; drop the prewarm if the cost is large |
 | Lazy icons make tiles pop in while scrolling | Load the first screen of icons with the index; lazy only below the fold |
-| Renaming anything stored by Android (service component) turns the service off | Non-goal; listed in §1 |
 
 ---
 

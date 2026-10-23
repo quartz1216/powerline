@@ -28,7 +28,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.data.SearchSettingsRepository
 import dev.quxomiya.powerline.search.BuiltIn
-import dev.quxomiya.powerline.services.StatusBarAccessibilityService
+import dev.quxomiya.powerline.services.PowerlineAccessibilityService
 import dev.quxomiya.powerline.ui.settings.AdvancedSettings
 import dev.quxomiya.powerline.ui.settings.BuiltInSettings
 import dev.quxomiya.powerline.ui.settings.ShareSettings
@@ -243,7 +243,7 @@ fun checkBatteryOptimizationIgnored(context: Context): Boolean {
 }
 
 fun checkAccessibilityPermission(context: Context): Boolean {
-    val expectedComponentName = ComponentName(context, StatusBarAccessibilityService::class.java)
+    val expectedComponentName = ComponentName(context, PowerlineAccessibilityService::class.java)
     val enabledServices = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
     val colonSplitter = android.text.TextUtils.SimpleStringSplitter(':')
     colonSplitter.setString(enabledServices)

@@ -26,9 +26,9 @@
             </intent-filter>
         </activity>
 
-        <!-- Status Bar Accessibility Service -->
+        <!-- Detects Alt+Space and draws the search overlay -->
         <service
-            android:name=".services.StatusBarAccessibilityService"
+            android:name=".services.PowerlineAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>

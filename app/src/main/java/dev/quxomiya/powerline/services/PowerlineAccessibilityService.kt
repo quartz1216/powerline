@@ -7,7 +7,7 @@ import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import dev.quxomiya.powerline.overlay.SearchOverlay
 
-class StatusBarAccessibilityService : AccessibilityService() {
+class PowerlineAccessibilityService : AccessibilityService() {
 
     private var overlay: SearchOverlay? = null
     private var lastToggleAt = 0L
