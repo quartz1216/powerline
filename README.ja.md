@@ -31,9 +31,23 @@
   - 注意:Gboad以外ではテストされていません!
   - 設定で変更可能｡
 
-## 動作確認済み
+## 対応環境
+### 動作要件
+- Android 8.0 以降
+- 物理キーボード (USB / Bluetooth)｡ソフトウェアキーボードからは起動できません｡
+
+### 動作確認済み
 - AndroidStudio (Virtual)
   - Desktop Setup (like a Pixel for Desktop)
 - Xiaomi Pad Mini (Physical)
   - Tablet mode and Workstasion mode.
   - GBoard (US and JA)
+- 今のところ以上です｡自分の端末で異常が発生したらissueに報告してください｡
+
+## Privacy
+- アクセシビリティ権限はAlt+Spaceのフックと最前面表示にのみ使われます｡
+- Powerline does not have the `INTERNET` permission. It cannot send anything anywhere.
+- It does not read screen content and does not record keystrokes.
+- The only data it keeps is your Powerline launch history and search settings, stored on the device.
+- It shows no ads and contains no analytics or tracking SDKs.
+- 詳しくは PRIVACY.mdをご覧ください｡

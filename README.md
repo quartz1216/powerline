@@ -29,7 +29,12 @@
 - Powerline turns the IME off automatically when it opens.
   - Note: tested only with Gboard!
 
-## Tested on
+## Supported environments
+### Requirements
+- Android 8.0 or later
+- A physical keyboard (USB or Bluetooth). On-screen keyboards cannot open Powerline.
+
+### Tested on
 - Android Studio emulator (virtual)
   - Desktop setup (like Pixel for desktop)
 - Xiaomi Pad Mini (physical)
