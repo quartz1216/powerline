@@ -9,7 +9,9 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.os.UserHandle
+import android.util.Log
 import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.domain.models.AppInfo
 import kotlinx.coroutines.CoroutineScope
@@ -76,8 +78,11 @@ class AppIndex(
     fun reload() {
         loadJob?.cancel()
         loadJob = scope.launch {
+            val start = SystemClock.uptimeMillis()
             loadChips(engines.value, shareTargets.value)
             _apps.value = loadApps()
+            // Load time and reload count (ROADMAP §6); read by scripts/measure.sh
+            Log.i(TAG, "Indexed ${_apps.value.size} apps in ${SystemClock.uptimeMillis() - start} ms")
         }
     }
 
@@ -124,6 +129,7 @@ class AppIndex(
         }
 }
 
+private const val TAG = "AppIndex"
 private const val BROWSER_PROBE_URL = "https://www.example.com/"
 
 // Icon of the app that opens this engine's URLs, else of the default browser (`browserIcon`,

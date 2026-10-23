@@ -1,6 +1,6 @@
 # Powerline Cleanup & Optimization Roadmap
 
-> **Status:** Phase 1 in progress (compatibility code removed)
+> **Status:** Phase 0 done; Phase 1 in progress
 > **Baseline:** `v2/phase6-7-cleanup-release` @ `4b6aa57` (V2 feature-complete, not yet merged to `main`)
 > **Target:** V2.1 — same features, less code, faster overlay
 > **Last updated:** 2026-10-23
@@ -116,9 +116,10 @@ This roadmap makes the app **smaller, simpler and faster without changing what t
 
 ### Phase 0 — Baseline
 
-- [ ] Merge V2 into `main` (prerequisite; cleanup branches are cut from `main`).
-- [ ] Record the baseline in §6: release APK size, debug/release method count, cold start of `MainActivity`, overlay first open and later opens (the `SearchOverlay` log), `PerformanceTest` timing, number of `AppIndex` reloads while 10 apps update.
-- [ ] Add a JVM benchmark for `AppsProvider` + `SearchRanker` over 1000 apps (extends `PerformanceTest`) so Phase 3 has a number to move.
+- [ ] Merge V2 into `main` (prerequisite; cleanup branches are cut from `main`). Until then the work runs on `v2.1/cleanup-optimization`, cut from `v2/phase6-7-cleanup-release`.
+- [x] Record the baseline in §6 with `scripts/measure.sh` (release build signed with the debug key; Alt+Space written to `/dev/input` as root).
+- [x] Add a JVM benchmark over 1000 apps: `SearchBenchmarkTest` (whole pipeline with history-based signals). It replaces `PerformanceTest`, which searched an empty index.
+- [x] Log `AppIndex` load time and reloads (`AppIndex: Indexed N apps in X ms`).
 
 ### Phase 1 — Dead code and dependencies
 
@@ -190,10 +191,23 @@ Only if Phases 1–4 are done. This is the largest change, and it is where the V
 
 ## 6. Measurements
 
-Reference device: _to fill in Phase 0_ (emulator image and API level).
+Reference device: Android Desktop emulator (`sdk_gdesktop_x86_64`, Android 17, 2880×1800, userdebug), 17 launcher apps. Release build. Medians of 10 runs (`scripts/measure.sh`); the search benchmark is `SearchBenchmarkTest` on the JVM, run alone.
 
 | Metric | Baseline | After P1 | After P2 | After P3 | After P4 |
 |---|---|---|---|---|---|
+| Release APK size | 1,458 KB | | | | |
+| Main Kotlin lines (`app/src/main`) | 4,095 | | | | |
+| `MainActivity` cold start | 252 ms | | | | |
+| Overlay first open (key → first frame) | 74 ms | | | | |
+| `AppIndex` first load (apps appear in the grid) | 216 ms | | | | |
+| Overlay later opens | 47 ms | | | | |
+| Search, 1000 apps (µs / query, JVM) | ~680 | | | | |
+| `AppIndex` reloads, 10 package events | 10 | | | | |
+| Idle memory (PSS, overlay closed) | 28,715 KB | | | | |
+
+The open-time targets in §1 (first < 200 ms, later < 80 ms) are already met. What users still see on a first open is the grid filling in once `AppIndex` has loaded, so Phase 4 aims at that load.
+
+---|---|---|---|---|---|
 | Release APK size | | | | | |
 | Main Kotlin lines (`app/src/main`) | 4,120 | | | | |
 | `MainActivity` cold start | | | | | |
