@@ -1,0 +1,70 @@
+package dev.quxomiya.powerline.search.providers
+
+import android.content.Context
+import android.net.Uri
+import dev.quxomiya.powerline.search.AvailableEngine
+import dev.quxomiya.powerline.search.ResultSection
+import dev.quxomiya.powerline.search.SearchAction
+import dev.quxomiya.powerline.search.SearchItem
+import dev.quxomiya.powerline.search.SearchProvider
+import dev.quxomiya.powerline.search.SearchRequest
+import dev.quxomiya.powerline.ui.theme.PowerlineIcons
+import kotlinx.coroutines.flow.StateFlow
+
+// Direct URLs and the search engines (Web search settings). Nothing is sent anywhere until an item is run,
+// which opens the URL in whatever app Android picks for it. Off with the Built-in switch.
+class WebProvider(
+    private val engines: StateFlow<List<AvailableEngine>>
+) : SearchProvider {
+    override val id = "web"
+    override val priority = 20
+    override val section = ResultSection.WEB
+
+    // example.com, https://example.com/path, sub.example.co.jp:8080?q=1
+    private val urlPattern = Regex(
+        "^(https?://)?([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,24}(:\\d{1,5})?([/?#]\\S*)?$",
+        RegexOption.IGNORE_CASE
+    )
+
+    override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {
+        if (request.isAlias) {
+            val requested = request.engine ?: return emptyList()
+            if (request.aliasQuery.isEmpty()) return emptyList()
+            // Without its icon until AppIndex has reloaded an engine just added in settings
+            val engine = engines.value.find { it.engine == requested } ?: AvailableEngine(requested)
+            return listOf(engineItem(engine, request.aliasQuery))
+        }
+
+        val text = request.text
+        val items = mutableListOf<SearchItem>()
+        // A URL-looking query opens directly, ahead of searching for it
+        if (urlPattern.matches(text)) {
+            val hasScheme = text.startsWith("http://", ignoreCase = true) || text.startsWith("https://", ignoreCase = true)
+            val url = if (hasScheme) text else "https://$text"
+            items += SearchItem(
+                id = "url:$url",
+                providerId = id,
+                title = text,
+                subtitle = "Open in browser",
+                icon = null,
+                section = section,
+                score = 1,
+                action = SearchAction.OpenUrl(url),
+                vectorIcon = PowerlineIcons.Public
+            )
+        }
+        engines.value.firstOrNull()?.let { items += engineItem(it, text) }
+        return items
+    }
+
+    private fun engineItem(available: AvailableEngine, query: String) = SearchItem(
+        id = "web:${available.engine.id}:$query",
+        providerId = id,
+        title = query,
+        subtitle = "Search ${available.engine.name}",
+        icon = available.icon,
+        section = section,
+        score = 0,
+        action = SearchAction.OpenUrl(available.engine.url.replace("%s", Uri.encode(query)))
+    )
+}
