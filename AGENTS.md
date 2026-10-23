@@ -22,13 +22,13 @@ Powerline is a keyboard-first launcher for Android (Alt+Space opens the search o
 ```sh
 ./gradlew :app:assembleDebug        # build
 ./gradlew :app:testDebugUnitTest    # JVM tests
-scripts/device-tests.sh             # instrumented / E2E (emulator or rooted device)
+scripts/device-tests.sh             # instrumented / E2E (emulator or device)
 ```
 
 - After a change, make sure at least `testDebugUnitTest` passes.
 - For changes touching UI or key handling, run `device-tests.sh` when possible. If you cannot, say so in the report.
 - Requires JDK 17 and Android SDK 34.
-- Alt+Space is only caught from a physical keyboard. Key events injected with `adb shell input keyevent` / `keycombination` do not open the overlay, so do not try them for testing. The overlay can be driven only by `device-tests.sh` (writes to `/dev/input`, so it needs an emulator or rooted device); otherwise ask the user to check it with a physical keyboard.
+- Alt+Space is only caught from a physical keyboard. Key events injected with `adb shell input keyevent` / `keycombination` do not open the overlay, so do not try them for testing. The overlay can be driven by `device-tests.sh`: on an emulator or rooted device it writes to `/dev/input`; on a production device (Android 12+) it registers a virtual USB keyboard with `adb shell hid -`, which also works by hand (see `OverlayE2ETest.HidKeyboard`).
 
 ## Installing on a device
 
@@ -43,6 +43,12 @@ adb shell settings put secure accessibility_enabled 1
 
 - After enabling, confirm with `adb shell settings get secure enabled_accessibility_services`.
 - If no device is connected, stop after the build and report that installation was not possible.
+- On Xiaomi / HyperOS, set the battery to unrestricted after installing, or the system stops the service:
+
+```sh
+adb shell dumpsys deviceidle whitelist +dev.quxomiya.powerline
+adb shell cmd appops set dev.quxomiya.powerline RUN_ANY_IN_BACKGROUND allow
+```
 
 ## Principles
 

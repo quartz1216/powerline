@@ -43,10 +43,10 @@ Requirements: Android Studio / JDK 17, Android SDK 34.
 ```sh
 ./gradlew :app:assembleDebug        # build
 ./gradlew :app:testDebugUnitTest    # JVM tests (search pipeline, providers, history)
-scripts/device-tests.sh             # instrumented + end-to-end tests on an emulator
+scripts/device-tests.sh             # instrumented + end-to-end tests on an emulator or device
 scripts/measure.sh                  # startup, open time, typing and memory numbers (release build)
 ```
 
-`scripts/device-tests.sh` needs an emulator (or rooted device): the end-to-end tests press Alt+Space by writing to `/dev/input`, which needs `adb root`. The script sets that up. Gradle uninstalls the app after the run.
+The end-to-end tests press Alt+Space as a physical keyboard: on an emulator or rooted device by writing to `/dev/input` (the script runs `adb root` for that), on other devices through a virtual USB keyboard made with Android's `hid` tool (Android 12+). The app stays installed after the run.
 
 The plan and status of the V2 rework is in [ROADMAP.md](ROADMAP.md).
