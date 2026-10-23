@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 // The package name subtitle follows the Advanced switch.
 class AppsProvider(
     private val apps: StateFlow<List<IndexedApp>>,
-    private val enabled: () -> Boolean = { true },
     private val showPackageName: () -> Boolean = { true }
 ) : SearchProvider {
     override val id = ID
@@ -23,7 +22,6 @@ class AppsProvider(
     override val section = ResultSection.APPS
 
     override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {
-        if (!enabled()) return emptyList()
         val showPackageName = showPackageName()
         return apps.value.mapNotNull { indexed ->
             val match = indexed.searchKeys.maxOfOrNull { SearchRanker.match(request, it) } ?: 0

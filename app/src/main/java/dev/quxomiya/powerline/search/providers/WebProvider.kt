@@ -14,8 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 // Direct URLs and the search engines (Web search settings). Nothing is sent anywhere until an item is run,
 // which opens the URL in whatever app Android picks for it. Off with the Built-in switch.
 class WebProvider(
-    private val engines: StateFlow<List<AvailableEngine>>,
-    private val enabled: () -> Boolean = { true }
+    private val engines: StateFlow<List<AvailableEngine>>
 ) : SearchProvider {
     override val id = "web"
     override val priority = 20
@@ -28,7 +27,6 @@ class WebProvider(
     )
 
     override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {
-        if (!enabled()) return emptyList()
         if (request.isAlias) {
             val requested = request.engine ?: return emptyList()
             if (request.aliasQuery.isEmpty()) return emptyList()

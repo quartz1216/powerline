@@ -49,6 +49,27 @@ class SearchSettingsRepositoryTest {
         assertEquals(listOf(claude), reopened.shareTargets.value)
     }
 
+    // Web search / Share off: their engines and targets are out of effect, and back when switched on
+    @Test
+    fun activeListsFollowBuiltInSwitches() {
+        val repository = SearchSettingsRepository(context)
+        repository.setShareTargets(listOf(claude))
+        assertEquals(PowerlineDefaults.SEARCH_ENGINES, repository.activeEngines.value)
+        assertEquals(listOf(claude), repository.activeShareTargets.value)
+
+        repository.setEnabled(BuiltIn.WEB, false)
+        repository.setEnabled(BuiltIn.SHARE, false)
+        assertEquals(emptyList<SearchEngine>(), repository.activeEngines.value)
+        assertEquals(emptyList<ShareTarget>(), repository.activeShareTargets.value)
+        repository.setEngines(listOf(gh))
+        assertEquals(emptyList<SearchEngine>(), repository.activeEngines.value)
+
+        repository.setEnabled(BuiltIn.WEB, true)
+        assertEquals(listOf(gh), repository.activeEngines.value)
+        assertEquals(listOf(gh), SearchSettingsRepository(context).activeEngines.value)
+        assertEquals(emptyList<ShareTarget>(), SearchSettingsRepository(context).activeShareTargets.value)
+    }
+
     @Test
     fun resetRestoresBuiltIns() {
         val repository = SearchSettingsRepository(context)

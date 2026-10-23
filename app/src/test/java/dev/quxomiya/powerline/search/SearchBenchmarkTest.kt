@@ -53,7 +53,7 @@ class SearchBenchmarkTest {
                 WebProvider(engines),
                 ShareProvider()
             )
-        )
+        ) { true }
         val pipeline = SearchPipeline(
             context,
             registry,

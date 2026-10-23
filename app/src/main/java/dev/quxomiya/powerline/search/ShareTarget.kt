@@ -24,4 +24,12 @@ data class AliasChip(
     val alias: String,
     val icon: Drawable?,
     val isShare: Boolean
-)
+) {
+    companion object {
+        fun of(engine: SearchEngine, icon: Drawable?) =
+            AliasChip("web:${engine.id}", engine.name, engine.alias.orEmpty(), icon, isShare = false)
+
+        fun of(target: ShareTarget, icon: Drawable?) =
+            AliasChip("share:${target.id}", target.name, target.alias, icon, isShare = true)
+    }
+}

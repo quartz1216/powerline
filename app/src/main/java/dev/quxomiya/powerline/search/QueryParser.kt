@@ -5,11 +5,8 @@ import java.text.Normalizer
 // Engines and share targets are read on every parse, so edits in settings apply at once
 class QueryParser(
     private val engines: () -> List<SearchEngine>,
-    private val shareTargets: () -> List<ShareTarget> = { emptyList() }
+    private val shareTargets: () -> List<ShareTarget>
 ) {
-
-    constructor(engines: List<SearchEngine>, shareTargets: List<ShareTarget> = emptyList()) :
-        this({ engines }, { shareTargets })
 
     private val whitespace = Regex("\\s+")
 

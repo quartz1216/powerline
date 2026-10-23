@@ -37,6 +37,14 @@ class SearchSettingsRepository(context: Context) {
     private val _forceAsciiInput = MutableStateFlow(readForceAsciiInput())
     val forceAsciiInput: StateFlow<Boolean> = _forceAsciiInput.asStateFlow()
 
+    // The engines and share targets in effect: none while Web search / Share is switched off, so
+    // their aliases read as plain text and their chips go. The overlay reads only these.
+    private val _activeEngines = MutableStateFlow(emptyList<SearchEngine>())
+    val activeEngines: StateFlow<List<SearchEngine>> = _activeEngines.asStateFlow()
+
+    private val _activeShareTargets = MutableStateFlow(emptyList<ShareTarget>())
+    val activeShareTargets: StateFlow<List<ShareTarget>> = _activeShareTargets.asStateFlow()
+
     // Held here: SharedPreferences keeps its listeners only weakly
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         when (key) {
@@ -46,20 +54,29 @@ class SearchSettingsRepository(context: Context) {
             KEY_SHOW_PACKAGE_NAME -> _showPackageName.value = readShowPackageName()
             KEY_FORCE_ASCII_INPUT -> _forceAsciiInput.value = readForceAsciiInput()
         }
+        refreshActive()
     }
 
     init {
+        refreshActive()
         prefs.registerOnSharedPreferenceChangeListener(listener)
+    }
+
+    private fun refreshActive() {
+        _activeEngines.value = if (isEnabled(BuiltIn.WEB)) _engines.value else emptyList()
+        _activeShareTargets.value = if (isEnabled(BuiltIn.SHARE)) _shareTargets.value else emptyList()
     }
 
     fun setEngines(engines: List<SearchEngine>) {
         _engines.value = engines
+        refreshActive()
         prefs.edit().putString(KEY_ENGINES, gson.toJson(engines)).apply()
     }
 
     // Back to PowerlineDefaults.SEARCH_ENGINES, including any built-in the user deleted
     fun resetEngines() {
         _engines.value = PowerlineDefaults.SEARCH_ENGINES
+        refreshActive()
         prefs.edit().remove(KEY_ENGINES).apply()
     }
 
@@ -67,6 +84,7 @@ class SearchSettingsRepository(context: Context) {
 
     fun setEnabled(builtIn: BuiltIn, enabled: Boolean) {
         _disabledBuiltIns.value = if (enabled) _disabledBuiltIns.value - builtIn else _disabledBuiltIns.value + builtIn
+        refreshActive()
         prefs.edit().putBoolean(builtIn.key, enabled).apply()
     }
 
@@ -89,6 +107,7 @@ class SearchSettingsRepository(context: Context) {
 
     fun setShareTargets(targets: List<ShareTarget>) {
         _shareTargets.value = targets
+        refreshActive()
         prefs.edit().putString(KEY_SHARE_TARGETS, gson.toJson(targets)).apply()
     }
 

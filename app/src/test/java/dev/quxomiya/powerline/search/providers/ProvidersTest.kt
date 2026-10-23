@@ -62,11 +62,6 @@ class ProvidersTest {
     }
 
     @Test
-    fun appsSilentWhenSwitchedOff() {
-        assertEquals(0, runBlocking { AppsProvider(apps, enabled = { false }).search(parser.parse("chr"), context) }.size)
-    }
-
-    @Test
     fun appsPackageNameFollowsSwitch() {
         assertEquals("com.android.chrome", appsSearch("chr").single().subtitle)
         val hidden = runBlocking { AppsProvider(apps, showPackageName = { false }).search(parser.parse("chr"), context) }
@@ -87,12 +82,6 @@ class ProvidersTest {
         val item = calc("200*10%").single()
         assertEquals("20", item.title)
         assertEquals(SearchAction.CopyText("20"), item.action)
-    }
-
-    @Test
-    fun calculatorSilentWhenSwitchedOff() {
-        val items = runBlocking { CalculatorProvider { false }.search(parser.parse("1+2"), context) }
-        assertEquals(0, items.size)
     }
 
     @Test
@@ -166,14 +155,6 @@ class ProvidersTest {
     }
 
     @Test
-    fun webSilentWhenSwitchedOff() {
-        val provider = WebProvider(engines) { false }
-        listOf("laneige", "example.com", "yt laneige").forEach { query ->
-            assertEquals("for '$query'", 0, runBlocking { provider.search(parser.parse(query), context) }.size)
-        }
-    }
-
-    @Test
     fun aliasQueryIsEncoded() {
         val item = web("wiki C++ & Java").single()
         assertEquals(SearchAction.OpenUrl("https://en.wikipedia.org/wiki/Special:Search?search=C%2B%2B%20%26%20Java"), item.action)
@@ -190,16 +171,6 @@ class ProvidersTest {
     @Test
     fun shareSilentInAliasMode() {
         assertEquals(0, runBlocking { ShareProvider().search(parser.parse("yt x"), context) }.size)
-    }
-
-    // Switching Share off hides "Share text" and share aliases alike
-    @Test
-    fun shareSilentWhenSwitchedOff() {
-        val target = ShareTarget("claude", "Claude", "cl", "com.anthropic.claude", "com.anthropic.claude.Share")
-        val shareParser = QueryParser(PowerlineDefaults.SEARCH_ENGINES, listOf(target))
-        val provider = ShareProvider(enabled = { false })
-        assertEquals(0, runBlocking { provider.search(shareParser.parse("hello"), context) }.size)
-        assertEquals(0, runBlocking { provider.search(shareParser.parse("cl hello"), context) }.size)
     }
 
     @Test

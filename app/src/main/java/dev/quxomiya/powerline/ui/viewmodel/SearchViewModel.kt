@@ -16,6 +16,10 @@ import dev.quxomiya.powerline.search.RankingSignals
 import dev.quxomiya.powerline.search.SearchItem
 import dev.quxomiya.powerline.search.SearchPipeline
 import dev.quxomiya.powerline.search.SearchUiState
+import dev.quxomiya.powerline.search.providers.AppsProvider
+import dev.quxomiya.powerline.search.providers.CalculatorProvider
+import dev.quxomiya.powerline.search.providers.ShareProvider
+import dev.quxomiya.powerline.search.providers.WebProvider
 import dev.quxomiya.powerline.search.providers.toSearchItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,7 +40,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
     val userDataRepository = UserDataRepository(application)
     private val searchSettings = SearchSettingsRepository.get(application)
-    private val appIndex = AppIndex(application, viewModelScope, searchSettings.engines, searchSettings.shareTargets)
+    private val appIndex = AppIndex(application, viewModelScope, searchSettings.activeEngines, searchSettings.activeShareTargets)
 
     // Launchable apps by name (the standby "all apps" grid)
     private val _visibleApps = MutableStateFlow<List<AppInfo>>(emptyList())
@@ -46,23 +50,13 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val _recentApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val recentApps: StateFlow<List<AppInfo>> = _recentApps.asStateFlow()
 
-    // Aliased search engines by name, then share targets, each only while its built-in is on
+    // Aliased search engines by name, then share targets (only the active ones reach AppIndex)
     private val aliasChips: StateFlow<List<AliasChip>> =
-        combine(
-            appIndex.availableEngines,
-            appIndex.availableShareTargets,
-            searchSettings.disabledBuiltIns
-        ) { allEngines, allTargets, disabled ->
-            val engines = if (BuiltIn.WEB in disabled) emptyList() else allEngines
-            val targets = if (BuiltIn.SHARE in disabled) emptyList() else allTargets
-            engines.sortedBy { it.engine.name.lowercase() }.mapNotNull { available ->
-                val engine = available.engine
-                val alias = engine.alias?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-                AliasChip("web:${engine.id}", engine.name, alias, available.icon, isShare = false)
-            } + targets.map { available ->
-                val target = available.target
-                AliasChip("share:${target.id}", target.name, target.alias, available.icon, isShare = true)
-            }
+        combine(appIndex.availableEngines, appIndex.availableShareTargets) { engines, targets ->
+            engines.filter { !it.engine.alias.isNullOrBlank() }
+                .sortedBy { it.engine.name.lowercase() }
+                .map { AliasChip.of(it.engine, it.icon) } +
+                targets.map { AliasChip.of(it.target, it.icon) }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // Standby chips: the alias chips, none at all with Chips off
@@ -79,15 +73,19 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         .map { BuiltIn.HOME !in it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, searchSettings.isEnabled(BuiltIn.HOME))
 
-    // A switched-off built-in's aliases read as plain text
-    private val parser = QueryParser(
-        { if (searchSettings.isEnabled(BuiltIn.WEB)) searchSettings.engines.value else emptyList() },
-        { if (searchSettings.isEnabled(BuiltIn.SHARE)) searchSettings.shareTargets.value else emptyList() }
-    )
+    private val parser = QueryParser({ searchSettings.activeEngines.value }, { searchSettings.activeShareTargets.value })
 
     private val pipeline = SearchPipeline(
         context = application,
-        registry = ProviderRegistry(appIndex, searchSettings::isEnabled) { searchSettings.showPackageName.value },
+        registry = ProviderRegistry(
+            listOf(
+                AppsProvider(appIndex.apps) { searchSettings.showPackageName.value },
+                CalculatorProvider(),
+                WebProvider(appIndex.availableEngines),
+                ShareProvider(appIndex.availableShareTargets)
+            ),
+            searchSettings::isEnabled
+        ),
         parser = parser,
         signals = {
             RankingSignals(
@@ -150,11 +148,9 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private fun setQuery(newQuery: String, debounce: Boolean) {
         val split = parser.splitAlias(newQuery)
         val chip = split?.first?.let { request ->
-            val id = request.shareTarget?.let { "share:${it.id}" } ?: "web:${request.engine?.id}"
+            val chip = request.shareTarget?.let { AliasChip.of(it, null) } ?: AliasChip.of(request.engine!!, null)
             // Without its icon until AppIndex has reloaded an alias just added in settings
-            aliasChips.value.find { it.id == id }
-                ?: request.shareTarget?.let { AliasChip(id, it.name, it.alias, null, isShare = true) }
-                ?: request.engine?.let { AliasChip(id, it.name, it.alias.orEmpty(), null, isShare = false) }
+            aliasChips.value.find { it.id == chip.id } ?: chip
         }
         val fieldText = if (chip != null) split.second else newQuery
         // Stored as typed, the alias part normalized to the chip's alias

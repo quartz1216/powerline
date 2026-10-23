@@ -39,8 +39,8 @@ data class IndexedApp(
 class AppIndex(
     private val context: Context,
     private val scope: CoroutineScope,
-    private val engines: StateFlow<List<SearchEngine>> = MutableStateFlow(PowerlineDefaults.SEARCH_ENGINES),
-    private val shareTargets: StateFlow<List<ShareTarget>> = MutableStateFlow(emptyList())
+    private val engines: StateFlow<List<SearchEngine>>,
+    private val shareTargets: StateFlow<List<ShareTarget>>
 ) {
 
     private val _apps = MutableStateFlow<List<IndexedApp>>(emptyList())

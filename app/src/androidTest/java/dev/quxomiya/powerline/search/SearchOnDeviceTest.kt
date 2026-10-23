@@ -5,11 +5,15 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.search.providers.AppsProvider
+import dev.quxomiya.powerline.search.providers.CalculatorProvider
+import dev.quxomiya.powerline.search.providers.ShareProvider
+import dev.quxomiya.powerline.search.providers.WebProvider
 import dev.quxomiya.powerline.ui.viewmodel.SearchViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -35,12 +39,19 @@ class SearchOnDeviceTest {
 
     @Before
     fun setup() = runBlocking {
-        appIndex = AppIndex(application, scope)
+        appIndex = AppIndex(application, scope, MutableStateFlow(PowerlineDefaults.SEARCH_ENGINES), MutableStateFlow(emptyList()))
         withTimeout(10_000) { appIndex.apps.first { it.isNotEmpty() } }
         pipeline = SearchPipeline(
             context = application,
-            registry = ProviderRegistry(appIndex),
-            parser = QueryParser(PowerlineDefaults.SEARCH_ENGINES),
+            registry = ProviderRegistry(
+                listOf(
+                    AppsProvider(appIndex.apps),
+                    CalculatorProvider(),
+                    WebProvider(appIndex.availableEngines),
+                    ShareProvider(appIndex.availableShareTargets)
+                )
+            ) { true },
+            parser = QueryParser({ PowerlineDefaults.SEARCH_ENGINES }, { emptyList() }),
             signals = { RankingSignals() }
         )
     }
@@ -126,7 +137,7 @@ class SearchOnDeviceTest {
     @Test
     fun appsProviderAloneIsFast() = runBlocking {
         val provider = AppsProvider(appIndex.apps)
-        val request = QueryParser(PowerlineDefaults.SEARCH_ENGINES).parse("c")
+        val request = QueryParser({ PowerlineDefaults.SEARCH_ENGINES }, { emptyList() }).parse("c")
         provider.search(request, application)
         val ms = measureNanoTime { provider.search(request, application) } / 1_000_000
         assertTrue("took $ms ms for ${appIndex.apps.value.size} apps", ms < PowerlineDefaults.PROVIDER_TIMEOUT_MS)

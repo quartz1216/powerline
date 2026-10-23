@@ -173,7 +173,7 @@ class SearchPipelineTest {
     private fun pipeline(vararg providers: SearchProvider, signals: RankingSignals = RankingSignals()) =
         SearchPipeline(
             context = context,
-            registry = ProviderRegistry(providers.toList()),
+            registry = ProviderRegistry(providers.toList()) { true },
             parser = QueryParser(PowerlineDefaults.SEARCH_ENGINES),
             signals = { signals }
         ).also { pipelines += it }
