@@ -69,6 +69,17 @@ class SearchBenchmarkTest {
         val perQueryUs = (System.nanoTime() - start) / 1_000.0 / (ROUNDS * queries.size)
         println("BENCH pipeline_1000_apps_us %.1f".format(perQueryUs))
         assertTrue(results > 0)
+
+        // The providers alone, one after another: what the pipeline's parallel runs, timeouts,
+        // ranking and dedup add on top (ROADMAP §7 #3)
+        val parser = QueryParser(PowerlineDefaults.SEARCH_ENGINES)
+        suspend fun providersOnly(query: String) =
+            registry.providersFor(parser.parse(query)).sumOf { it.search(parser.parse(query), context).size }
+        repeat(WARMUP_ROUNDS) { queries.forEach { providersOnly(it) } }
+        val directStart = System.nanoTime()
+        repeat(ROUNDS) { queries.forEach { providersOnly(it) } }
+        val directUs = (System.nanoTime() - directStart) / 1_000.0 / (ROUNDS * queries.size)
+        println("BENCH providers_only_1000_apps_us %.1f".format(directUs))
     }
 
     // Labels of two to three words from a fixed vocabulary, so prefix, word, initials and fuzzy
