@@ -110,7 +110,7 @@ class SearchOverlay(private val service: AccessibilityService) {
             rootView = root
             logOpenTime(root, triggeredAt)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.w(TAG, "Cannot show the overlay", e)
         }
     }
 
@@ -121,7 +121,7 @@ class SearchOverlay(private val service: AccessibilityService) {
         try {
             windowManager.removeView(root)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.w(TAG, "Cannot remove the overlay", e)
         }
     }
 

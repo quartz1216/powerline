@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.LauncherApps
 import android.content.pm.ShortcutInfo
 import android.graphics.drawable.Icon
+import android.util.Log
 import android.net.Uri
 import android.os.Process
 import android.provider.Settings
@@ -67,7 +68,7 @@ fun AppActionMenu(
         try {
             shortcuts = launcherApps.getShortcuts(query, Process.myUserHandle()) ?: emptyList()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.w(TAG, "Cannot read shortcuts of $packageName", e)
         }
     }
 
@@ -153,7 +154,7 @@ fun AppActionMenu(
                                 launcherApps.startShortcut(shortcut.`package`, shortcut.id, null, null, Process.myUserHandle())
                                 onDismissRequest()
                             } catch (e: Exception) {
-                                e.printStackTrace()
+                                Log.w(TAG, "Cannot start shortcut ${shortcut.id}", e)
                             }
                         }
                     }
@@ -192,3 +193,5 @@ fun ShortcutItem(
         modifier = Modifier.clickable(onClick = onClick)
     )
 }
+
+private const val TAG = "AppActionMenu"
