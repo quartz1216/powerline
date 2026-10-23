@@ -6,7 +6,7 @@ Powerline is a keyboard-first launcher for Android (Alt+Space opens the search o
 
 - Chat with the user in Japanese.
 - Everything else in English: code, comments, commit messages, file contents, documents, and any other deliverable.
-- Existing Japanese text (ROADMAP.md) stays as is unless the task is to update it. New or rewritten text is English.
+- Existing Japanese text stays as is unless the task is to update it. New or rewritten text is English.
 
 ## Layout
 
@@ -14,7 +14,8 @@ Powerline is a keyboard-first launcher for Android (Alt+Space opens the search o
 - `app/src/test/` — JVM unit tests (search pipeline, providers, history)
 - `app/src/androidTest/` — instrumented / E2E tests (need an emulator)
 - `scripts/device-tests.sh` — runs the instrumented / E2E tests
-- `ROADMAP.md` — V2 plan and progress. Read it first when a decision is unclear
+- `scripts/measure.sh` — measures the numbers in ROADMAP.md §6 on an emulator (release build; needs root like device-tests.sh)
+- `ROADMAP.md` — current plan and progress. Read it first when a decision is unclear
 
 ## Build and test
 

@@ -44,6 +44,7 @@ Requirements: Android Studio / JDK 17, Android SDK 34.
 ./gradlew :app:assembleDebug        # build
 ./gradlew :app:testDebugUnitTest    # JVM tests (search pipeline, providers, history)
 scripts/device-tests.sh             # instrumented + end-to-end tests on an emulator
+scripts/measure.sh                  # startup, open time, typing and memory numbers (release build)
 ```
 
 `scripts/device-tests.sh` needs an emulator (or rooted device): the end-to-end tests press Alt+Space by writing to `/dev/input`, which needs `adb root`. The script sets that up. Gradle uninstalls the app after the run.

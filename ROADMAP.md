@@ -1,6 +1,6 @@
 # Powerline Cleanup & Optimization Roadmap
 
-> **Status:** Phases 0–3 done; Phase 4 in progress
+> **Status:** Phases 0–4 done. Phase 5 (toolchain) is optional and not started
 > **Baseline:** `v2/phase6-7-cleanup-release` @ `4b6aa57` (V2 feature-complete, not yet merged to `main`)
 > **Target:** V2.1 — same features, less code, faster overlay
 > **Last updated:** 2026-10-23
@@ -164,19 +164,20 @@ Finding for Phase 4: on a fresh process, `AppIndex` finishes its IO work in ~50 
 
 ### Phase 4 — Overlay open and rendering
 
-- [ ] Create `SearchViewModel` / `AppIndex` in `onServiceConnected` on a background thread so the first Alt+Space does not load the index.
-- [ ] Load app icons lazily (per visible tile) and cache them; labels stay eager for search.
-- [ ] Replace `AndroidView(ImageView)` in `AppIcon` with a Compose `Image` of a cached `ImageBitmap`, if measurements show a gain.
-- [ ] Keep the `ComposeView` between opens (detach / re-add, or keep the window and toggle visibility). Check that focus, IME and the fade-out still behave. Keep it only if later opens get faster.
-- [ ] Add a Baseline Profile for the overlay path and `MainActivity` (needs `androidx.profileinstaller` and a profile generator module. Reason: AOT-compiles the Compose code used on first open).
+- [x] Create `SearchViewModel` / `AppIndex` when the service connects (`SearchOverlay.prepare`). The index loads in ~20 ms while nothing else runs, and every first open shows the full grid in its first frame (10 / 10), where before the grid filled in ~185 ms after the key press. Idle memory unchanged.
+- [ ] ~~Load app icons lazily~~ Not done: with the index loaded at service start, icons are ready before the first open; loading them per tile would make tiles pop in. Memory per app cannot be judged on an emulator with 17 apps; check on a phone with many apps.
+- [x] Draw `AppIcon` as a cached `ImageBitmap` instead of `AndroidView(ImageView)`. Open and typing times unchanged; idle memory ~28.0 → ~26.0 MB.
+- [x] Keep the overlay's composition between opens: the panel runs on its own `Recomposer` and the same view is re-added on each open. Later opens ~41 → ~16 ms. Focus, IME, reset on reopen and the fade-out pass `OverlayE2ETest`.
+- [ ] ~~Add a Baseline Profile~~ Not done, because it cannot be verified here: on the reference emulator (API 37) `profileinstaller` 1.3.0 reports the ART version as unsupported, and the APK's profile (format 010) is rejected as dex metadata. Compose's own profiles already ship in the APK (`assets/dexopt/baseline.prof`). Upper bound measured with the app fully compiled ahead of time (`COMPILED=1 scripts/measure.sh`): first open ~103 → ~75 ms, typing p90 ~4.3 → ~1.8 ms. Revisit with Phase 5 (newer `profileinstaller`) or on a physical device.
 
-**Done when:** first open < 200 ms, later opens < 80 ms on the reference emulator (log from `OverlayE2ETest`); memory while idle not higher than baseline.
+**Done when:** first open < 200 ms, later opens < 80 ms on the reference emulator (log from `OverlayE2ETest`); memory while idle not higher than baseline. ✅ First open ~99 ms with the grid filled, later opens ~18 ms, idle memory ~26.0 MB (baseline ~28.7 MB).
 
 ### Phase 5 — Toolchain (optional)
 
 Only if Phases 1–4 are done. This is the largest change, and it is where the V2 roadmap drew the line.
 
 - [ ] Java / JVM target 1.8 → 17.
+- [ ] Update `profileinstaller` (through Compose) and add the app's own Baseline Profile (see Phase 4).
 - [ ] AGP 8.2 → current, Kotlin 1.9 → 2.x with the Compose compiler Gradle plugin (strong skipping cuts recomposition), Compose BOM update, `compileSdk` / `targetSdk` update with the behavior changes reviewed.
 
 ---
@@ -198,19 +199,21 @@ Reference device: Android Desktop emulator (`sdk_gdesktop_x86_64`, Android 17, 2
 
 | Metric | Baseline | After P1 | After P2 | After P3 | After P4 |
 |---|---|---|---|---|---|
-| Release APK size | 1,458 KB | 1,457 KB | 1,429 KB | 1,429 KB | |
-| Main Kotlin lines (`app/src/main`) | 4,095 | 4,078 | 4,241 | 4,286 | |
-| `MainActivity` cold start | 252 ms | 219 ms | 218 ms | 217 ms | |
-| Overlay first open (key → first frame) | 74 ms | 86 ms | 68 ms | 84 ms | |
-| `AppIndex` first load (apps appear in the grid) | 216 ms | 189 ms | 198 ms | 183 ms | |
-| Overlay later opens | 47 ms | 41 ms | 40 ms | 49 ms | |
-| Search, 1000 apps (µs / query, JVM) | ~680 | ~660 | ~655 | ~245 | |
-| `AppIndex` reloads, 10 package events | 10 | 10 | 9 | 1 | |
-| Idle memory (PSS, overlay closed) | 28,715 KB | 28,145 KB | 28,094 KB | 28,071 KB | |
+| Release APK size | 1,458 KB | 1,457 KB | 1,429 KB | 1,429 KB | 1,421 KB |
+| Main Kotlin lines (`app/src/main`) | 4,095 | 4,078 | 4,241 | 4,286 | 4,302 |
+| `MainActivity` cold start | 252 ms | 219 ms | 218 ms | 217 ms | 209 ms |
+| Overlay first open (key → first frame) | 74 ms | 86 ms | 68 ms | 84 ms | 99 ms |
+| `AppIndex` first load (apps appear in the grid) | 216 ms | 189 ms | 198 ms | 183 ms | 21 ms (at service start) |
+| Overlay later opens | 47 ms | 41 ms | 40 ms | 49 ms | 18 ms |
+| Search, 1000 apps (µs / query, JVM) | ~680 | ~660 | ~655 | ~245 | ~245 |
+| `AppIndex` reloads, 10 package events | 10 | 10 | 9 | 1 | 1 |
+| Idle memory (PSS, overlay closed) | 28,715 KB | 28,145 KB | 28,094 KB | 28,071 KB | 25,988 KB |
+| First opens with the grid filled in the first frame | 0 / 10 | | | | 10 / 10 |
+| Typing UI-thread p50 / p90 per frame | | | | | 0.5 / 4.3 ms |
 
-Timings on the emulator vary by about ±15% between runs; Phases 1 and 2 changed no code on these paths, so their differences are noise. Main Kotlin lines went up in Phase 2: the split settings files each carry their own imports, and `StoredJson`, `StandbySelection` and `PowerlineIcons` are new.
+Timings on the emulator vary by about ±15% between runs; Phases 1 and 2 changed no code on these paths, so their differences are noise. Typing frames were added to `scripts/measure.sh` in Phase 4. Main Kotlin lines went up in Phase 2: the split settings files each carry their own imports, and `StoredJson`, `StandbySelection` and `PowerlineIcons` are new.
 
-The open-time targets in §1 (first < 200 ms, later < 80 ms) are already met. What users still see on a first open is the grid filling in once `AppIndex` has loaded, so Phase 4 aims at that load.
+The open-time targets in §1 (first < 200 ms, later < 80 ms) were met from the start. What users saw on a first open was the grid filling in once `AppIndex` had loaded; Phase 4 removed that wait.
 
 ---|---|---|---|---|---|
 | Release APK size | | | | | |
