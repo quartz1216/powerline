@@ -1,8 +1,6 @@
 package dev.quxomiya.powerline.search.providers
 
 import android.content.Context
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Calculate
 import dev.quxomiya.powerline.domain.Calculator
 import dev.quxomiya.powerline.search.ResultSection
 import dev.quxomiya.powerline.search.SearchAction
@@ -10,12 +8,13 @@ import dev.quxomiya.powerline.search.SearchItem
 import dev.quxomiya.powerline.search.SearchMode
 import dev.quxomiya.powerline.search.SearchProvider
 import dev.quxomiya.powerline.search.SearchRequest
+import dev.quxomiya.powerline.ui.theme.PowerlineIcons
 
 // Arithmetic on the query; running the item copies the result. Off with the Built-in switch.
 class CalculatorProvider(private val enabled: () -> Boolean = { true }) : SearchProvider {
     override val id = "calculator"
     override val priority = 30
-    private val icon = Icons.Default.Calculate
+    private val icon = PowerlineIcons.Calculate
     override val section = ResultSection.CALCULATOR
 
     override suspend fun search(request: SearchRequest, context: Context): List<SearchItem> {

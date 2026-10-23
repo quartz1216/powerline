@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
@@ -33,6 +31,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import dev.quxomiya.powerline.search.SearchAction
 import dev.quxomiya.powerline.search.SearchItem
 import dev.quxomiya.powerline.ui.theme.PanelItemShape
+import dev.quxomiya.powerline.ui.theme.PowerlineIcons
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -95,8 +94,8 @@ fun ResultIcon(item: SearchItem, isSelected: Boolean = false) {
         return
     }
     val vector = item.vectorIcon ?: when (item.action) {
-        is SearchAction.LaunchApp -> Icons.Default.Apps
-        is SearchAction.CopyText -> Icons.Default.Calculate
+        is SearchAction.LaunchApp -> PowerlineIcons.Apps
+        is SearchAction.CopyText -> PowerlineIcons.Calculate
         is SearchAction.OpenUrl -> Icons.Default.Search
         is SearchAction.ShareText -> Icons.Default.Share
     }

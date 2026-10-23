@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Shortcut
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -45,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import dev.quxomiya.powerline.search.SearchItem
+import dev.quxomiya.powerline.ui.theme.PowerlineIcons
 import dev.quxomiya.powerline.utils.ActionExecutor
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -187,7 +187,7 @@ fun ShortcutItem(
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Icon(Icons.Default.Shortcut, contentDescription = null)
+                Icon(PowerlineIcons.Shortcut, contentDescription = null)
             }
         },
         modifier = Modifier.clickable(onClick = onClick)

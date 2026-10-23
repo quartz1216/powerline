@@ -2,8 +2,6 @@ package dev.quxomiya.powerline.search.providers
 
 import android.content.Context
 import android.net.Uri
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Public
 import dev.quxomiya.powerline.search.AvailableEngine
 import dev.quxomiya.powerline.search.ResultSection
 import dev.quxomiya.powerline.search.SearchAction
@@ -11,6 +9,7 @@ import dev.quxomiya.powerline.search.SearchItem
 import dev.quxomiya.powerline.search.SearchMode
 import dev.quxomiya.powerline.search.SearchProvider
 import dev.quxomiya.powerline.search.SearchRequest
+import dev.quxomiya.powerline.ui.theme.PowerlineIcons
 import kotlinx.coroutines.flow.StateFlow
 
 // Direct URLs and the search engines (Web search settings). Nothing is sent anywhere until an item is run,
@@ -54,7 +53,7 @@ class WebProvider(
                 section = section,
                 score = 1,
                 action = SearchAction.OpenUrl(url),
-                vectorIcon = Icons.Default.Public
+                vectorIcon = PowerlineIcons.Public
             )
         }
         engines.value.firstOrNull()?.let { items += engineItem(it, text) }
