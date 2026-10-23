@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 # Measures the numbers in ROADMAP.md §6 on a connected emulator / rooted device, using the
 # release build (R8) signed with the debug key. Replaces any installed Powerline build.
 #
@@ -36,9 +36,13 @@ command -v cygpath >/dev/null && KEYSTORE=$(cygpath -m "$KEYSTORE")
 "$APKSIGNER" sign --ks "$KEYSTORE" --ks-pass pass:android --ks-key-alias androiddebugkey \
     --out "$APK" "$UNSIGNED"
 
-adb root >/dev/null
 adb wait-for-device
-adb shell "chmod 666 /dev/input/event*"
+ROOT=0
+if adb root 2>/dev/null | grep -qv "cannot run as root"; then
+    adb wait-for-device
+    adb shell "chmod 666 /dev/input/event*"
+    ROOT=1
+fi
 adb install -r "$APK" >/dev/null 2>&1 || { adb uninstall "$PKG" >/dev/null; adb install "$APK" >/dev/null; }
 
 # COMPILED=1: compile the whole app ahead of time, the upper bound of what a baseline profile or
@@ -48,16 +52,30 @@ if [ "${COMPILED:-0}" = 1 ]; then
     adb shell cmd package compile -f -m speed "$PKG" >/dev/null
 fi
 
-KEYBOARD=$(adb shell getevent -p | awk '
-    /add device/ { dev = $NF }
-    / 0039 / && dev != "" { print dev; exit }' | tr -d '\r')
-[ -n "$KEYBOARD" ] || { echo "No keyboard with KEY_SPACE under /dev/input" >&2; exit 1; }
-
-key() { # code value
-    adb shell "sendevent $KEYBOARD 1 $1 $2; sendevent $KEYBOARD 0 0 0"
-}
-alt_space() { key 56 1; key 57 1; key 57 0; key 56 0; }
-esc() { key 1 1; key 1 0; }
+# Alt+Space as a physical keyboard: as root, written to a keyboard's evdev node; otherwise from a
+# virtual USB keyboard made with the hid tool (as in OverlayE2ETest), fed through a FIFO
+if [ "$ROOT" = 1 ]; then
+    KEYBOARD=$(adb shell getevent -p | awk '
+        /add device/ { dev = $NF }
+        / 0039 / && dev != "" { print dev; exit }' | tr -d '\r')
+    [ -n "$KEYBOARD" ] || { echo "No keyboard with KEY_SPACE under /dev/input" >&2; exit 1; }
+    key() { # code value
+        adb shell "sendevent $KEYBOARD 1 $1 $2; sendevent $KEYBOARD 0 0 0"
+    }
+    alt_space() { key 56 1; key 57 1; key 57 0; key 56 0; }
+else
+    report() { echo "{\"id\":1,\"command\":\"report\",\"report\":[$1,0,$2,0,0,0,0,0]}"; }
+    # hid reads commands from adb's stdin, here file descriptor 3, for as long as it stays open
+    exec 3> >(adb shell hid - >/dev/null 2>&1)
+    echo '{"id":1,"command":"register","name":"Powerline measure keyboard","vid":6353,"pid":1,"bus":"usb","descriptor":[5,1,9,6,161,1,5,7,25,224,41,231,21,0,37,1,117,1,149,8,129,2,149,1,117,8,129,1,149,5,117,1,5,8,25,1,41,5,145,2,149,1,117,3,145,1,149,6,117,8,21,0,37,101,5,7,25,0,41,101,129,0,192]}' >&3
+    sleep 2
+    gap() { echo '{"id":1,"command":"delay","duration":20}'; }
+    alt_space() { { report 4 0; gap; report 4 44; gap; report 4 0; gap; report 0 0; } >&3; }
+    # Closing the stream ends hid, which removes the keyboard
+    trap 'exec 3>&-' EXIT
+fi
+# Esc reaches the focused overlay window as an injected key too
+esc() { adb shell input keyevent KEYCODE_ESCAPE; }
 
 enable_service() {
     adb shell settings delete secure enabled_accessibility_services >/dev/null
@@ -152,13 +170,17 @@ sleep 3
 pss_kb=$(adb shell dumpsys meminfo "$PKG" | awk '/TOTAL PSS:/ { print $3; exit } /^ *TOTAL / { print $2; exit }')
 
 # --- AppIndex reloads while one app is disabled / enabled 5 times (10 package events) ---
-adb logcat -c
-for _ in 1 2 3 4 5; do
-    adb shell pm disable-user --user current com.android.camera2 >/dev/null
-    adb shell pm enable --user current com.android.camera2 >/dev/null
-done
-sleep 5
-reloads=$(adb logcat -d -s AppIndex:I | grep -c "Indexed" || true)
+# Only where the AOSP camera exists (emulators); on a phone this would disable a real app
+reloads="n/a (no com.android.camera2)"
+if adb shell pm path com.android.camera2 2>/dev/null | grep -q package:; then
+    adb logcat -c
+    for _ in 1 2 3 4 5; do
+        adb shell pm disable-user --user current com.android.camera2 >/dev/null
+        adb shell pm enable --user current com.android.camera2 >/dev/null
+    done
+    sleep 5
+    reloads=$(adb logcat -d -s AppIndex:I | grep -c "Indexed" || true)
+fi
 
 echo
 echo "Release APK size              ${apk_kb} KB"
