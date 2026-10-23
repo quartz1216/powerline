@@ -32,7 +32,7 @@ Powerline keeps these in its private app storage:
 
 Searches, calculator input, web queries and shared text are not saved.
 
-Android Auto Backup may include this data in your device backup (your Google account backup or a device-to-device transfer), as it does for most apps. Uninstalling Powerline deletes it.
+Only the search settings are included in Android Auto Backup (your Google account backup or a device-to-device transfer), so they come back when you restore a device. Launch history and favorite apps are never backed up; they stay on this device. Uninstalling Powerline deletes all of it.
 
 ## Installed apps
 

@@ -212,5 +212,5 @@ Reference device: _to fill in Phase 0_ (emulator image and API level).
 | 1 | `isLoading`: remove, or show a subtle loading state? | Remove (no visible change) |
 | 2 | Keep the `className == null` fallback for history entries? | Keep until a check shows no stored entry lacks `className` |
 | 3 | Simplify `SearchPipeline` timeouts after Phase 3 timings? | Keep |
-| 4 | Android Auto Backup includes `powerline_settings` (`backup_rules.xml`, `data_extraction_rules.xml`), so launch history goes to the user's cloud backup. Keep, or exclude `history`? | Keep; if changed, update PRIVACY.md |
+| 4 | ~~Android Auto Backup included launch history and favorites. Keep, or exclude?~~ | **Decided 2026-10-23:** back up only the search settings (Built-in switches, Web search entries, Share entries, Advanced). History and favorites moved to `powerline_user_data`, which is not backed up. Done. |
 | 5 | Do Phase 5 (toolchain) in this roadmap or separately? | Separately |

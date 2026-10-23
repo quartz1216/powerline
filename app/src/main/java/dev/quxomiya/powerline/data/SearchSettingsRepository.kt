@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 // Settings (MainActivity) and the overlay (accessibility service) share one process and one
 // instance, so an edit reaches the open overlay right away.
 class SearchSettingsRepository(context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val gson = Gson()
 
     private val _engines = MutableStateFlow(readEngines())
@@ -118,6 +118,8 @@ class SearchSettingsRepository(context: Context) {
     }
 
     companion object {
+        // The only file Auto Backup includes (res/xml/backup_rules.xml)
+        const val PREFS_NAME = "powerline_settings"
         const val KEY_ENGINES = "search_engines"
         const val KEY_SHARE_TARGETS = "share_targets"
         const val KEY_SHOW_PACKAGE_NAME = "show_package_name"

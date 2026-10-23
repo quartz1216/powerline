@@ -14,12 +14,14 @@ import org.robolectric.annotation.Config
 class UserDataRepositoryTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val prefs = context.getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("powerline_user_data", Context.MODE_PRIVATE)
+    private val settingsPrefs = context.getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
     private lateinit var repository: UserDataRepository
 
     @Before
     fun setup() {
         prefs.edit().clear().commit()
+        settingsPrefs.edit().clear().commit()
         repository = UserDataRepository(context)
     }
 
@@ -73,10 +75,11 @@ class UserDataRepositoryTest {
         assertEquals(0.25, frecency.getValue("com.b"), 1e-9)
     }
 
+    // Earlier builds kept history and favorites in the settings file, which Auto Backup includes
     @Test
-    fun legacyKeysRemovedUserDataKept() {
-        prefs.edit()
-            .putString("history", "[]")
+    fun userDataMovedOutOfSettingsAndLegacyKeysRemoved() {
+        settingsPrefs.edit()
+            .putString("history", """[{"packageName":"com.a","className":"com.a.Main","timestamp":1}]""")
             .putStringSet("favorite_apps", setOf("com.a"))
             .putBoolean("onboarding_completed", true)
             .putString("app_weights", "{}")
@@ -86,13 +89,31 @@ class UserDataRepositoryTest {
             .putBoolean("apps_enabled", false)
             .putBoolean("calculator_enabled", false)
             .putBoolean("share_enabled", false)
+            .putBoolean("show_package_name", false)
+            .putBoolean("force_ascii_input", false)
             .commit()
-        UserDataRepository(context)
+        val moved = UserDataRepository(context)
         assertEquals(
-            setOf("history", "favorite_apps", "search_engines", "share_targets", "apps_enabled", "calculator_enabled", "share_enabled"),
-            prefs.all.keys
+            setOf(
+                "search_engines", "share_targets", "apps_enabled", "calculator_enabled", "share_enabled",
+                "show_package_name", "force_ascii_input"
+            ),
+            settingsPrefs.all.keys
         )
-        assertEquals(setOf("com.a"), UserDataRepository(context).getFavoriteApps())
+        assertEquals(setOf("history", "favorite_apps"), prefs.all.keys)
+        assertEquals(setOf("com.a"), moved.getFavoriteApps())
+        assertEquals(listOf(HistoryItem("com.a", "com.a.Main", 1)), moved.getHistory())
+    }
+
+    // A launch recorded since the move is not overwritten by an older copy in the settings file
+    @Test
+    fun movedUserDataKeepsNewerCopy() {
+        repository.recordAppLaunch("com.new", null, timestamp = 2)
+        settingsPrefs.edit()
+            .putString("history", """[{"packageName":"com.old","timestamp":1}]""")
+            .commit()
+        assertEquals(listOf(HistoryItem("com.new", null, 2)), UserDataRepository(context).getHistory())
+        assertEquals(emptySet<String>(), settingsPrefs.all.keys)
     }
 
     @Test
