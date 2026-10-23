@@ -88,14 +88,19 @@ done
 adb shell input keyevent KEYCODE_HOME
 
 # --- overlay first open: fresh process, service just bound ---
+# The index loads when the service connects, or on the first open if it is not ready by then
 firsts=""
 indexed=""
+ready=0
 for _ in $(seq "$RUNS"); do
     adb shell am force-stop "$PKG"
+    adb logcat -c
     enable_service
     sleep 2
+    at_connect=$(adb logcat -d -s AppIndex:I | sed -n 's/.*apps in \([0-9]*\) ms.*/\1/p' | head -1)
     firsts="$firsts $(open_time)"
-    indexed="$indexed $(adb logcat -d -s AppIndex:I | sed -n 's/.*apps in \([0-9]*\) ms.*/\1/p' | head -1)"
+    adb logcat -d -s SearchOverlay:I | grep -q "([1-9][0-9]* apps ready)" && ready=$((ready + 1))
+    indexed="$indexed ${at_connect:-$(adb logcat -d -s AppIndex:I | sed -n 's/.*apps in \([0-9]*\) ms.*/\1/p' | head -1)}"
 done
 
 # --- later opens ---
@@ -119,7 +124,8 @@ echo
 echo "Release APK size        ${apk_kb} KB"
 echo "MainActivity cold start median $(echo $starts | tr ' ' '\n' | median) ms   ($starts )"
 echo "Overlay first open      median $(echo $firsts | tr ' ' '\n' | median) ms   ($firsts )"
-echo "AppIndex load (first)   median $(echo $indexed | tr ' ' '\n' | median) ms   ($indexed )"
+echo "First opens with apps ready  $ready / $RUNS"
+echo "AppIndex first load     median $(echo $indexed | tr ' ' '\n' | median) ms   ($indexed )"
 echo "Overlay later opens     median $(echo $laters | tr ' ' '\n' | median) ms   ($laters )"
 echo "Idle memory (PSS)       ${pss_kb} KB"
 echo "AppIndex reloads, 10 package events  $reloads"

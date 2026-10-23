@@ -14,7 +14,7 @@ class PowerlineAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        overlay = SearchOverlay(this)
+        overlay = SearchOverlay(this).apply { prepare() }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {

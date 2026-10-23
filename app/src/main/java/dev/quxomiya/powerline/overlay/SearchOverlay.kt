@@ -131,10 +131,16 @@ class SearchOverlay(private val service: AccessibilityService) {
         root.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
                 root.viewTreeObserver.removeOnPreDrawListener(this)
-                Log.i(TAG, "Shown ${SystemClock.uptimeMillis() - triggeredAt} ms after the key press")
+                val apps = viewModel.visibleApps.value.size
+                Log.i(TAG, "Shown ${SystemClock.uptimeMillis() - triggeredAt} ms after the key press ($apps apps ready)")
                 return true
             }
         })
+    }
+
+    // Creates the view model ahead of the first Alt+Space, so the app index is loaded by then
+    fun prepare() {
+        viewModel
     }
 
     fun destroy() {
