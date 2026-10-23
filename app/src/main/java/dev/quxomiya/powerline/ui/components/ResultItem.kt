@@ -1,9 +1,8 @@
 package dev.quxomiya.powerline.ui.components
 
 import android.graphics.drawable.Drawable
-import android.view.View
-import android.widget.ImageView
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
@@ -20,14 +19,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.graphics.drawable.toBitmap
 import dev.quxomiya.powerline.search.SearchAction
 import dev.quxomiya.powerline.search.SearchItem
 import dev.quxomiya.powerline.ui.theme.PanelItemShape
@@ -107,20 +109,11 @@ fun ResultIcon(item: SearchItem, isSelected: Boolean = false) {
     )
 }
 
+// Drawn once into a bitmap of the shown size, then kept for as long as the tile shows this drawable
 @Composable
 fun AppIcon(drawable: Drawable, size: Dp = 40.dp) {
-    AndroidView(
-        factory = { context ->
-            ImageView(context).apply {
-                setImageDrawable(drawable)
-                scaleType = ImageView.ScaleType.FIT_CENTER
-                // Decorative: every icon sits next to the app or engine name, which TalkBack reads
-                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-            }
-        },
-        update = { view ->
-            view.setImageDrawable(drawable)
-        },
-        modifier = Modifier.size(size)
-    )
+    val px = with(LocalDensity.current) { size.roundToPx() }
+    val bitmap = remember(drawable, px) { drawable.toBitmap(px, px).asImageBitmap() }
+    // Decorative: every icon sits next to the app or engine name, which TalkBack reads
+    Image(bitmap = bitmap, contentDescription = null, modifier = Modifier.size(size))
 }

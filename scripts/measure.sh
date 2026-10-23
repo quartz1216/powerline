@@ -20,7 +20,7 @@ sdk_dir() {
     sed -n 's/^sdk.dir=//p' local.properties | sed 's/\\:/:/; s/\\\\/\//g'
 }
 
-median() { sort -n | awk '{ v[NR] = $1 } END { print (NR ? v[int((NR + 1) / 2)] : "n/a") }'; }
+median() { tr ' ' '\n' | sort -n | awk 'NF { v[++n] = $1 } END { print (n ? v[int((n + 1) / 2)] : "n/a") }'; }
 
 # --- build and install ---
 ./gradlew -q :app:assembleRelease
@@ -72,6 +72,22 @@ open_time() {
     echo "${ms:-n/a}"
 }
 
+# "Indexed N apps in X ms" from AppIndex, first in the log
+index_time() { adb logcat -d -s AppIndex:I | sed -n 's/.*apps in \([0-9]*\) ms.*/\1/p' | head -1; }
+
+# UI-thread time per frame (HandleInputStart to SyncQueued) since the last gfxinfo reset, as in
+# OverlayE2ETest, one per line
+frame_times() {
+    adb shell dumpsys gfxinfo "$PKG" framestats | tr -d '\r' | awk -F, '
+        /^Flags,/ { for (i = 1; i <= NF; i++) col[$i] = i; next }
+        col["Flags"] && $1 == "0" && $col["SyncQueued"] > 0 {
+            printf "%.1f\n", ($col["SyncQueued"] - $col["HandleInputStart"]) / 1000000
+        }'
+}
+
+# Value at percentile $1 of numbers on stdin, one per line
+percentile() { sort -n | awk -v p="$1" 'NF { v[++n] = $1 } END { print (n ? v[int((n * p + 99) / 100)] : "n/a") }'; }
+
 adb shell input keyevent KEYCODE_HOME
 
 # --- APK size ---
@@ -97,15 +113,31 @@ for _ in $(seq "$RUNS"); do
     adb logcat -c
     enable_service
     sleep 2
-    at_connect=$(adb logcat -d -s AppIndex:I | sed -n 's/.*apps in \([0-9]*\) ms.*/\1/p' | head -1)
+    at_connect=$(index_time)
     firsts="$firsts $(open_time)"
     adb logcat -d -s SearchOverlay:I | grep -q "([1-9][0-9]* apps ready)" && ready=$((ready + 1))
-    indexed="$indexed ${at_connect:-$(adb logcat -d -s AppIndex:I | sed -n 's/.*apps in \([0-9]*\) ms.*/\1/p' | head -1)}"
+    indexed="$indexed ${at_connect:-$(index_time)}"
 done
 
 # --- later opens ---
 laters=""
 for _ in $(seq "$RUNS"); do laters="$laters $(open_time)"; done
+
+# --- typing "powerline" a key at a time into the open overlay ---
+typing_p50=""
+typing_p90=""
+for _ in 1 2 3; do
+    alt_space
+    sleep 1
+    adb shell dumpsys gfxinfo "$PKG" reset >/dev/null
+    for c in p o w e r l i n e; do adb shell input text "$c"; sleep 0.06; done
+    sleep 0.5
+    frames=$(frame_times)
+    typing_p50="$typing_p50 $(echo "$frames" | percentile 50)"
+    typing_p90="$typing_p90 $(echo "$frames" | percentile 90)"
+    esc
+    sleep 0.5
+done
 
 # --- idle memory, overlay closed ---
 sleep 3
@@ -121,11 +153,13 @@ sleep 5
 reloads=$(adb logcat -d -s AppIndex:I | grep -c "Indexed" || true)
 
 echo
-echo "Release APK size        ${apk_kb} KB"
-echo "MainActivity cold start median $(echo $starts | tr ' ' '\n' | median) ms   ($starts )"
-echo "Overlay first open      median $(echo $firsts | tr ' ' '\n' | median) ms   ($firsts )"
-echo "First opens with apps ready  $ready / $RUNS"
-echo "AppIndex first load     median $(echo $indexed | tr ' ' '\n' | median) ms   ($indexed )"
-echo "Overlay later opens     median $(echo $laters | tr ' ' '\n' | median) ms   ($laters )"
-echo "Idle memory (PSS)       ${pss_kb} KB"
+echo "Release APK size              ${apk_kb} KB"
+echo "MainActivity cold start       median $(echo $starts | median) ms   ($starts )"
+echo "Overlay first open            median $(echo $firsts | median) ms   ($firsts )"
+echo "First opens with apps ready   $ready / $RUNS"
+echo "AppIndex first load           median $(echo $indexed | median) ms   ($indexed )"
+echo "Overlay later opens           median $(echo $laters | median) ms   ($laters )"
+echo "Typing UI-thread p50 / frame  median $(echo $typing_p50 | median) ms   ($typing_p50 )"
+echo "Typing UI-thread p90 / frame  median $(echo $typing_p90 | median) ms   ($typing_p90 )"
+echo "Idle memory (PSS)             ${pss_kb} KB"
 echo "AppIndex reloads, 10 package events  $reloads"
