@@ -4,7 +4,6 @@ import java.text.Normalizer
 
 // Usage data read once per search
 data class RankingSignals(
-    val favoriteApps: Set<String> = emptySet(),
     // Package name -> time-decayed launch count (see UserDataRepository.getAppFrecency)
     val appFrecency: Map<String, Double> = emptyMap()
 )
@@ -31,17 +30,15 @@ object SearchRanker {
     const val SUBSTRING = 400
     const val FUZZY = 200
 
-    // A favorite outranks one match tier, frecency at most one
-    const val FAVORITE_BONUS = 300
+    // Frecency outranks at most one match tier
     const val FRECENCY_PER_LAUNCH = 40
     const val MAX_FRECENCY_BONUS = 200
 
-    // Provider score (match tier for apps) plus favorite and frecency bonuses for apps
+    // Provider score (match tier for apps) plus the frecency bonus for apps
     fun score(item: SearchItem, signals: RankingSignals): Int {
         var score = item.score
         val action = item.action
         if (action is SearchAction.LaunchApp) {
-            if (action.packageName in signals.favoriteApps) score += FAVORITE_BONUS
             val frecency = signals.appFrecency[action.packageName] ?: 0.0
             score += (frecency * FRECENCY_PER_LAUNCH).toInt().coerceAtMost(MAX_FRECENCY_BONUS)
         }

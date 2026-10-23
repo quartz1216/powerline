@@ -50,13 +50,6 @@ class SearchRankerTest {
     }
 
     @Test
-    fun favoriteAddsBonus() {
-        val item = appItem("com.example.a", score = SearchRanker.PREFIX)
-        val signals = RankingSignals(favoriteApps = setOf("com.example.a"))
-        assertEquals(SearchRanker.PREFIX + SearchRanker.FAVORITE_BONUS, SearchRanker.score(item, signals))
-    }
-
-    @Test
     fun frecencyBonusIsCapped() {
         val item = appItem("com.example.a", score = 0)
         assertEquals(40, SearchRanker.score(item, RankingSignals(appFrecency = mapOf("com.example.a" to 1.0))))
@@ -72,7 +65,7 @@ class SearchRankerTest {
             id = "web", providerId = "web", title = "x", subtitle = null, icon = null,
             section = ResultSection.WEB, score = 1, action = SearchAction.OpenUrl("https://x.com")
         )
-        val signals = RankingSignals(favoriteApps = setOf("https://x.com"), appFrecency = mapOf("https://x.com" to 5.0))
+        val signals = RankingSignals(appFrecency = mapOf("https://x.com" to 5.0))
         assertEquals(1, SearchRanker.score(item, signals))
     }
 

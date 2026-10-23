@@ -58,18 +58,6 @@ class SearchPipelineTest {
     }
 
     @Test
-    fun favoriteOutranksOneTier() = runBlocking {
-        val provider = FakeProvider("apps", ResultSection.APPS, items = {
-            listOf(
-                it.item("prefix", score = SearchRanker.PREFIX, action = SearchAction.LaunchApp("com.prefix", "Main")),
-                it.item("word", score = SearchRanker.WORD, action = SearchAction.LaunchApp("com.fav", "Main"))
-            )
-        })
-        val results = pipeline(provider, signals = RankingSignals(favoriteApps = setOf("com.fav"))).search("q")
-        assertEquals(listOf("word", "prefix"), results.single().items.map { it.id })
-    }
-
-    @Test
     fun providerPriorityBreaksTies() = runBlocking {
         val low = FakeProvider("low", ResultSection.WEB, priority = 1, items = { listOf(it.item("from-low")) })
         val high = FakeProvider("high", ResultSection.WEB, priority = 9, items = { listOf(it.item("from-high")) })

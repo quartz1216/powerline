@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -48,7 +47,6 @@ fun StandbyContent(
     gridState: LazyGridState,
     onChipClick: (AliasChip) -> Unit,
     onAppClick: (AppInfo) -> Unit,
-    onAppLongClick: (AppInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -74,8 +72,7 @@ fun StandbyContent(
                     AppTile(
                         app = app,
                         isSelected = index == selectedIndex,
-                        onClick = { onAppClick(app) },
-                        onLongClick = { onAppLongClick(app) }
+                        onClick = { onAppClick(app) }
                     )
                 }
                 item(span = { GridItemSpan(maxLineSpan) }) {
@@ -90,8 +87,7 @@ fun StandbyContent(
                 AppTile(
                     app = app,
                     isSelected = grid.recentCount + index == selectedIndex,
-                    onClick = { onAppClick(app) },
-                    onLongClick = { onAppLongClick(app) }
+                    onClick = { onAppClick(app) }
                 )
             }
         }

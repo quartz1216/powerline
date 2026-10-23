@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 11 and below. Only the search settings; launch history and favorites stay on the device. -->
+<!-- Android 11 and below. Only the search settings; launch history stays on the device. -->
 <full-backup-content>
     <include domain="sharedpref" path="powerline_settings.xml" />
 </full-backup-content>

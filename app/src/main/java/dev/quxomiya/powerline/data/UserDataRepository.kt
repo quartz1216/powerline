@@ -4,28 +4,16 @@ import android.content.Context
 import android.content.SharedPreferences
 import kotlin.math.pow
 
-// Stores user data (launch history, favorites). The search settings live in SearchSettingsRepository;
+// Stores the launch history. The search settings live in SearchSettingsRepository;
 // everything else is fixed in PowerlineDefaults.
 // Kept in its own file so Auto Backup can leave it out (res/xml/backup_rules.xml): only the
 // search settings are backed up.
 class UserDataRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    // Read from prefs once, then kept in step with every write: each search reads both
-    @Volatile
-    private var favorites: Set<String>? = null
-
+    // Read from prefs once, then kept in step with every write: each search reads it
     @Volatile
     private var history: List<HistoryItem>? = null
-
-    // --- Favorite Apps ---
-    fun getFavoriteApps(): Set<String> =
-        favorites ?: prefs.getStringSet(KEY_FAVORITE_APPS, null).orEmpty().toSet().also { favorites = it }
-
-    fun setFavoriteApps(favorites: Set<String>) {
-        this.favorites = favorites.toSet()
-        prefs.edit().putStringSet(KEY_FAVORITE_APPS, favorites).apply()
-    }
 
     // --- History ---
 
@@ -58,7 +46,6 @@ class UserDataRepository(context: Context) {
     companion object {
         private const val PREFS_NAME = "powerline_user_data"
         private const val KEY_HISTORY = "history"
-        private const val KEY_FAVORITE_APPS = "favorite_apps"
 
         @Volatile
         private var instance: UserDataRepository? = null

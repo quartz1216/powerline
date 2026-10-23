@@ -55,7 +55,7 @@ adb shell cmd appops set dev.quxomiya.powerline RUN_ANY_IN_BACKGROUND allow
 - **No settings**: no settings screen, no persisted preferences, no JSON backup. The exceptions are those listed in README and ROADMAP only.
 - **Do not ask the user**: outside system permission screens, do not show dialogs asking for consent or migration.
 - **No INTERNET permission**: Powerline has no `INTERNET` permission. Web search goes to the browser.
-- **Minimal history**: only launch history (last 100 apps) and favorites are stored. If you store anything new, update PRIVACY.md too.
+- **Minimal history**: only launch history (last 100 apps) is stored, besides the search settings. If you store anything new, update PRIVACY.md too.
 - **Accessibility service is only for detecting Alt+Space**. Do not extend its use.
 - Keep the fixed Material You theme (wallpaper colors on Android 12+, brand colors on 11 and below).
 

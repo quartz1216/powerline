@@ -72,10 +72,4 @@ class UserDataRepositoryTest {
         assertEquals(1.5, frecency.getValue("com.a"), 1e-9)
         assertEquals(0.25, frecency.getValue("com.b"), 1e-9)
     }
-
-    @Test
-    fun favoritesRoundTrip() {
-        repository.setFavoriteApps(setOf("com.a", "com.b"))
-        assertEquals(setOf("com.a", "com.b"), UserDataRepository(context).getFavoriteApps())
-    }
 }

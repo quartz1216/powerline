@@ -42,7 +42,6 @@ class SearchBenchmarkTest {
         apps.take(PowerlineDefaults.MAX_HISTORY_ITEMS).forEachIndexed { i, app ->
             userData.recordAppLaunch(app.app.packageName, app.app.className, timestamp = i.toLong())
         }
-        userData.setFavoriteApps(apps.take(5).map { it.app.packageName }.toSet())
 
         val appIndex = MutableStateFlow(apps)
         val engines = MutableStateFlow(PowerlineDefaults.SEARCH_ENGINES.map { AvailableEngine(it) })
@@ -58,7 +57,7 @@ class SearchBenchmarkTest {
             context,
             registry,
             QueryParser(PowerlineDefaults.SEARCH_ENGINES),
-            signals = { RankingSignals(userData.getFavoriteApps(), userData.getAppFrecency()) }
+            signals = { RankingSignals(userData.getAppFrecency()) }
         ).also { pipelines += it }
 
         val queries = TYPED.flatMap { word -> (1..word.length).map { word.take(it) } }

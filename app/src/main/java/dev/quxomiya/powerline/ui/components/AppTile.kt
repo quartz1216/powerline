@@ -1,8 +1,7 @@
 package dev.quxomiya.powerline.ui.components
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,13 +24,11 @@ import dev.quxomiya.powerline.domain.models.AppInfo
 import dev.quxomiya.powerline.ui.theme.PanelItemShape
 
 // Icon + label tile for the standby app grid
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppTile(
     app: AppInfo,
     isSelected: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val containerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
@@ -42,7 +39,7 @@ fun AppTile(
             .fillMaxWidth()
             .clip(PanelItemShape)
             .background(containerColor)
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .clickable(onClick = onClick)
             // The label is on the tile itself, so a tile cut off at the grid's edge still has one
             .semantics { contentDescription = app.label }
             .padding(horizontal = 4.dp, vertical = 12.dp),

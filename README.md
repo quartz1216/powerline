@@ -30,11 +30,9 @@ Alt+Space needs a physical keyboard. Keys sent by software (on-screen keyboards,
 | Enter | Run the selected item |
 | Esc / Back | Close |
 
-Long-press an app for favorite, app info, share and app shortcuts.
-
 ## What Powerline keeps
 
-Only your launch history (the last 100 apps opened from Powerline), favorite apps and the search settings on the status screen. There are no backup files; Android backup includes only the search settings. Powerline has no internet permission. Details in [PRIVACY.md](PRIVACY.md).
+Only your launch history (the last 100 apps opened from Powerline) and the search settings on the status screen. There are no backup files; Android backup includes only the search settings. Powerline has no internet permission. Details in [PRIVACY.md](PRIVACY.md).
 
 ## Development
 

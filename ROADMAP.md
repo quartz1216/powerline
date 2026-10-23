@@ -149,6 +149,10 @@ This roadmap makes the app **smaller, simpler and faster without changing what t
 
 **Done when:** largest file < 350 lines; Built-in switches still behave exactly as before (existing provider and E2E tests pass); APK size recorded. ✅ Largest file 258 lines (`StatusScreen.kt`); unit tests 117/117, device tests 24/24.
 
+### Removed feature (2026-10-23)
+
+- [x] The long-press menu on apps (bottom sheet with Favorite, App info, Share and app shortcuts) and favorites are gone, at the user's request: `AppActionMenu`, the long-click handlers on tiles and results, the favorite bonus in `SearchRanker` and the `favorite_apps` storage. Ranking now uses match tier and frecency only.
+
 ### Phase 3 — Search and index performance
 
 - [x] Precompute word lists and initials once per key (`MatchKey`, built in `IndexedApp.of`). Benchmark ~655 → ~277 µs per query.

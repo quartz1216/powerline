@@ -88,10 +88,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         ),
         parser = parser,
         signals = {
-            RankingSignals(
-                favoriteApps = userDataRepository.getFavoriteApps(),
-                appFrecency = userDataRepository.getAppFrecency()
-            )
+            RankingSignals(appFrecency = userDataRepository.getAppFrecency())
         }
     )
 
@@ -217,22 +214,6 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             val sections = withContext(Dispatchers.Default) { pipeline.search(query) }
             _uiState.value = SearchUiState(sections = sections)
         }
-    }
-
-    fun toggleFavorite(packageName: String) {
-        val current = userDataRepository.getFavoriteApps().toMutableSet()
-        if (current.contains(packageName)) {
-            current.remove(packageName)
-        } else {
-            current.add(packageName)
-        }
-        userDataRepository.setFavoriteApps(current)
-        // Refresh search to update ordering
-        performSearch(_query.value, debounce = false)
-    }
-
-    fun isFavorite(packageName: String): Boolean {
-        return userDataRepository.getFavoriteApps().contains(packageName)
     }
 
     override fun onCleared() {

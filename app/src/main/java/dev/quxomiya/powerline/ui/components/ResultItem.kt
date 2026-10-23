@@ -1,10 +1,9 @@
 package dev.quxomiya.powerline.ui.components
 
 import android.graphics.drawable.Drawable
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,13 +34,11 @@ import dev.quxomiya.powerline.search.SearchItem
 import dev.quxomiya.powerline.ui.theme.PanelItemShape
 import dev.quxomiya.powerline.ui.theme.PowerlineIcons
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ResultItem(
     item: SearchItem,
     isSelected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: (() -> Unit)? = null
+    onClick: () -> Unit
 ) {
     // Same tile look as the standby grid (AppTile)
     val backgroundColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
@@ -53,10 +50,7 @@ fun ResultItem(
             .fillMaxWidth()
             .clip(PanelItemShape)
             .background(backgroundColor)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            )
+            .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
