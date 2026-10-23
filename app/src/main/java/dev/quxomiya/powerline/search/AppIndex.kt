@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Handler
@@ -94,10 +95,11 @@ class AppIndex(
         loadJob = scope.launch {
             delay(delayMs)
             val start = SystemClock.uptimeMillis()
-            loadChips(engines.value, shareTargets.value)
+            // Apps first: the grid waits for them, while chips show without icons until theirs load
             _apps.value = loadApps()
             // Load time and reload count (ROADMAP §6); read by scripts/measure.sh
             Log.i(TAG, "Indexed ${_apps.value.size} apps in ${SystemClock.uptimeMillis() - start} ms")
+            loadChips(engines.value, shareTargets.value)
         }
     }
 
@@ -126,9 +128,14 @@ class AppIndex(
             .map { app -> IndexedApp.of(app, PowerlineDefaults.APP_ALIASES[app.packageName].orEmpty()) }
     }
 
+    // Most engines open in the same app (the browser), so each app's icon is loaded once
     private suspend fun loadEngines(engines: List<SearchEngine>): List<AvailableEngine> = withContext(Dispatchers.IO) {
-        val browserIcon = context.urlHandlerIcon(BROWSER_PROBE_URL)
-        engines.map { engine -> AvailableEngine(engine, context.engineIcon(engine, browserIcon)) }
+        val pm = context.packageManager
+        val icons = HashMap<String, Drawable>()
+        fun iconOf(url: String): Drawable? =
+            context.urlHandler(url)?.let { handler -> icons.getOrPut(handler.activityInfo.name) { handler.loadIcon(pm) } }
+        val browserIcon = iconOf(BROWSER_PROBE_URL)
+        engines.map { engine -> AvailableEngine(engine, iconOf(engine.probeUrl()) ?: browserIcon) }
     }
 
     private suspend fun loadShareTargets(targets: List<ShareTarget>): List<AvailableShareTarget> =
@@ -144,10 +151,12 @@ private const val TAG = "AppIndex"
 private const val PACKAGE_EVENT_SETTLE_MS = 500L
 private const val BROWSER_PROBE_URL = "https://www.example.com/"
 
-// Icon of the app that opens this engine's URLs, else of the default browser (`browserIcon`,
-// passed in when looking up many engines at once). Also the icon in the Web search settings.
-fun Context.engineIcon(engine: SearchEngine, browserIcon: Drawable? = urlHandlerIcon(BROWSER_PROBE_URL)): Drawable? =
-    urlHandlerIcon(engine.url.replace("%s", "test")) ?: browserIcon
+// Icon of the app that opens this engine's URLs, else of the default browser. The icon in the
+// Web search settings; AppIndex does the same for all engines at once.
+fun Context.engineIcon(engine: SearchEngine): Drawable? =
+    (urlHandler(engine.probeUrl()) ?: urlHandler(BROWSER_PROBE_URL))?.loadIcon(packageManager)
+
+private fun SearchEngine.probeUrl() = url.replace("%s", "test")
 
 // Icon of the target's share activity; null once its app is uninstalled
 fun Context.shareTargetIcon(target: ShareTarget): Drawable? = try {
@@ -156,10 +165,10 @@ fun Context.shareTargetIcon(target: ShareTarget): Drawable? = try {
     null
 }
 
-// Icon of the app Android opens this URL with by default: an app that claims the link
+// The activity Android opens this URL with by default: an app that claims the link
 // (YouTube for youtube.com) or the default browser. null when the user would be asked
 // to choose (no default set).
-private fun Context.urlHandlerIcon(url: String): Drawable? {
+private fun Context.urlHandler(url: String): ResolveInfo? {
     val pm = packageManager
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
     return try {
@@ -168,7 +177,7 @@ private fun Context.urlHandlerIcon(url: String): Drawable? {
         // among the actual handlers
         val handlers = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
         if (handlers.none { it.activityInfo.packageName == handler.activityInfo.packageName }) return null
-        handler.loadIcon(pm)
+        handler
     } catch (e: Exception) {
         null
     }
