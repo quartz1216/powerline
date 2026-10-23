@@ -1,6 +1,6 @@
 # Powerline Cleanup & Optimization Roadmap
 
-> **Status:** Phases 0–1 done; Phase 2 in progress
+> **Status:** Phases 0–2 done; Phase 3 in progress
 > **Baseline:** `v2/phase6-7-cleanup-release` @ `4b6aa57` (V2 feature-complete, not yet merged to `main`)
 > **Target:** V2.1 — same features, less code, faster overlay
 > **Last updated:** 2026-10-23
@@ -137,17 +137,17 @@ This roadmap makes the app **smaller, simpler and faster without changing what t
 
 ### Phase 2 — Simplification
 
-- [ ] One source of truth for active features: a small `ActiveFeatures` (or similar) derived from `SearchSettingsRepository` that providers, parser and chips all read. Remove the per-provider `enabled` lambdas.
-- [ ] Build alias chip IDs in one place.
-- [ ] Remove `SearchMode`; derive alias mode from `engine` / `shareTarget`.
-- [ ] Merge storage: one process-wide owner of `powerline_settings` (backed up) and `powerline_user_data` (not backed up), one JSON codec.
-- [ ] Replace Gson with `org.json` for the three lists; delete the Gson keep rules.
-- [ ] Move test-only constructor defaults into test helpers.
-- [ ] Split `SearchSettings.kt`; move standby keyboard navigation out of `SearchScreen` into a tested state holder.
-- [ ] Replace `material-icons-extended` with the 13 icons the app uses.
-- [ ] Fix lint errors and turn `abortOnError` back on.
+- [x] One source of truth for active features: `SearchSettingsRepository.activeEngines` / `activeShareTargets` (empty while Web search / Share is off) feed the parser, `AppIndex` and the chips; `ProviderRegistry` skips switched-off providers (`ResultSection.builtIn`). The per-provider `enabled` lambdas are gone.
+- [x] Build alias chip IDs in one place (`AliasChip.of`).
+- [x] Remove `SearchMode`; `SearchRequest.isAlias` derives it from `engine` / `shareTarget`.
+- [x] One process-wide owner per prefs file (`SearchSettingsRepository.get`, `UserDataRepository.get`) and one JSON codec (`StoredJson`). The two repositories stay separate classes: they back different files (backed up / not backed up).
+- [x] Replace Gson with `org.json`; delete the keep rules and `proguard-rules.pro`.
+- [x] Move test-only constructor defaults into test helpers (`AppIndex`, `QueryParser`, `ProviderRegistry`).
+- [x] Split `SearchSettings.kt` (`SwitchSettings`, `WebSearchSettings`, `ShareSettings`, `SettingsRows`); move standby keyboard navigation into `StandbySelection`, tested on the JVM.
+- [x] Replace `material-icons-extended` with `PowerlineIcons` (Apps, Calculate, Public, Shortcut; path data taken from the library). The other icons come from material-icons-core, which material3 already includes.
+- [x] Fix lint errors and turn `abortOnError` back on. Lint found a real crash: `layoutInDisplayCutoutMode` was set on Android 8.x, where the field does not exist. Left as warnings: dependency updates (Phase 5) and `mipmap-anydpi-v26` (AGP 8.2's aapt2 does not find the icon without the qualifier).
 
-**Done when:** largest file < 350 lines; Built-in switches still behave exactly as before (existing provider and E2E tests pass); APK size recorded.
+**Done when:** largest file < 350 lines; Built-in switches still behave exactly as before (existing provider and E2E tests pass); APK size recorded. ✅ Largest file 258 lines (`StatusScreen.kt`); unit tests 117/117, device tests 24/24.
 
 ### Phase 3 — Search and index performance
 
@@ -196,17 +196,17 @@ Reference device: Android Desktop emulator (`sdk_gdesktop_x86_64`, Android 17, 2
 
 | Metric | Baseline | After P1 | After P2 | After P3 | After P4 |
 |---|---|---|---|---|---|
-| Release APK size | 1,458 KB | 1,457 KB | | | |
-| Main Kotlin lines (`app/src/main`) | 4,095 | 4,078 | | | |
-| `MainActivity` cold start | 252 ms | 219 ms | | | |
-| Overlay first open (key → first frame) | 74 ms | 86 ms | | | |
-| `AppIndex` first load (apps appear in the grid) | 216 ms | 189 ms | | | |
-| Overlay later opens | 47 ms | 41 ms | | | |
-| Search, 1000 apps (µs / query, JVM) | ~680 | ~660 | | | |
-| `AppIndex` reloads, 10 package events | 10 | 10 | | | |
-| Idle memory (PSS, overlay closed) | 28,715 KB | 28,145 KB | | | |
+| Release APK size | 1,458 KB | 1,457 KB | 1,429 KB | | |
+| Main Kotlin lines (`app/src/main`) | 4,095 | 4,078 | 4,241 | | |
+| `MainActivity` cold start | 252 ms | 219 ms | 218 ms | | |
+| Overlay first open (key → first frame) | 74 ms | 86 ms | 68 ms | | |
+| `AppIndex` first load (apps appear in the grid) | 216 ms | 189 ms | 198 ms | | |
+| Overlay later opens | 47 ms | 41 ms | 40 ms | | |
+| Search, 1000 apps (µs / query, JVM) | ~680 | ~660 | ~655 | | |
+| `AppIndex` reloads, 10 package events | 10 | 10 | 9 | | |
+| Idle memory (PSS, overlay closed) | 28,715 KB | 28,145 KB | 28,094 KB | | |
 
-Timings on the emulator vary by about ±15% between runs; Phase 1 changed no code on these paths, so its differences are noise.
+Timings on the emulator vary by about ±15% between runs; Phases 1 and 2 changed no code on these paths, so their differences are noise. Main Kotlin lines went up in Phase 2: the split settings files each carry their own imports, and `StoredJson`, `StandbySelection` and `PowerlineIcons` are new.
 
 The open-time targets in §1 (first < 200 ms, later < 80 ms) are already met. What users still see on a first open is the grid filling in once `AppIndex` has loaded, so Phase 4 aims at that load.
 
