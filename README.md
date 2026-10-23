@@ -28,3 +28,10 @@
   - For example, an app named 「電話」 can be found by typing "Phone", from its package name `com.example.phone`.
 - Powerline turns the IME off automatically when it opens.
   - Note: tested only with Gboard!
+
+## Tested on
+- Android Studio emulator (virtual)
+  - Desktop setup (like Pixel for desktop)
+- Xiaomi Pad Mini (physical)
+  - Tablet mode and Workstation mode
+  - Gboard (US and Japanese)
