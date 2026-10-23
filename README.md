@@ -6,6 +6,7 @@
 ## Overview
 - A command launcher for Android, inspired by Spotlight.
 - Keyboard first: open it with Alt+Space.
+- Works in desktop mode too.
 
 ## Features
 - **Apps**: lists your apps and finds them by any text in the app name or package name.
