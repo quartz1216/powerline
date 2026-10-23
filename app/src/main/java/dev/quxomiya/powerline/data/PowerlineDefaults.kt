@@ -10,6 +10,9 @@ object PowerlineDefaults {
 
     const val MAX_STANDBY_RECENT_APPS = 8
 
+    // App icons in the standby grid; AppIndex keeps every icon at this size
+    const val APP_ICON_SIZE_DP = 48
+
     // App launches kept for the recent row and frecency
     const val MAX_HISTORY_ITEMS = 100
     // A launch counts half as much after this long

@@ -13,6 +13,8 @@ import android.os.Looper
 import android.os.SystemClock
 import android.os.UserHandle
 import android.util.Log
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.drawable.toDrawable
 import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.domain.models.AppInfo
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +29,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 // A launchable app with its search keys prepared once at load time
 data class IndexedApp(
@@ -112,15 +115,18 @@ class AppIndex(
         launcherApps?.unregisterCallback(packageCallback)
     }
 
+    // Icons are drawn once at the largest size shown (the standby tile) and only that bitmap is
+    // kept: a launcher icon as loaded holds its full-size layers, hundreds of KB per app
     private suspend fun loadApps(): List<IndexedApp> = withContext(Dispatchers.IO) {
         val pm = context.packageManager
+        val iconPx = (PowerlineDefaults.APP_ICON_SIZE_DP * context.resources.displayMetrics.density).roundToInt()
         val mainIntent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
         pm.queryIntentActivities(mainIntent, 0)
             .map { resolveInfo ->
                 AppInfo(
                     label = resolveInfo.loadLabel(pm).toString(),
                     packageName = resolveInfo.activityInfo.packageName,
-                    icon = resolveInfo.loadIcon(pm),
+                    icon = resolveInfo.loadIcon(pm).toBitmap(iconPx, iconPx).toDrawable(context.resources),
                     className = resolveInfo.activityInfo.name
                 )
             }

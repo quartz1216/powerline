@@ -20,6 +20,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import dev.quxomiya.powerline.data.PowerlineDefaults
 import dev.quxomiya.powerline.domain.models.AppInfo
 import dev.quxomiya.powerline.ui.theme.PanelItemShape
 
@@ -48,7 +49,7 @@ fun AppTile(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        AppIcon(drawable = app.icon, size = 48.dp)
+        AppIcon(drawable = app.icon, size = PowerlineDefaults.APP_ICON_SIZE_DP.dp)
         Text(
             text = app.label,
             style = MaterialTheme.typography.labelMedium,
