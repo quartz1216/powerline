@@ -23,10 +23,8 @@
 ## If it doesn't work
 - On OSs with strict task management such as Xiaomi HyperOS, even accessibility services may be automatically killed. You may need to uncheck 'Pause app activity if unused' in App Info or set battery restrictions to 'No restrictions'.
 
-## Support for non-Latin users
+## Support for non-Latin users(Optional)
 - Search also matches package names, so Powerline is easy to use with an IME.
   - For example, an app named 「電話」 can be found by typing "Phone", from its package name `com.example.phone`.
-  - You can change this in the settings.
 - Powerline turns the IME off automatically when it opens.
   - Note: tested only with Gboard!
-  - You can change this in the settings.
