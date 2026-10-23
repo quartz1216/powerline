@@ -1,23 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.CommandLauncher" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.Powerline" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
-    <!-- Home Launcher Theme: Shows System Wallpaper -->
-    <style name="Theme.CommandLauncher.Home" parent="Theme.CommandLauncher">
-        <item name="android:windowShowWallpaper">true</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
-    </style>
-
-    <!-- Overlay Theme: Completely Transparent -->
-    <style name="Theme.CommandLauncher.Overlay" parent="Theme.CommandLauncher">
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="android:backgroundDimEnabled">true</item>
-        <item name="android:backgroundDimAmount">0.5</item>
-        <item name="android:windowAnimationStyle">@android:style/Animation.Translucent</item>
+    <!-- Search overlay window: appears instantly, fades out on close -->
+    <style name="OverlayWindowAnimation">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/overlay_fade_out</item>
     </style>
 </resources>

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+. Only the search settings; launch history stays on the device. -->
 <data-extraction-rules>
     <cloud-backup>
-        <include domain="user" path="." />
+        <include domain="sharedpref" path="powerline_settings.xml" />
     </cloud-backup>
     <device-transfer>
-        <include domain="user" path="." />
+        <include domain="sharedpref" path="powerline_settings.xml" />
     </device-transfer>
 </data-extraction-rules>
