@@ -150,14 +150,15 @@ class OverlayE2ETest {
         assertEquals(context.packageName, UserDataRepository(context).getHistory().firstOrNull()?.packageName)
     }
 
-    // Shift+Tab from the first grid section reaches the engine chips; Enter types the alias.
-    // The overlay must stay open: the Enter release once bubbled up to the background and closed it.
+    // Shift+Tab from the first grid section reaches the engine chips; Enter types the alias of the
+    // first chip (by name: Maps). The overlay must stay open: the Enter release once bubbled up to
+    // the background and closed it.
     @Test
     fun shiftTabSelectsEngineChip() {
         shell("input keycombination KEYCODE_SHIFT_LEFT KEYCODE_TAB")
         shell("input keyevent KEYCODE_ENTER")
         type("lofi")
-        assertNotNull(device.wait(Until.findObject(By.text("Search YouTube Music")), TIMEOUT))
+        assertNotNull(device.wait(Until.findObject(By.text("Search Maps")), TIMEOUT))
     }
 
     // ROADMAP Phase 7: the overlay shows within 200ms of Alt+Space. SearchOverlay logs the time
