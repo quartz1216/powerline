@@ -11,26 +11,37 @@ import kotlin.math.pow
 class UserDataRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+    // Read from prefs once, then kept in step with every write: each search reads both
+    @Volatile
+    private var favorites: Set<String>? = null
+
+    @Volatile
+    private var history: List<HistoryItem>? = null
+
     // --- Favorite Apps ---
-    fun getFavoriteApps(): Set<String> {
-        return prefs.getStringSet(KEY_FAVORITE_APPS, emptySet()) ?: emptySet()
-    }
+    fun getFavoriteApps(): Set<String> =
+        favorites ?: prefs.getStringSet(KEY_FAVORITE_APPS, null).orEmpty().toSet().also { favorites = it }
 
     fun setFavoriteApps(favorites: Set<String>) {
+        this.favorites = favorites.toSet()
         prefs.edit().putStringSet(KEY_FAVORITE_APPS, favorites).apply()
     }
 
     // --- History ---
 
     // App launches, most recent first
-    fun getHistory(): List<HistoryItem> {
+    fun getHistory(): List<HistoryItem> = history ?: readHistory().also { history = it }
+
+    private fun readHistory(): List<HistoryItem> {
         val json = prefs.getString(KEY_HISTORY, null) ?: return emptyList()
         return StoredJson.history(json) ?: emptyList()
     }
 
     fun recordAppLaunch(packageName: String, className: String, timestamp: Long = System.currentTimeMillis()) {
-        val history = listOf(HistoryItem(packageName, className, timestamp)) + getHistory()
-        prefs.edit().putString(KEY_HISTORY, StoredJson.ofHistory(history.take(PowerlineDefaults.MAX_HISTORY_ITEMS))).apply()
+        val updated = (listOf(HistoryItem(packageName, className, timestamp)) + getHistory())
+            .take(PowerlineDefaults.MAX_HISTORY_ITEMS)
+        history = updated
+        prefs.edit().putString(KEY_HISTORY, StoredJson.ofHistory(updated)).apply()
     }
 
     // Package name -> sum over its launches of 0.5^(age / half-life); a launch just now counts 1
