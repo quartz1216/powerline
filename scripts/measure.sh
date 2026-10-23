@@ -6,6 +6,7 @@
 # needs adbd as root. The search benchmark runs on the JVM: SearchBenchmarkTest.
 #
 #   scripts/measure.sh            # RUNS=10 by default
+#   COMPILED=1 scripts/measure.sh # compiled ahead of time (see below)
 set -e
 cd "$(dirname "$0")/.."
 
@@ -39,6 +40,13 @@ adb root >/dev/null
 adb wait-for-device
 adb shell "chmod 666 /dev/input/event*"
 adb install -r "$APK" >/dev/null 2>&1 || { adb uninstall "$PKG" >/dev/null; adb install "$APK" >/dev/null; }
+
+# COMPILED=1: compile the whole app ahead of time, the upper bound of what a baseline profile or
+# background dexopt can give. Otherwise the app runs as freshly installed by adb (interpreted,
+# JIT), the slowest case.
+if [ "${COMPILED:-0}" = 1 ]; then
+    adb shell cmd package compile -f -m speed "$PKG" >/dev/null
+fi
 
 KEYBOARD=$(adb shell getevent -p | awk '
     /add device/ { dev = $NF }
