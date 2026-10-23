@@ -165,7 +165,7 @@ Finding for Phase 4: on a fresh process, `AppIndex` finishes its IO work in ~50 
 ### Phase 4 — Overlay open and rendering
 
 - [x] Create `SearchViewModel` / `AppIndex` when the service connects (`SearchOverlay.prepare`). The index loads in ~20 ms while nothing else runs, and every first open shows the full grid in its first frame (10 / 10), where before the grid filled in ~185 ms after the key press. Idle memory unchanged.
-- [ ] ~~Load app icons lazily~~ Not done: with the index loaded at service start, icons are ready before the first open; loading them per tile would make tiles pop in. Memory per app cannot be judged on an emulator with 17 apps; check on a phone with many apps.
+- [x] Keep each app icon only as a bitmap at the size it is shown (48 dp), drawn once when the index loads. Checked on the Xiaomi Pad mini (78 apps): a launcher icon as loaded holds its full-size layers, so native heap went ~50 → ~25 MB and idle PSS ~101 → ~84 MB. Loading icons per visible tile instead was not needed: with the index loaded at service start they are ready before the first open, and lazy loading would make tiles pop in.
 - [x] Draw `AppIcon` as a cached `ImageBitmap` instead of `AndroidView(ImageView)`. Open and typing times unchanged; idle memory ~28.0 → ~26.0 MB.
 - [x] Keep the overlay's composition between opens: the panel runs on its own `Recomposer` and the same view is re-added on each open. Later opens ~41 → ~16 ms. Focus, IME, reset on reopen and the fade-out pass `OverlayE2ETest`.
 - [ ] ~~Add a Baseline Profile~~ Not done, because it cannot be verified here: on the reference emulator (API 37) `profileinstaller` 1.3.0 reports the ART version as unsupported, and the APK's profile (format 010) is rejected as dex metadata. Compose's own profiles already ship in the APK (`assets/dexopt/baseline.prof`). Upper bound measured with the app fully compiled ahead of time (`COMPILED=1 scripts/measure.sh`): first open ~103 → ~75 ms, typing p90 ~4.3 → ~1.8 ms. Revisit with Phase 5 (newer `profileinstaller`) or on a physical device.
@@ -226,6 +226,21 @@ The open-time targets in §1 (first < 200 ms, later < 80 ms) were met from the s
 | Idle memory (PSS, service only) | | | | | |
 
 ---
+
+### Physical device
+
+Xiaomi Pad mini (`25079RPDCG`, HyperOS, Android 16 / API 36, user build, 3008×1880), 78 launcher apps. Release build, not compiled ahead of time, medians of 5 runs (`RUNS=5 scripts/measure.sh`). Alt+Space comes from a virtual USB keyboard made with `adb shell hid -`, since SELinux keeps the shell from writing `/dev/input` on a user build. Battery set to unrestricted (see AGENTS.md).
+
+| Metric | After P4 | After keeping icons at display size |
+|---|---|---|
+| `MainActivity` cold start | 221 ms | 213 ms |
+| Overlay first open (grid filled in the first frame) | 108 ms (5 / 5) | 102 ms (5 / 5) |
+| `AppIndex` first load (at service start) | 260 ms | 284 ms |
+| Overlay later opens | 39 ms | 35 ms |
+| Typing UI-thread p50 / p90 per frame | 1.3 / 9.2 ms | 2.1 / 9.3 ms |
+| Idle memory (PSS, overlay closed) | 101,134 KB | 83,832 KB |
+
+Device tests: 23 / 24 pass, 1 skipped (`builtInAliasFindsDialer`: the tablet has no dialer). Running them here found three test problems (fixed): the writable-node check ignored stderr, the launch test relied on the package name line (a setting), and frame stats required flags 0 (HyperOS sets vendor flags on every frame). It also found that standby tiles cut off at the grid's edge had no accessible label (fixed in `AppTile`).
 
 ## 7. Open decisions
 
