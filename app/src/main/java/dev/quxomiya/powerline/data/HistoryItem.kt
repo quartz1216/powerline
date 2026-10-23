@@ -4,6 +4,6 @@ package dev.quxomiya.powerline.data
 // "recent apps" row and the frecency bonus in search.
 data class HistoryItem(
     val packageName: String,
-    val className: String? = null,
+    val className: String,
     val timestamp: Long
 )

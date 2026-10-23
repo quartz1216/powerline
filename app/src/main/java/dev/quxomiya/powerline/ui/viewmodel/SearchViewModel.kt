@@ -176,15 +176,10 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun refreshRecentApps() {
-        val apps = _visibleApps.value
-        val appsByPackage = apps.groupBy { it.packageName }
+        val appsByComponent = _visibleApps.value.associateBy { it.packageName to it.className }
         _recentApps.value = userDataRepository.getHistory()
             .asSequence()
-            // The launched activity, or the package's first one for V1 entries without a class
-            .mapNotNull { item ->
-                val candidates = appsByPackage[item.packageName] ?: return@mapNotNull null
-                candidates.find { it.className == item.className } ?: candidates.first()
-            }
+            .mapNotNull { appsByComponent[it.packageName to it.className] }
             .distinct()
             .take(PowerlineDefaults.MAX_STANDBY_RECENT_APPS)
             .toList()

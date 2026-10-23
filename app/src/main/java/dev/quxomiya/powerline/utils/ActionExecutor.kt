@@ -33,19 +33,13 @@ object ActionExecutor {
     }
 
     private fun launchApp(context: Context, action: SearchAction.LaunchApp): Boolean {
-        // The exact launcher activity when known: a package can have several launcher icons
-        val intent = action.className?.let { className ->
-            Intent(Intent.ACTION_MAIN)
-                .addCategory(Intent.CATEGORY_LAUNCHER)
-                .setComponent(ComponentName(action.packageName, className))
-                .addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-        } ?: context.packageManager.getLaunchIntentForPackage(action.packageName)
-        if (intent == null) {
-            Toast.makeText(context, "Cannot launch app", Toast.LENGTH_SHORT).show()
-            return false
-        }
+        // The exact launcher activity: a package can have several launcher icons
+        val intent = Intent(Intent.ACTION_MAIN)
+            .addCategory(Intent.CATEGORY_LAUNCHER)
+            .setComponent(ComponentName(action.packageName, action.className))
+            .addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED or Intent.FLAG_ACTIVITY_NEW_TASK)
         return try {
-            context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            context.startActivity(intent)
             true
         } catch (e: Exception) {
             Toast.makeText(context, "Cannot launch app", Toast.LENGTH_SHORT).show()

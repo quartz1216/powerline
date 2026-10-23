@@ -63,8 +63,8 @@ class SearchPipelineTest {
     fun favoriteOutranksOneTier() = runBlocking {
         val provider = FakeProvider("apps", ResultSection.APPS, items = {
             listOf(
-                it.item("prefix", score = SearchRanker.PREFIX, action = SearchAction.LaunchApp("com.prefix", null)),
-                it.item("word", score = SearchRanker.WORD, action = SearchAction.LaunchApp("com.fav", null))
+                it.item("prefix", score = SearchRanker.PREFIX, action = SearchAction.LaunchApp("com.prefix", "Main")),
+                it.item("word", score = SearchRanker.WORD, action = SearchAction.LaunchApp("com.fav", "Main"))
             )
         })
         val results = pipeline(provider, signals = RankingSignals(favoriteApps = setOf("com.fav"))).search("q")
@@ -82,7 +82,7 @@ class SearchPipelineTest {
     @Test
     fun perSectionLimit() = runBlocking {
         val provider = FakeProvider("apps", ResultSection.APPS, items = { r ->
-            (1..12).map { r.item("app$it", action = SearchAction.LaunchApp("com.app$it", null)) }
+            (1..12).map { r.item("app$it", action = SearchAction.LaunchApp("com.app$it", "Main")) }
         })
         val results = pipeline(provider).search("q")
         assertEquals(PowerlineDefaults.MAX_RESULTS_PER_SECTION, results.single().items.size)

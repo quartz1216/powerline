@@ -1,6 +1,6 @@
 # Powerline Cleanup & Optimization Roadmap
 
-> **Status:** Not started
+> **Status:** Phase 1 in progress (compatibility code removed)
 > **Baseline:** `v2/phase6-7-cleanup-release` @ `4b6aa57` (V2 feature-complete, not yet merged to `main`)
 > **Target:** V2.1 — same features, less code, faster overlay
 > **Last updated:** 2026-10-23
@@ -27,7 +27,6 @@ This roadmap makes the app **smaller, simpler and faster without changing what t
 ### Non-goals
 
 - New features, new settings, or changes to existing settings (AGENTS.md: no settings beyond README / this file)
-- Changing the stored format of `history`, `favorite_apps`, `search_engines` or `share_targets` in a way that loses existing data
 - Using the accessibility service for anything beyond Alt+Space (AGENTS.md)
 - UI redesign
 
@@ -39,6 +38,7 @@ This roadmap makes the app **smaller, simpler and faster without changing what t
 - **One item per commit**, each with `testDebugUnitTest` passing. Items that touch the overlay, key handling or `AppIndex` also run `scripts/device-tests.sh`.
 - **No behavior changes.** If a cleanup would change behavior (ordering, timing, what is shown), it is out of scope or needs its own decision recorded in §7.
 - **New dependencies need a stated reason** (AGENTS.md). Removing dependencies needs none.
+- **No compatibility code for earlier builds.** Powerline is in closed testing and not published, so stored data, pref keys and component names may change freely. Testers may have to re-enable the accessibility service or clear app data after an update; note it in the release notes for testers.
 
 ---
 
@@ -48,9 +48,9 @@ This roadmap makes the app **smaller, simpler and faster without changing what t
 
 | Where | What | Action |
 |---|---|---|
-| `data/UserDataRepository.kt` `StoredHistoryItem` | Reads V1 history entries (`id` / `type == "APP"`). V1 was `com.quartz.powerline`, so its data never exists in this app's storage (the file itself says so). | Remove the V1 fields; read `HistoryItem` directly |
-| `ui/viewmodel/SearchViewModel.kt` `refreshRecentApps` | Fallback to "the package's first activity for V1 entries without a class" | Keep the fallback only if pre-release V2 builds wrote entries without `className`; otherwise remove |
-| `data/UserDataRepository.kt` `removeLegacyKeys` | Reads every pref key each time a repository is created, to remove keys from pre-release V2 builds | Run once per app version (or drop after V2.0 is out) |
+| `data/UserDataRepository.kt` `StoredHistoryItem` | Reads V1 history entries (`id` / `type == "APP"`). V1 was `com.quartz.powerline`, so its data never exists in this app's storage (the file itself says so). | ✅ Removed; `HistoryItem` is read directly |
+| `ui/viewmodel/SearchViewModel.kt` `refreshRecentApps` | Fallback to "the package's first activity for V1 entries without a class" | ✅ Removed; `className` is non-null in `AppInfo`, `LaunchApp` and `HistoryItem`, and launches always target the exact activity |
+| `data/UserDataRepository.kt` `removeLegacyKeys` | Reads every pref key each time a repository is created, to remove keys from pre-release V2 builds | ✅ Removed (closed testing: no compatibility with earlier builds) |
 | `search/SearchRequest.kt` `rawQuery` | Set by `QueryParser`, never read | Remove |
 | `search/SearchUiState.kt` `isLoading` | Set by `SearchViewModel`, never read by the UI | Remove, or use it; decide in §7 |
 | `search/SearchProvider.kt` `displayName`, `icon` | Not read through the interface | Remove from the interface (providers may keep a private icon) |
@@ -122,9 +122,10 @@ This roadmap makes the app **smaller, simpler and faster without changing what t
 
 ### Phase 1 — Dead code and dependencies
 
-- [ ] Remove the V1 history format (`StoredHistoryItem` V1 fields) — keep reading the current format unchanged (`UserDataRepositoryTest` covers it).
-- [ ] Decide and apply the `className == null` fallback in `refreshRecentApps`.
-- [ ] Run `removeLegacyKeys` once per `versionCode` instead of on every repository creation.
+- [x] Remove the V1 history format (`StoredHistoryItem`).
+- [x] Remove the `className == null` fallbacks (recent apps, app launch).
+- [x] Remove `removeLegacyKeys` and the history / favorites move out of the settings file.
+- [x] Rename `StatusBarAccessibilityService` to `PowerlineAccessibilityService`.
 - [ ] Remove `SearchRequest.rawQuery`, `SearchProvider.displayName` / `icon`, `OVERLAY_CLOSE_ON_BACKGROUND_TAP`; resolve `isLoading` (§7).
 - [ ] Replace `printStackTrace` with `Log`.
 - [ ] Remove `mockito-*`, `core-testing`, `ui-tooling-preview` (or move to debug), `useSupportLibrary`, Jetifier.
@@ -137,8 +138,8 @@ This roadmap makes the app **smaller, simpler and faster without changing what t
 - [ ] One source of truth for active features: a small `ActiveFeatures` (or similar) derived from `SearchSettingsRepository` that providers, parser and chips all read. Remove the per-provider `enabled` lambdas.
 - [ ] Build alias chip IDs in one place.
 - [ ] Remove `SearchMode`; derive alias mode from `engine` / `shareTarget`.
-- [ ] Merge storage: one process-wide owner of `powerline_settings` (settings + history + favorites), one JSON codec. Keep the keys and JSON shape unchanged.
-- [ ] Replace Gson with `org.json` for the three lists; delete the Gson keep rules. Add a test that reads JSON written by the Gson version.
+- [ ] Merge storage: one process-wide owner of `powerline_settings` (backed up) and `powerline_user_data` (not backed up), one JSON codec.
+- [ ] Replace Gson with `org.json` for the three lists; delete the Gson keep rules.
 - [ ] Move test-only constructor defaults into test helpers.
 - [ ] Split `SearchSettings.kt`; move standby keyboard navigation out of `SearchScreen` into a tested state holder.
 - [ ] Replace `material-icons-extended` with the 13 icons the app uses.
@@ -180,7 +181,7 @@ Only if Phases 1–4 are done. This is the largest change, and it is where the V
 
 | Risk | Mitigation |
 |---|---|
-| Storage refactor loses user history or settings | Keys and JSON shape stay the same; tests read data written by the previous build before the change merges |
+| Storage refactor resets testers' history or settings | Acceptable during closed testing; tell testers in the release notes |
 | Keeping the overlay view between opens breaks focus / IME / ASCII input | `OverlayE2ETest` plus a manual check with Gboard and Google Japanese Input |
 | Prewarming in `onServiceConnected` raises idle memory | Measure idle memory before / after; drop the prewarm if the cost is large |
 | Lazy icons make tiles pop in while scrolling | Load the first screen of icons with the index; lazy only below the fold |
@@ -209,7 +210,7 @@ Reference device: _to fill in Phase 0_ (emulator image and API level).
 | # | Question | Default if undecided |
 |---|---|---|
 | 1 | `isLoading`: remove, or show a subtle loading state? | Remove (no visible change) |
-| 2 | Keep the `className == null` fallback for history entries? | Keep until a check shows no stored entry lacks `className` |
+| 2 | ~~Keep the `className == null` fallback for history entries?~~ | **Decided 2026-10-23:** no. Powerline is in closed testing, so nothing is kept for compatibility with earlier builds. |
 | 3 | Simplify `SearchPipeline` timeouts after Phase 3 timings? | Keep |
 | 4 | ~~Android Auto Backup included launch history and favorites. Keep, or exclude?~~ | **Decided 2026-10-23:** back up only the search settings (Built-in switches, Web search entries, Share entries, Advanced). History and favorites moved to `powerline_user_data`, which is not backed up. Done. |
 | 5 | Do Phase 5 (toolchain) in this roadmap or separately? | Separately |

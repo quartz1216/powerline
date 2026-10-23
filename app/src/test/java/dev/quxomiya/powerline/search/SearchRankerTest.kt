@@ -78,6 +78,6 @@ class SearchRankerTest {
 
     private fun appItem(packageName: String, score: Int) = SearchItem(
         id = packageName, providerId = "apps", title = packageName, subtitle = null, icon = ColorDrawable(),
-        section = ResultSection.APPS, score = score, action = SearchAction.LaunchApp(packageName, null)
+        section = ResultSection.APPS, score = score, action = SearchAction.LaunchApp(packageName, "Main")
     )
 }

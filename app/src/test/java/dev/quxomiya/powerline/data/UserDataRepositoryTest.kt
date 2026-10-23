@@ -15,47 +15,45 @@ class UserDataRepositoryTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val prefs = context.getSharedPreferences("powerline_user_data", Context.MODE_PRIVATE)
-    private val settingsPrefs = context.getSharedPreferences("powerline_settings", Context.MODE_PRIVATE)
     private lateinit var repository: UserDataRepository
 
     @Before
     fun setup() {
         prefs.edit().clear().commit()
-        settingsPrefs.edit().clear().commit()
         repository = UserDataRepository(context)
     }
 
     @Test
     fun launchesAreMostRecentFirst() {
         repository.recordAppLaunch("com.a", "com.a.Main", timestamp = 1)
-        repository.recordAppLaunch("com.b", null, timestamp = 2)
+        repository.recordAppLaunch("com.b", "com.b.Main", timestamp = 2)
         assertEquals(
-            listOf(HistoryItem("com.b", null, 2), HistoryItem("com.a", "com.a.Main", 1)),
+            listOf(HistoryItem("com.b", "com.b.Main", 2), HistoryItem("com.a", "com.a.Main", 1)),
             repository.getHistory()
         )
     }
 
     @Test
     fun historyIsCapped() {
-        repeat(PowerlineDefaults.MAX_HISTORY_ITEMS + 10) { repository.recordAppLaunch("com.app$it", null, timestamp = it.toLong()) }
+        repeat(PowerlineDefaults.MAX_HISTORY_ITEMS + 10) {
+            repository.recordAppLaunch("com.app$it", "Main", timestamp = it.toLong())
+        }
         val history = repository.getHistory()
         assertEquals(PowerlineDefaults.MAX_HISTORY_ITEMS, history.size)
         assertEquals("com.app${PowerlineDefaults.MAX_HISTORY_ITEMS + 9}", history.first().packageName)
     }
 
-    // V1 stored {id, type, title, ...}; only app launches survive
     @Test
-    fun readsV1History() {
+    fun entriesMissingAFieldAreDropped() {
         prefs.edit().putString(
             "history",
             """[
-                {"id":"com.v1.app","type":"APP","title":"V1 App","timestamp":30},
-                {"id":"settings_action","type":"APP","title":"Powerline Status","timestamp":20},
-                {"id":"https://google.com","type":"WEB","title":"web","timestamp":10},
-                {"id":"1+1","type":"CALCULATOR","title":"2","timestamp":5}
+                {"packageName":"com.a","className":"com.a.Main","timestamp":30},
+                {"packageName":"com.b","timestamp":20},
+                {"className":"com.c.Main","timestamp":10}
             ]"""
         ).commit()
-        assertEquals(listOf(HistoryItem("com.v1.app", null, 30)), repository.getHistory())
+        assertEquals(listOf(HistoryItem("com.a", "com.a.Main", 30)), repository.getHistory())
     }
 
     @Test
@@ -67,53 +65,12 @@ class UserDataRepositoryTest {
     @Test
     fun frecencyDecaysByHalfLife() {
         val now = 1_000_000_000_000L
-        repository.recordAppLaunch("com.a", null, timestamp = now - PowerlineDefaults.FRECENCY_HALF_LIFE_MS)
-        repository.recordAppLaunch("com.a", null, timestamp = now)
-        repository.recordAppLaunch("com.b", null, timestamp = now - 2 * PowerlineDefaults.FRECENCY_HALF_LIFE_MS)
+        repository.recordAppLaunch("com.a", "Main", timestamp = now - PowerlineDefaults.FRECENCY_HALF_LIFE_MS)
+        repository.recordAppLaunch("com.a", "Main", timestamp = now)
+        repository.recordAppLaunch("com.b", "Main", timestamp = now - 2 * PowerlineDefaults.FRECENCY_HALF_LIFE_MS)
         val frecency = repository.getAppFrecency(now)
         assertEquals(1.5, frecency.getValue("com.a"), 1e-9)
         assertEquals(0.25, frecency.getValue("com.b"), 1e-9)
-    }
-
-    // Earlier builds kept history and favorites in the settings file, which Auto Backup includes
-    @Test
-    fun userDataMovedOutOfSettingsAndLegacyKeysRemoved() {
-        settingsPrefs.edit()
-            .putString("history", """[{"packageName":"com.a","className":"com.a.Main","timestamp":1}]""")
-            .putStringSet("favorite_apps", setOf("com.a"))
-            .putBoolean("onboarding_completed", true)
-            .putString("app_weights", "{}")
-            .putBoolean("is_advanced", true)
-            .putString("search_engines", "[]")
-            .putString("share_targets", "[]")
-            .putBoolean("apps_enabled", false)
-            .putBoolean("calculator_enabled", false)
-            .putBoolean("share_enabled", false)
-            .putBoolean("show_package_name", false)
-            .putBoolean("force_ascii_input", false)
-            .commit()
-        val moved = UserDataRepository(context)
-        assertEquals(
-            setOf(
-                "search_engines", "share_targets", "apps_enabled", "calculator_enabled", "share_enabled",
-                "show_package_name", "force_ascii_input"
-            ),
-            settingsPrefs.all.keys
-        )
-        assertEquals(setOf("history", "favorite_apps"), prefs.all.keys)
-        assertEquals(setOf("com.a"), moved.getFavoriteApps())
-        assertEquals(listOf(HistoryItem("com.a", "com.a.Main", 1)), moved.getHistory())
-    }
-
-    // A launch recorded since the move is not overwritten by an older copy in the settings file
-    @Test
-    fun movedUserDataKeepsNewerCopy() {
-        repository.recordAppLaunch("com.new", null, timestamp = 2)
-        settingsPrefs.edit()
-            .putString("history", """[{"packageName":"com.old","timestamp":1}]""")
-            .commit()
-        assertEquals(listOf(HistoryItem("com.new", null, 2)), UserDataRepository(context).getHistory())
-        assertEquals(emptySet<String>(), settingsPrefs.all.keys)
     }
 
     @Test
