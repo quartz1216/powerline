@@ -35,3 +35,12 @@
 - Xiaomi Pad Mini (physical)
   - Tablet mode and Workstation mode
   - Gboard (US and Japanese)
+- That is all so far. If something goes wrong on your device, please report it in [Issues](https://github.com/quartz1216/powerline/issues).
+
+## Privacy
+- The accessibility permission is used only to catch Alt+Space and to show the search panel on top of other apps.
+- Powerline does not have the `INTERNET` permission. It cannot send anything anywhere.
+- It does not read screen content and does not record keystrokes.
+- The only data it keeps is your Powerline launch history and search settings, stored on the device.
+- It shows no ads and contains no analytics or tracking SDKs.
+- See [PRIVACY.md](PRIVACY.md) for details.
