@@ -12,14 +12,14 @@
         android:icon="@mipmap/ic_launcher"
         android:label="Powerline"
         android:supportsRtl="true"
-        android:theme="@style/Theme.CommandLauncher">
+        android:theme="@style/Theme.Powerline">
 
         <!-- Status / Permissions / About (app icon) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.CommandLauncher">
+            android:theme="@style/Theme.Powerline">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

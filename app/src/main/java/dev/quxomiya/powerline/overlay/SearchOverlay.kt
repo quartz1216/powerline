@@ -37,7 +37,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import dev.quxomiya.powerline.MainActivity
 import dev.quxomiya.powerline.R
 import dev.quxomiya.powerline.ui.SearchScreen
-import dev.quxomiya.powerline.ui.theme.CommandLauncherTheme
+import dev.quxomiya.powerline.ui.theme.PowerlineTheme
 import dev.quxomiya.powerline.ui.viewmodel.SearchViewModel
 import dev.quxomiya.powerline.utils.ActionExecutor
 
@@ -48,7 +48,7 @@ class SearchOverlay(private val service: AccessibilityService) {
     private val owner = OverlayOwner()
     private val windowManager = service.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val context: Context = NewTaskContext(
-        android.view.ContextThemeWrapper(service, R.style.Theme_CommandLauncher)
+        android.view.ContextThemeWrapper(service, R.style.Theme_Powerline)
     )
     private val viewModel: SearchViewModel by lazy {
         ViewModelProvider(
@@ -73,7 +73,7 @@ class SearchOverlay(private val service: AccessibilityService) {
 
         val composeView = ComposeView(context).apply {
             setContent {
-                CommandLauncherTheme(setSystemBars = false) {
+                PowerlineTheme(setSystemBars = false) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()

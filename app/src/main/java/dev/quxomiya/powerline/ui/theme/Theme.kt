@@ -16,7 +16,7 @@ import androidx.core.view.WindowCompat
 
 // Material You: colors follow the wallpaper on Android 12+; older versions fall back to the brand scheme.
 @Composable
-fun CommandLauncherTheme(
+fun PowerlineTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     setSystemBars: Boolean = true,
     content: @Composable () -> Unit
