@@ -2,9 +2,6 @@ package dev.quxomiya.powerline.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import kotlin.math.pow
 
 // Stores user data (launch history, favorites). The search settings live in SearchSettingsRepository;
@@ -13,7 +10,6 @@ import kotlin.math.pow
 // search settings are backed up.
 class UserDataRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    private val gson = Gson()
 
     // --- Favorite Apps ---
     fun getFavoriteApps(): Set<String> {
@@ -28,23 +24,13 @@ class UserDataRepository(context: Context) {
 
     // App launches, most recent first
     fun getHistory(): List<HistoryItem> {
-        val json = prefs.getString(KEY_HISTORY, "[]")
-        return try {
-            // Built explicitly rather than from an anonymous TypeToken subclass, whose generic
-            // signature R8 strips in release builds
-            val typeToken = TypeToken.getParameterized(List::class.java, HistoryItem::class.java).type
-            val stored: List<HistoryItem> = gson.fromJson(json, typeToken) ?: emptyList()
-            // Gson ignores Kotlin nullability, so drop entries missing a required field
-            stored.filter { it.packageName != null && it.className != null }
-        } catch (e: Exception) {
-            Log.w("UserDataRepository", "Unreadable history", e)
-            emptyList()
-        }
+        val json = prefs.getString(KEY_HISTORY, null) ?: return emptyList()
+        return StoredJson.history(json) ?: emptyList()
     }
 
     fun recordAppLaunch(packageName: String, className: String, timestamp: Long = System.currentTimeMillis()) {
         val history = listOf(HistoryItem(packageName, className, timestamp)) + getHistory()
-        prefs.edit().putString(KEY_HISTORY, gson.toJson(history.take(PowerlineDefaults.MAX_HISTORY_ITEMS))).apply()
+        prefs.edit().putString(KEY_HISTORY, StoredJson.ofHistory(history.take(PowerlineDefaults.MAX_HISTORY_ITEMS))).apply()
     }
 
     // Package name -> sum over its launches of 0.5^(age / half-life); a launch just now counts 1
@@ -58,9 +44,18 @@ class UserDataRepository(context: Context) {
         return frecency
     }
 
-    private companion object {
-        const val PREFS_NAME = "powerline_user_data"
-        const val KEY_HISTORY = "history"
-        const val KEY_FAVORITE_APPS = "favorite_apps"
+    companion object {
+        private const val PREFS_NAME = "powerline_user_data"
+        private const val KEY_HISTORY = "history"
+        private const val KEY_FAVORITE_APPS = "favorite_apps"
+
+        @Volatile
+        private var instance: UserDataRepository? = null
+
+        // One per process, like SearchSettingsRepository
+        fun get(context: Context): UserDataRepository =
+            instance ?: synchronized(this) {
+                instance ?: UserDataRepository(context.applicationContext).also { instance = it }
+            }
     }
 }

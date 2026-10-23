@@ -2,9 +2,6 @@ package dev.quxomiya.powerline.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import dev.quxomiya.powerline.search.BuiltIn
 import dev.quxomiya.powerline.search.SearchEngine
 import dev.quxomiya.powerline.search.ShareTarget
@@ -18,7 +15,6 @@ import kotlinx.coroutines.flow.asStateFlow
 // instance, so an edit reaches the open overlay right away.
 class SearchSettingsRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    private val gson = Gson()
 
     private val _engines = MutableStateFlow(readEngines())
     val engines: StateFlow<List<SearchEngine>> = _engines.asStateFlow()
@@ -70,7 +66,7 @@ class SearchSettingsRepository(context: Context) {
     fun setEngines(engines: List<SearchEngine>) {
         _engines.value = engines
         refreshActive()
-        prefs.edit().putString(KEY_ENGINES, gson.toJson(engines)).apply()
+        prefs.edit().putString(KEY_ENGINES, StoredJson.ofEngines(engines)).apply()
     }
 
     // Back to PowerlineDefaults.SEARCH_ENGINES, including any built-in the user deleted
@@ -108,32 +104,18 @@ class SearchSettingsRepository(context: Context) {
     fun setShareTargets(targets: List<ShareTarget>) {
         _shareTargets.value = targets
         refreshActive()
-        prefs.edit().putString(KEY_SHARE_TARGETS, gson.toJson(targets)).apply()
+        prefs.edit().putString(KEY_SHARE_TARGETS, StoredJson.ofShareTargets(targets)).apply()
     }
 
     // Unset means the built-in engines; unreadable data falls back to them too
     private fun readEngines(): List<SearchEngine> {
         val json = prefs.getString(KEY_ENGINES, null) ?: return PowerlineDefaults.SEARCH_ENGINES
-        return readList(json, SearchEngine::class.java)
-            // Gson ignores Kotlin nullability, so drop entries missing a required field
-            ?.filter { it.id != null && it.name != null && it.url != null }
-            ?: PowerlineDefaults.SEARCH_ENGINES
+        return StoredJson.engines(json) ?: PowerlineDefaults.SEARCH_ENGINES
     }
 
     private fun readShareTargets(): List<ShareTarget> {
         val json = prefs.getString(KEY_SHARE_TARGETS, null) ?: return emptyList()
-        return readList(json, ShareTarget::class.java)
-            ?.filter { it.id != null && it.name != null && it.alias != null && it.packageName != null && it.className != null }
-            ?: emptyList()
-    }
-
-    private fun <T> readList(json: String, type: Class<T>): List<T>? = try {
-        // Built explicitly rather than from an anonymous TypeToken subclass, whose generic
-        // signature R8 strips in release builds
-        gson.fromJson<List<T>>(json, TypeToken.getParameterized(List::class.java, type).type)
-    } catch (e: Exception) {
-        Log.w("SearchSettingsRepository", "Unreadable $type list", e)
-        null
+        return StoredJson.shareTargets(json) ?: emptyList()
     }
 
     companion object {
@@ -147,16 +129,12 @@ class SearchSettingsRepository(context: Context) {
         val KEYS = setOf(KEY_ENGINES, KEY_SHARE_TARGETS, KEY_SHOW_PACKAGE_NAME, KEY_FORCE_ASCII_INPUT) + BUILT_IN_KEYS
 
         @Volatile
-        private var instance: Pair<Context, SearchSettingsRepository>? = null
+        private var instance: SearchSettingsRepository? = null
 
-        fun get(context: Context): SearchSettingsRepository {
-            val app = context.applicationContext
-            instance?.let { (owner, repository) -> if (owner === app) return repository }
-            return synchronized(this) {
-                instance?.takeIf { it.first === app }?.second
-                    ?: SearchSettingsRepository(app).also { instance = app to it }
+        fun get(context: Context): SearchSettingsRepository =
+            instance ?: synchronized(this) {
+                instance ?: SearchSettingsRepository(context.applicationContext).also { instance = it }
             }
-        }
     }
 }
 

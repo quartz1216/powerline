@@ -38,7 +38,7 @@ import kotlinx.coroutines.withContext
 
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
 
-    val userDataRepository = UserDataRepository(application)
+    val userDataRepository = UserDataRepository.get(application)
     private val searchSettings = SearchSettingsRepository.get(application)
     private val appIndex = AppIndex(application, viewModelScope, searchSettings.activeEngines, searchSettings.activeShareTargets)
 
