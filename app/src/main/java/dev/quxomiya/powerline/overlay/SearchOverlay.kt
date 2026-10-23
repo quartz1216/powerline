@@ -19,10 +19,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -41,6 +44,9 @@ import dev.quxomiya.powerline.ui.SearchScreen
 import dev.quxomiya.powerline.ui.theme.PowerlineTheme
 import dev.quxomiya.powerline.ui.viewmodel.SearchViewModel
 import dev.quxomiya.powerline.utils.ActionExecutor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 // Search surface drawn as an accessibility overlay window instead of an Activity,
 // so desktop / freeform windowing cannot turn it into an app window.
@@ -58,21 +64,19 @@ class SearchOverlay(private val service: AccessibilityService) {
         )[SearchViewModel::class.java]
     }
 
-    private var rootView: FrameLayout? = null
+    // The panel is composed once and kept between opens. Compose cancels a window's own recomposer
+    // when its view leaves the window manager, so the panel runs on this one instead.
+    private val uiScope = CoroutineScope(AndroidUiDispatcher.Main)
+    private val recomposer = Recomposer(uiScope.coroutineContext)
 
-    val isShowing: Boolean
-        get() = rootView != null
-
-    // triggeredAt: uptime of the key press that opened the overlay, for the open-time log
-    fun toggle(triggeredAt: Long = SystemClock.uptimeMillis()) {
-        if (isShowing) hide() else show(triggeredAt)
+    init {
+        uiScope.launch { recomposer.runRecomposeAndApplyChanges() }
     }
 
-    fun show(triggeredAt: Long = SystemClock.uptimeMillis()) {
-        if (isShowing) return
-        viewModel.resetForOpen()
-
+    private val root: FrameLayout by lazy {
         val composeView = ComposeView(context).apply {
+            setParentCompositionContext(recomposer)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnLifecycleDestroyed(owner))
             setContent {
                 PowerlineTheme(setSystemBars = false) {
                     Box(
@@ -98,17 +102,28 @@ class SearchOverlay(private val service: AccessibilityService) {
                 }
             }
         }
-
-        val root = DismissKeyLayout(context, onDismiss = ::hide).apply {
+        DismissKeyLayout(context, onDismiss = ::hide).apply {
             addView(composeView)
             setViewTreeLifecycleOwner(owner)
             setViewTreeViewModelStoreOwner(owner)
             setViewTreeSavedStateRegistryOwner(owner)
         }
+    }
 
+    var isShowing = false
+        private set
+
+    // triggeredAt: uptime of the key press that opened the overlay, for the open-time log
+    fun toggle(triggeredAt: Long = SystemClock.uptimeMillis()) {
+        if (isShowing) hide() else show(triggeredAt)
+    }
+
+    fun show(triggeredAt: Long = SystemClock.uptimeMillis()) {
+        if (isShowing) return
+        viewModel.resetForOpen()
         try {
             windowManager.addView(root, layoutParams())
-            rootView = root
+            isShowing = true
             logOpenTime(root, triggeredAt)
         } catch (e: Exception) {
             Log.w(TAG, "Cannot show the overlay", e)
@@ -117,8 +132,8 @@ class SearchOverlay(private val service: AccessibilityService) {
 
     // The fade-out is the window exit animation (windowAnimations), run by the system after removal
     fun hide() {
-        val root = rootView ?: return
-        rootView = null
+        if (!isShowing) return
+        isShowing = false
         try {
             windowManager.removeView(root)
         } catch (e: Exception) {
@@ -146,6 +161,8 @@ class SearchOverlay(private val service: AccessibilityService) {
     fun destroy() {
         hide()
         owner.destroy()
+        recomposer.cancel()
+        uiScope.cancel()
     }
 
     private fun openStatusScreen() {
