@@ -30,3 +30,10 @@
 - Powerlineを開いたときに自動的にIMEをオフにします｡(オプション｡設定で変更可能｡)
   - 注意:Gboad以外ではテストされていません!
   - 設定で変更可能｡
+
+## 動作確認済み
+- AndroidStudio (Virtual)
+  - Desktop Setup (like a Pixel for Desktop)
+- Xiaomi Pad Mini (Physical)
+  - Tablet mode and Workstasion mode.
+  - GBoard (US and JA)
