@@ -1,6 +1,6 @@
 # Powerline Cleanup & Optimization Roadmap
 
-> **Status:** Phase 0 done; Phase 1 in progress
+> **Status:** Phases 0–1 done; Phase 2 in progress
 > **Baseline:** `v2/phase6-7-cleanup-release` @ `4b6aa57` (V2 feature-complete, not yet merged to `main`)
 > **Target:** V2.1 — same features, less code, faster overlay
 > **Last updated:** 2026-10-23
@@ -127,12 +127,13 @@ This roadmap makes the app **smaller, simpler and faster without changing what t
 - [x] Remove the `className == null` fallbacks (recent apps, app launch).
 - [x] Remove `removeLegacyKeys` and the history / favorites move out of the settings file.
 - [x] Rename `StatusBarAccessibilityService` to `PowerlineAccessibilityService`.
-- [ ] Remove `SearchRequest.rawQuery`, `SearchProvider.displayName` / `icon`, `OVERLAY_CLOSE_ON_BACKGROUND_TAP`; resolve `isLoading` (§7).
-- [ ] Replace `printStackTrace` with `Log`.
-- [ ] Remove `mockito-*`, `core-testing`, `ui-tooling-preview` (or move to debug), `useSupportLibrary`, Jetifier.
-- [ ] Rename `CommandLauncherTheme` / `Theme.CommandLauncher` to Powerline names.
+- [x] Remove `SearchRequest.rawQuery`, `SearchProvider.displayName` / `icon`, `OVERLAY_CLOSE_ON_BACKGROUND_TAP`, `isLoading` (§7 #1), and the empty `SearchViewModelTest`.
+- [x] Replace `printStackTrace` with `Log`.
+- [x] Remove `mockito-*`, `core-testing`, `ui-tooling-preview`, `useSupportLibrary`, Jetifier.
+- [x] Rename `CommandLauncherTheme` / `Theme.CommandLauncher` to `PowerlineTheme` / `Theme.Powerline`.
+- [x] Fix `OverlayE2ETest.shiftTabSelectsEngineChip`, which had failed since the chips were sorted by name (`f4ae978`).
 
-**Done when:** build and all tests pass; no change visible on the device.
+**Done when:** build and all tests pass; no change visible on the device. ✅ Unit tests 105/105, device tests 24/24.
 
 ### Phase 2 — Simplification
 
@@ -195,15 +196,17 @@ Reference device: Android Desktop emulator (`sdk_gdesktop_x86_64`, Android 17, 2
 
 | Metric | Baseline | After P1 | After P2 | After P3 | After P4 |
 |---|---|---|---|---|---|
-| Release APK size | 1,458 KB | | | | |
-| Main Kotlin lines (`app/src/main`) | 4,095 | | | | |
-| `MainActivity` cold start | 252 ms | | | | |
-| Overlay first open (key → first frame) | 74 ms | | | | |
-| `AppIndex` first load (apps appear in the grid) | 216 ms | | | | |
-| Overlay later opens | 47 ms | | | | |
-| Search, 1000 apps (µs / query, JVM) | ~680 | | | | |
-| `AppIndex` reloads, 10 package events | 10 | | | | |
-| Idle memory (PSS, overlay closed) | 28,715 KB | | | | |
+| Release APK size | 1,458 KB | 1,457 KB | | | |
+| Main Kotlin lines (`app/src/main`) | 4,095 | 4,078 | | | |
+| `MainActivity` cold start | 252 ms | 219 ms | | | |
+| Overlay first open (key → first frame) | 74 ms | 86 ms | | | |
+| `AppIndex` first load (apps appear in the grid) | 216 ms | 189 ms | | | |
+| Overlay later opens | 47 ms | 41 ms | | | |
+| Search, 1000 apps (µs / query, JVM) | ~680 | ~660 | | | |
+| `AppIndex` reloads, 10 package events | 10 | 10 | | | |
+| Idle memory (PSS, overlay closed) | 28,715 KB | 28,145 KB | | | |
+
+Timings on the emulator vary by about ±15% between runs; Phase 1 changed no code on these paths, so its differences are noise.
 
 The open-time targets in §1 (first < 200 ms, later < 80 ms) are already met. What users still see on a first open is the grid filling in once `AppIndex` has loaded, so Phase 4 aims at that load.
 
@@ -223,7 +226,7 @@ The open-time targets in §1 (first < 200 ms, later < 80 ms) are already met. Wh
 
 | # | Question | Default if undecided |
 |---|---|---|
-| 1 | `isLoading`: remove, or show a subtle loading state? | Remove (no visible change) |
+| 1 | ~~`isLoading`: remove, or show a subtle loading state?~~ | **Removed** in Phase 1 |
 | 2 | ~~Keep the `className == null` fallback for history entries?~~ | **Decided 2026-10-23:** no. Powerline is in closed testing, so nothing is kept for compatibility with earlier builds. |
 | 3 | Simplify `SearchPipeline` timeouts after Phase 3 timings? | Keep |
 | 4 | ~~Android Auto Backup included launch history and favorites. Keep, or exclude?~~ | **Decided 2026-10-23:** back up only the search settings (Built-in switches, Web search entries, Share entries, Advanced). History and favorites moved to `powerline_user_data`, which is not backed up. Done. |
